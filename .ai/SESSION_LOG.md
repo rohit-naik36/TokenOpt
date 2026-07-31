@@ -1,0 +1,19 @@
+# Session Log
+
+## 2026-08-01 — Session 3: Version control, project memory, baseline commits
+
+### Work performed
+- Established git repo (`main`), `.gitignore`, commit workflow rules
+- Created `.ai/` project memory (CURRENT_STATE, NEXT_STEPS, DECISIONS, ROADMAP,
+  ARCHITECTURE, SESSION_LOG) + milestone checkpoint
+- Created `README.md` (referenced by `pyproject.toml` — packaging would fail without it)
+- Committed all existing work in logical commits (scaffolding → config/utils →
+  pipeline → observability → clients → factory/exports → tests → docs)
+- Verified: 23 tests pass, new-file lint clean
+
+### Context (prior sessions)
+- Session 2 (previous chat): implemented `local_client.py`, `factory.py`,
+  package `__init__` files, 23 tests; fixed invalid TOML in pyproject,
+  added numpy dependency; installed missing deps; updated SESSION_BACKUP.md
+- Session 1 (original build): Phase 1 core modules (config, utils, pipeline
+  stages, observability, OpenAI/Anthropic clients)
