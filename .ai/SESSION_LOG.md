@@ -1,5 +1,20 @@
 # Session Log
 
+## 2026-08-01 — Session 3 (continued): Controlled shutdown per Decision 12
+
+### Work performed
+- Adopted AI Session Management Policy → **Decision 12** recorded
+- Validation run: pytest 23 passed; ruff clean; `python -m build` OK;
+  **mypy FAILS** (numpy 2.5 stubs vs py3.10 — recorded, not hidden; this is M1)
+- Created `.ai/SESSION_STATE.md` (live status) and `.ai/TASK_QUEUE.md`
+  (READY/IN PROGRESS/BLOCKED/DONE board for M1–M15)
+- Updated `.ai/STANDARDS/ai-memory-standard.md` (SESSION_STATE, TASK_QUEUE,
+  controlled-shutdown rule) and `AGENTS.md` (startup steps 9–10, session-close
+  procedure, Decision 12 note)
+- Updated CURRENT_STATE, ROADMAP (Phase 0 done), SESSION_LOG
+- Final checkpoint `CHECKPOINT_20260801_0112.md`
+- **STOPPED — waiting for explicit approval to begin M1**
+
 ## 2026-08-01 — Session 3 (continued): Phase 0 — AI Engineering Foundation
 
 ### Work performed

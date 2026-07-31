@@ -2,6 +2,13 @@
 
 _Last updated: 2026-08-01_
 
+## Phase 0 — AI Engineering Foundation (DONE)
+- [x] M0.1 `.ai/STANDARDS/` (8 normative standards)
+- [x] M0.2 `.ai/WORKFLOWS/` (5 runbooks)
+- [x] M0.3 `.ai/ROLES/` (4 role definitions)
+- [x] Manifest + AGENTS.md reference updates
+- [x] Session management policy (Decision 12): SESSION_STATE.md + TASK_QUEUE.md
+
 ## Phase 1 — Core infrastructure (DONE)
 - [x] Project setup (pyproject, extras)
 - [x] Config, token counting, embeddings
@@ -12,10 +19,18 @@ _Last updated: 2026-08-01_
 - [x] Baseline unit tests (23)
 
 ## Phase 2 — Hardening & enhancements (NEXT)
+- [ ] M1 fix mypy/numpy type gate (⚠ approval: numpy pin) — **first action**
+- [ ] M2/M3 pipeline stage unit tests
+- [ ] M4 integration tests + coverage gate
+- [ ] M5 CI pipeline
+- [ ] M6 release metadata (⚠ license)
+- [ ] M7 security scans (⚠ dev deps)
+- [ ] M8 onboarding (CONTRIBUTING, Makefile, examples)
+- [ ] M12 cleanup (⚠ deletions), M13 refactor, M14 arch docs
+- [ ] M15 release v0.1.0 (⚠ optional PyPI publish)
 - [ ] Pipeline stage unit tests
 - [ ] Integration tests (mock servers)
 - [ ] README + docs
-- [ ] Build/packaging verification
 - [ ] Router: cost/latency tracking, dynamic routing
 - [ ] Cache: file persistence, better eviction
 - [ ] Summarizer: pluggable summarization model

@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01_
+_Last updated: 2026-08-01 (controlled shutdown — session complete, awaiting M1 approval)_
 
-## Status: Phase 1 complete, Phase 2 started (v0.1.0)
+## Status: Phase 0 + Phase 1 complete; Phase 2 begins with M1 (approved roadmap, waiting go-ahead)
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -46,7 +46,9 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
   (4 role definitions); manifest + AGENTS.md updated to reference them
 - **Implementation roadmap** — `.ai/IMPLEMENTATION_ROADMAP.md` approved with
   Phase 0 modification; awaiting approval to begin M1 (fix mypy gate)
-- **Packaging** — `pip install -e .` verified, README exists
+- **Session management (Decision 12)** — `.ai/SESSION_STATE.md` +
+  `.ai/TASK_QUEUE.md` maintained; controlled shutdown at 01:12
+- **Packaging** — `pip install -e .` verified, `python -m build` OK; README exists
 - **Lint** — `ruff check tokenopt tests` fully clean (fixed 64+ findings incl.
   one latent bug: missing import in `pipeline/compressor.py`)
 
@@ -69,4 +71,5 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 - `pytest tests/` → 23 passed
 - `ruff check tokenopt tests` → clean
-- `pip install -e .` → success; `import tokenopt` → v0.1.0
+- `python -m build` → sdist + wheel built
+- `mypy tokenopt` → **FAILS** (numpy 2.5 stubs vs py3.10 target) — M1 task
