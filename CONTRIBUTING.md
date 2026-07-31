@@ -38,10 +38,35 @@ readiness — if CI is red, the branch is not releasable.
 | `lint` | Python 3.12 (fast, version-independent) | ruff, mypy |
 | `test` | **matrix** Python 3.10 / 3.11 / 3.12 | pytest + coverage ≥80% |
 | `package` | Python 3.12, after `test` | `python -m build` + fresh-venv smoke |
+| `security` | Python 3.12, after `lint` | `pip-audit` + `gitleaks` |
 
 `lint` runs first so verification errors fail fast; `package` is last because
 it depends on everything above. The test matrix uses `fail-fast: true` — one
 failing Python version aborts the rest of the matrix immediately.
+
+### Security checks
+
+The `security` job enforces the baseline from `SECURITY.md`:
+
+- `pip-audit --path .` — audits the **runtime** dependency set against the
+  OSV advisory database; any known vulnerability fails the job (release
+  blocker). The `tokenopt` package itself is skipped by the scanner (not on
+  PyPI) and is expected.
+- `gitleaks detect --log-opts=--all` (pinned 8.30.1) — scans full git history
+  for secrets; any leak fails the job.
+
+To reproduce locally:
+
+```powershell
+pip install -e ".[dev]"   # provides pip-audit
+pip-audit --path . --desc
+# gitleaks is a standalone binary; download from its GitHub releases and run:
+gitleaks detect --source . --no-banner --log-opts=--all
+```
+
+Findings are classified release-blocker vs advisory in `SECURITY.md`.
+Dependabot (`.github/dependabot.yml`) opens weekly PRs for `pip` dependencies
+and GitHub Actions.
 
 ### Assumptions
 
