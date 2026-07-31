@@ -183,6 +183,12 @@ See `.ai/ARCHITECTURE.md` for the full reference.
 
 ## 4. Engineering Standards
 
+> **Normative detail:** each standard below is expanded as a normative
+> document in `.ai/STANDARDS/` (coding, documentation, testing, git, release,
+> security, ai-memory, checkpoint). The manifest states the binding
+> principles; the standards carry the operational rules and verification
+> commands. Where they conflict, this manifest wins.
+
 ### Coding Standards
 
 - Python ≥ 3.10; type hints required on all public and private functions.
@@ -338,6 +344,9 @@ Every AI agent working on this repository **must**:
 - [ ] Read `AGENTS.md` (root) if present
 - [ ] Read `.ai/PROJECT_MANIFEST.md` before any work
 - [ ] Read everything inside `.ai/` (state, decisions, roadmap, logs, checkpoints)
+- [ ] Read `.ai/STANDARDS/` — normative engineering rules (binding)
+- [ ] Follow `.ai/WORKFLOWS/` when a task matches a defined workflow
+- [ ] Operate within `.ai/ROLES/` role definitions when a role is invoked
 - [ ] Follow all recorded architecture decisions (`.ai/DECISIONS.md`)
 - [ ] Never overwrite or delete checkpoints — always create new ones
 - [ ] Ask the user before breaking or changing public APIs
@@ -356,7 +365,19 @@ Every AI agent working on this repository **must**:
 ```
 <repo root>/
 ├── .ai/               # Project memory (state, decisions, roadmap, checkpoints)
-│   └── CHECKPOINTS/   # One file per milestone; append-only
+│   ├── CHECKPOINTS/   # One file per milestone; append-only
+│   ├── STANDARDS/     # Normative engineering standards (8 files)
+│   ├── WORKFLOWS/     # Development workflows (implement-feature, fix-bug, ...)
+│   ├── ROLES/         # Role definitions (architect, backend-engineer, ...)
+│   ├── PROJECT_MANIFEST.md   # Constitution (this document)
+│   ├── CURRENT_STATE.md      # What exists / in flight
+│   ├── NEXT_STEPS.md         # Task queue
+│   ├── DECISIONS.md          # Accepted decisions (append-only)
+│   ├── ROADMAP.md            # Phasing / long-term
+│   ├── ARCHITECTURE.md       # Structure and flows
+│   ├── SESSION_LOG.md        # Chronological session record
+│   ├── REPOSITORY_AUDIT.md   # Health baseline (read-only)
+│   └── IMPLEMENTATION_ROADMAP.md  # Prioritized milestone plan
 ├── tokenopt/          # SDK package
 │   ├── clients/       # Provider wrappers
 │   ├── pipeline/      # Optimization stages

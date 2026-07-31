@@ -72,6 +72,16 @@ The AI agent is responsible for:
 8. The most recent checkpoint in `.ai/CHECKPOINTS/` — where work left off
 9. `README.md` — the user-facing entry point
 
+**Then, as applicable:**
+
+- `.ai/STANDARDS/` — normative engineering rules (coding, documentation,
+  testing, git, release, security, ai-memory, checkpoint). Read the ones
+  relevant to the task before acting.
+- `.ai/WORKFLOWS/` — follow the matching workflow (implement-feature,
+  fix-bug, code-review, release, handover) when one applies.
+- `.ai/ROLES/` — adopt the applicable role definition (architect,
+  backend-engineer, reviewer, technical-writer) when the task demands it.
+
 Only then begin implementation.
 
 ---
@@ -206,7 +216,8 @@ The agent should actively identify improvements to:
 **Propose improvements before implementing them** — surface the idea, the
 rationale, and the expected benefit, then let the user decide. Approved
 improvements become decisions recorded in `.ai/DECISIONS.md` and items in
-`.ai/NEXT_STEPS.md`.
+`.ai/NEXT_STEPS.md`, and may be codified as new rules in `.ai/STANDARDS/`,
+`.ai/WORKFLOWS/`, or `.ai/ROLES/`.
 
 ---
 
