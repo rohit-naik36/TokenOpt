@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1–M4 complete — Verification Gates + Pipeline Stage Tests 1+2 + Integration Tests & Coverage Gate)_
+_Last updated: 2026-08-01 (M1–M5 complete — Verification Gates + Pipeline Stage Tests 1+2 + Integration Tests & Coverage Gate + CI)_
 
-## Status: Phase 0 + Phase 1 + M1 + M2 + M3 + M4 complete; next is M5 (CI pipeline)
+## Status: Phase 0 + Phase 1 + M1 + M2 + M3 + M4 + M5 complete; next is M6 (release metadata)
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -154,6 +154,30 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
     `addopts = --cov=tokenopt` in `pyproject.toml` — enforced by pytest itself
   - Suite: **149 tests passed** (19 new); coverage **94%**; ruff clean;
     mypy exit 0; build OK
+- **M5 — Continuous Integration (2026-08-01)**
+  - `.github/workflows/ci.yml` — triggers: push to main, PRs,
+    `workflow_dispatch`; `concurrency` cancel-in-progress; least-privilege
+    permissions. Three jobs, fail-fast:
+    1. `lint` (3.12) — `ruff check tokenopt tests` + `mypy tokenopt`
+    2. `test` (matrix 3.10/3.11/3.12) — `pip install -e ".[dev]"` +
+       `pytest tests/` (coverage ≥80% gate from M4 enforced in CI)
+    3. `package` (3.12, after test) — `python -m build` + fresh-venv wheel
+       install + `import tokenopt` smoke (DoD gate 5) + dist artifact upload
+  - `CONTRIBUTING.md` (new) — dev setup, DoD gates, CI layout/assumptions,
+    branch protection recommendations (user-administered settings)
+  - README — CI badge + "Continuous Integration" section
+  - **CI executed and verified via GitHub API: full matrix green**
+    (run 30664914071: lint ✅, test 3.10/3.11/3.12 ✅, package ✅)
+  - **2 genuine CI-found defects fixed (minimal, Decision 16)**:
+    1. `mypy tokenopt` failed in CI on `import ollama` (local env had the
+       optional package installed, masking it) — `ollama.*` added to the
+       optional-extras mypy overrides in `pyproject.toml`
+    2. `create_client(provider="local")` crashed with a bare
+       `ModuleNotFoundError` when `ollama` is not installed — `_create_client`
+       now raises a clear `RuntimeError` with `pip install tokenopt[local]`
+       hint; factory tests no longer depend on the optional package
+       (+1 regression test, `tests/test_factory.py`)
+  - Suite: **150 tests passed**; coverage **94%**; ruff clean; mypy exit 0
 
 ## Open item
 
@@ -162,8 +186,8 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- **M5** — CI pipeline (GitHub Actions, Python 3.10–3.12 matrix)
-- Release metadata (M6), security scans (M7), DX (M8), governance
+- **M6** — Release metadata: license (⚠ user choice), classifiers, CHANGELOG
+- Security scans (M7), DX (M8), governance
   docs extension (M10/M11 pending), cleanup (M12), refactor (M13), arch docs
   (M14), release v0.1.0 (M15)
 - README usage examples complete; full config reference pending
@@ -175,9 +199,8 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## Verification
 
-- `pytest tests/` → 149 passed (coverage gate enforced, 94%)
+- `pytest tests/` → 150 passed (coverage gate enforced, 94%)
 - `ruff check tokenopt tests` → clean
 - `mypy tokenopt` → **green (exit 0)**
 - `python -m build` → sdist + wheel OK
-- Coverage gate: `[tool.coverage] fail_under = 80` in pyproject.toml, run on
-  every `pytest` invocation via `addopts`
+- **GitHub Actions CI** → full matrix green (lint, test 3.10/3.11/3.12, package+smoke) — verified via GitHub API

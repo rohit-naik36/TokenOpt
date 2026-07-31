@@ -22,7 +22,7 @@ _Last updated: 2026-08-01_
 - [x] M1 fix mypy/numpy type gate (⚠ approval: numpy pin)
 - [x] M2/M3 pipeline stage unit tests
 - [x] M4 integration tests + coverage gate (94% ≥ 80% enforced by pytest)
-- [ ] M5 CI pipeline
+- [x] M5 CI pipeline (green on GitHub: lint / test 3.10–3.12 / package+smoke)
 - [ ] M6 release metadata (⚠ license)
 - [ ] M7 security scans (⚠ dev deps)
 - [ ] M8 onboarding (CONTRIBUTING, Makefile, examples)

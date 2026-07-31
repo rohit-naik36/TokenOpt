@@ -1,5 +1,53 @@
 # Session Log
 
+## 2026-08-01 — Session 8: M5 — Continuous Integration
+
+### Work performed
+- **`.github/workflows/ci.yml`** — CI pipeline as the single source of truth
+  for release readiness. Triggers: push to `main`, PRs, `workflow_dispatch`.
+  `concurrency` cancel-in-progress; `permissions: contents: read`; job
+  timeouts. Three jobs, fail-fast ordering (`lint` → `test` → `package`):
+  1. `lint` (Python 3.12) — `pip install -e . ruff mypy` →
+     `ruff check tokenopt tests` → `mypy tokenopt`
+  2. `test` — matrix **3.10/3.11/3.12** → `pip install -e ".[dev]"` →
+     `pytest tests/` (coverage ≥80% gate from M4 enforced in CI)
+  3. `package` (3.12, after test) — `pip install build` → `python -m build`
+     → fresh-venv wheel install + `import tokenopt` smoke (DoD gate 5) →
+     dist artifact upload (7-day retention)
+- **`CONTRIBUTING.md`** (new) — dev setup, DoD gates, CI pipeline layout,
+  assumptions (floating versions + pip cache; optional extras not installed
+  in CI; offline/deterministic tests; `build` package CI-only), branch
+  protection recommendations (user-administered: required status checks,
+  up-to-date branches, no bypass).
+- **README** — CI badge + "Continuous Integration" section.
+- **Workflow validation**: PyYAML parse + **actionlint 1.7.12** (zero
+  findings) before push.
+- **CI execution — first run FAILED on lint** (exactly what CI is for):
+  `mypy tokenopt` flagged `import ollama` (local_client.py:52) as
+  import-not-found. Root cause: `ollama` is installed in the local env, so
+  local mypy resolved it — the M1 mypy-overrides fix missed `ollama.*`.
+  Fixed: added `"ollama.*"` to the optional-extras overrides in
+  `pyproject.toml` (consistent with the M1 precedent comment).
+- **CI execution — second run FAILED on Test (3.12)** (fail-fast cancelled
+  3.10/3.11): `tests/test_factory.py` constructed `LocalClient` with the
+  default Ollama URL → bare `ModuleNotFoundError: No module named 'ollama'`
+  (again masked locally by the installed package). Fixed:
+  - `local_client.py` `_create_client` now wraps `import ollama` and raises a
+    clear `RuntimeError` with a `pip install tokenopt[local]` hint
+    (Decision 16; aligns with fail-open/optional-extras philosophy)
+  - `tests/test_factory.py`: the two local-client tests now pass an
+    OpenAI-compatible `base_url` (no optional package needed); added
+    regression test for the missing-package error (deterministic via
+    `monkeypatch.setitem(sys.modules, "ollama", None)`)
+- **CI execution — third run: FULL GREEN** (run 30664914071): Lint ✅,
+  Test 3.10/3.11/3.12 ✅, Package + fresh-venv smoke ✅. Verified via the
+  public GitHub API (repo is public; job-log download needs admin, so
+  failures were reproduced locally in CI-equivalent temp venvs instead).
+- **Verification (all green)**: `pytest tests/` **150 passed** (149 + 1
+  regression test); ruff clean; `mypy tokenopt` exit 0 (also in the
+  CI-equivalent venv without optional packages); coverage **94%**.
+- **STOPPING — awaiting approval to begin M6** (license choice).
+
 ## 2026-08-01 — Session 7: M4 — Integration Tests & Coverage Gate
 
 ### Work performed

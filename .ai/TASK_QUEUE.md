@@ -1,6 +1,6 @@
 # Task Queue
 
-_Updated: 2026-08-01 (M4 DONE — Integration Tests & Coverage Gate complete)_
+_Updated: 2026-08-01 (M5 DONE — Continuous Integration pipeline green)_
 
 Statuses: `READY` · `IN PROGRESS` · `BLOCKED` · `DONE`
 Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
@@ -23,12 +23,13 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 | **M2** — Pipeline Stage Tests 1 | 54 new behavioral-contract tests (router 18, compressor 16, summarizer 13, gating 5); router/compressor coverage 27%/… → **100%**; **defect fixed**: summarizer kept oldest messages as recent (now keeps last 3); suite 77 passed |
 | **M3** — Pipeline Stage Tests 2 | 53 new tests (cache 18, RAG 15, few-shot 13, gating+7); cache 68%→**96%**, rag_optimizer 24%→**98%**, suite **89%**; **4 defects fixed**: cache key collision (non-string content), RAG dedup embedding misalignment, few-shot injection w/o system message, pipeline fail-open; suite 130 passed |
 | **M4** — Integration Tests + Coverage Gate | `INTEGRATION_TEST_STRATEGY.md`; `tests/integration/` 19 tests via `httpx.MockTransport` (**zero new deps** — `http_client=` kwarg); **2 defects fixed**: `chat.completions.create` drop-in surface (Decision 14), Anthropic router scoped to claude models (Decision 13); `[tool.coverage] fail_under=80` + `--cov` addopts; suite **149 passed, coverage 94%** |
+| **M5** — CI Pipeline | `.github/workflows/ci.yml` — lint / test matrix (3.10–3.12) / package+build+smoke; `CONTRIBUTING.md` (CI docs + branch protection notes); README badge; **verified green on GitHub** (run 30664914071); **2 CI-found defects fixed** (ollama mypy override; clear error for missing ollama — Decision 16); suite **150 passed, coverage 94%** |
 
 ## IN PROGRESS
 
 | Task | Notes |
 |------|-------|
-| (none — awaiting approval) | resume with M5 (CI pipeline — no approval gate) |
+| (none — awaiting approval) | resume with M6 (⚠ approval: license choice) |
 
 ## BLOCKED
 
@@ -40,10 +41,9 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 
 | # | Task | Depends on |
 |---|------|------------|
-| M5 | CI pipeline (GitHub Actions, py 3.10–3.12) | M4 |
 | M6 | Release metadata: license (⚠ user choice), CHANGELOG, build | M5 |
 | M7 | Security: pip-audit + secret scan + Dependabot (⚠ dev deps) | M5 |
-| M8 | Onboarding: CONTRIBUTING.md, Makefile, examples/ | — |
+| M8 | Onboarding: CONTRIBUTING.md (extend), Makefile, examples/ | — |
 | M10 | Extend WORKFLOWS/ + ROLES/ to full sets | — |
 | M11 | `.ai/PROMPTS/` (optional) | M10 |
 | M12 | Cleanup: artifact dirs (⚠ deletion), archive SESSION_BACKUP.md, templates | — |

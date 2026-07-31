@@ -1,31 +1,29 @@
 # Next Steps
 
-_Last updated: 2026-08-01 (M4 complete — integration tests + coverage gate green)_
+_Last updated: 2026-08-01 (M5 complete — CI pipeline green on GitHub)_
 
-## M4 done — M5 is next
+## M5 done — M6 is next (⚠ approval: license choice)
 
-M4 (Integration Tests & Coverage Gate) is complete: `tests/integration/` with
-19 tests over `httpx.MockTransport` (zero new deps — `http_client=` injection,
-Decision 15); `INTEGRATION_TEST_STRATEGY.md` added; `[tool.coverage]
-fail_under = 80` + `--cov` in pytest `addopts`; two genuine integration defects
-fixed (drop-in `chat.completions.create` surface restored — Decision 14;
-Anthropic router scoped to claude models — Decision 13); suite **149 green,
-coverage 94%**, ruff clean, mypy exit 0. **M5 has no approval gate.**
+M5 (Continuous Integration) is complete: `.github/workflows/ci.yml` with
+lint / test (matrix 3.10–3.12) / package jobs running the full DoD gate
+pipeline; CI verified green via GitHub API (run 30664914071); two CI-found
+defects fixed (ollama mypy override, clear error for missing ollama package —
+Decision 16); CONTRIBUTING.md documents the pipeline, assumptions, and branch
+protection recommendations. **M6 has an approval gate** (license choice).
 
-1. **M5** — CI pipeline (GitHub Actions, Python 3.10–3.12 matrix)
-2. **M6** — Release metadata: license (⚠ user choice), classifiers, CHANGELOG,
+1. **M6** — Release metadata: license (⚠ user choice), classifiers, CHANGELOG,
    `python -m build` verification
-3. **M7** — Security hardening: pip-audit + secret scanning + Dependabot
+2. **M7** — Security hardening: pip-audit + secret scanning + Dependabot
    (⚠ new dev deps)
-4. **M8** — Onboarding: CONTRIBUTING.md, Makefile, examples/
-5. **M10** — Extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (audit §5)
-6. **M11** — `.ai/PROMPTS/` (9 prompts; optional)
-7. **M12** — Structure cleanup: artifact dirs (⚠ deletion approval),
+3. **M8** — Onboarding: CONTRIBUTING.md (extend), Makefile, examples/
+4. **M10** — Extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (audit §5)
+5. **M11** — `.ai/PROMPTS/` (9 prompts; optional)
+6. **M12** — Structure cleanup: artifact dirs (⚠ deletion approval),
    archive SESSION_BACKUP.md, GitHub templates
-8. **M13** — Maintainability refactor: response helpers, data-driven MODEL_COSTS
-9. **M14** — Architecture docs polish: Mermaid diagrams, normalization spec,
+7. **M13** — Maintainability refactor: response helpers, data-driven MODEL_COSTS
+8. **M14** — Architecture docs polish: Mermaid diagrams, normalization spec,
    extension guide
-10. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
+9. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
 
 ## Known follow-ups (need approval/decision)
 
