@@ -5,7 +5,7 @@ description = "Drop-in token & prompt optimization for OpenAI, Anthropic, and lo
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
-authors = [{ name = "rohit-naik36" }]
+authors = [{ name = "Rohit Naik" }]
 keywords = [
     "llm", "openai", "anthropic", "ollama", "prompt", "optimization",
     "compression", "caching", "routing", "summarization", "rag", "few-shot",
@@ -45,7 +45,7 @@ cache = ["redis>=5.0.0"]
 semantic = ["sentence-transformers>=3.0.0"]
 compression = ["llmlingua>=0.1.0"]
 local = ["ollama>=0.3.0"]
-dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "pytest-cov>=4.0.0", "ruff>=0.3.0", "mypy>=1.0.0"]
+dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "pytest-cov>=4.0.0", "ruff>=0.3.0", "mypy>=1.0.0", "pip-audit>=2.7.0"]
 all = ["redis>=5.0.0", "sentence-transformers>=3.0.0", "llmlingua>=0.1.0", "ollama>=0.3.0"]
 
 [build-system]
