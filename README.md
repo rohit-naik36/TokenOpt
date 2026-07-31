@@ -11,6 +11,172 @@ automatically reduces token usage and cost.
 - **Latency** — cheap-model routing for simple queries, cache hits avoid API calls
 - **Quality preservation** — quality-aware routing and similarity-based few-shot selection
 
+All optimization is **best-effort and fails open**: an optimization error
+never blocks the underlying request.
+
+## Installation
+
+> ⚠️ TokenOpt is **not on PyPI yet** (v0.1.0 is pre-release). Install from
+> GitHub until v0.1.0 is published.
+
+```bash
+# From GitHub (regular use)
+pip install git+https://github.com/rohit-naik36/TokenOpt.git
+
+# Or clone + editable install (recommended for development)
+git clone https://github.com/rohit-naik36/TokenOpt.git
+cd TokenOpt
+pip install -e .
+```
+
+**Core install** (OpenAI + Anthropic providers, routing, compression,
+summarization, in-memory caching, RAG, few-shot, metrics):
+
+| Extras | Enables | Command |
+|--------|---------|---------|
+| (none) | core as above | `pip install -e .` |
+| `[local]` | native Ollama support | `pip install -e ".[local]"` |
+| `[cache]` | Redis-backed semantic cache | `pip install -e ".[cache]"` |
+| `[semantic]` | sentence-transformers embeddings | `pip install -e ".[semantic]"` |
+| `[compression]` | LLMLingua compression | `pip install -e ".[compression]"` |
+| `[all]` | everything above | `pip install -e ".[all]"` |
+| `[dev]` | test/lint/type/audit tools | `pip install -e ".[dev]"` |
+
+Requires **Python ≥ 3.10**.
+
+## Quick Start
+
+The simplest possible drop-in. With `OPENAI_API_KEY` set in your environment:
+
+```python
+# Before
+from openai import OpenAI
+client = OpenAI()
+
+# After (drop-in replacement)
+from tokenopt import OpenAI
+client = OpenAI()
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Long prompt..."}],
+)
+
+# Check savings
+print(client.get_metrics_summary())
+```
+
+Run it end-to-end: `python examples/quickstart.py`.
+
+## Examples by provider
+
+### OpenAI
+
+```python
+from tokenopt import OpenAI, TokenOptConfig
+
+config = TokenOptConfig(
+    compression_ratio=0.5,
+    cache_enabled=True,      # in-memory semantic cache
+    enable_routing=True,     # route simple queries to cheaper models
+)
+client = OpenAI(config=config)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Explain semantic caching in one sentence."}],
+)
+print(response.choices[0].message.content)
+```
+
+Full script: `examples/openai_basic.py` (includes a second identical call
+that hits the cache).
+
+### Anthropic
+
+```python
+from tokenopt import Anthropic
+
+client = Anthropic()  # reads ANTHROPIC_API_KEY
+
+response = client.messages.create(
+    model="claude-3-5-haiku",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Write a one-line haiku about caching."}],
+)
+print("".join(block.text for block in response.content))
+```
+
+Full script: `examples/anthropic_basic.py`.
+
+### Local models (Ollama, vLLM, llama.cpp, LM Studio)
+
+```python
+from tokenopt import LocalClient
+
+# Ollama (default URL uses the native `ollama` package; needs `[local]` extra)
+client = LocalClient(model="llama3.1")
+
+# Any OpenAI-compatible server: vLLM, llama.cpp, LM Studio (no extra needed)
+client = LocalClient(model="qwen2.5", base_url="http://localhost:8000/v1")
+
+response = client.chat.completions.create(
+    messages=[{"role": "user", "content": "Hello! Who are you?"}],
+)
+print(response.choices[0].message.content)
+```
+
+Full script: `examples/local_basic.py`.
+
+### One client, any provider (factory)
+
+```python
+from tokenopt import create_client, create_client_from_model
+
+# Auto-detect provider from the model name
+client = create_client_from_model("claude-3-5-haiku", api_key=...)
+client = create_client_from_model("llama3.1", base_url="http://localhost:11434")
+
+# Explicit provider + endpoint
+local = create_client(
+    provider="local",
+    model="qwen2.5",
+    base_url="http://localhost:8000/v1",
+)
+```
+
+## Configuration
+
+`TokenOptConfig` controls every optimization stage:
+
+```python
+from tokenopt import OpenAI, RoutingRule, TokenOptConfig
+
+config = TokenOptConfig(
+    compression_ratio=0.5,          # target prompt size reduction
+    cache_enabled=True,
+    cache_ttl=3600,
+    enable_routing=True,
+    routing_rules=[                 # custom routing (checked by priority)
+        RoutingRule(
+            name="math_tasks",
+            condition=lambda q, m: "equation" in q.lower(),
+            model="o1-mini",
+            priority=10,
+        ),
+    ],
+    enable_summarization=True,
+    summarization_threshold=8000,   # token count that triggers summarization
+    rag_max_chunks=5,
+    fewshot_max_examples=3,
+    metrics_callback=my_callback,   # per-request hook (see observability)
+)
+client = OpenAI(config=config)
+```
+
+Run it: `examples/pipeline_config.py` (routing + RAG + few-shot) and
+`examples/metrics_observability.py` (callback + cost estimation).
+
 ## Supported providers & features
 
 | Provider | Models | Backend |
@@ -24,98 +190,81 @@ compression, conversation summarization, semantic caching (in-memory or
 Redis), RAG chunk optimization, few-shot selection, metrics + cost
 estimation.
 
-## Optional extras
+## Project structure
 
-```bash
-pip install -e ".[cache]"      # Redis-backed semantic cache
-pip install -e ".[semantic]"   # sentence-transformers embeddings
-pip install -e ".[compression]"  # LLMLingua compression
-pip install -e ".[local]"      # native Ollama support
-pip install -e ".[all]"        # everything
+```
+tokenopt/
+├── clients/          # OpenAI, Anthropic, LocalClient, base drop-in wrappers
+├── pipeline/         # routing, compression, summarization, cache, RAG, few-shot
+├── observability/    # metrics collection, cost estimation, structured logging
+├── utils/            # token counting, truncation, embeddings
+├── config.py         # TokenOptConfig, RoutingRule, default config
+└── factory.py        # create_client / create_client_from_model / detect_provider
+examples/             # runnable scripts for every primary workflow
+tests/                # unit + integration suite (offline, deterministic)
 ```
 
-## Install
+See `.ai/ARCHITECTURE.md` for a full architecture overview.
 
-```bash
-pip install -e .            # core (openai, anthropic, tiktoken, pydantic, numpy)
-pip install -e ".[all]"     # everything (Redis, sentence-transformers, LLMLingua, ollama)
-pip install -e ".[local]"   # just local model support
-```
+## Troubleshooting / FAQ
 
-## Quick start
+**`ModuleNotFoundError: No module named 'ollama'`**
+The Ollama backend needs the `ollama` package: `pip install -e ".[local]"`.
+Or point `base_url` at an OpenAI-compatible server (vLLM, llama.cpp, LM
+Studio) — no extra needed.
 
-```python
-# Before
-from openai import OpenAI
-client = OpenAI()
-response = client.chat.completions.create(
-    model="gpt-4o",
-    messages=[{"role": "user", "content": "Long prompt..."}],
-)
+**`AuthenticationError` / `401` on OpenAI or Anthropic**
+Set the API key as an environment variable (`OPENAI_API_KEY` /
+`ANTHROPIC_API_KEY`) or pass `api_key=` to the client. The SDK itself never
+stores or logs keys.
 
-# After (drop-in replacement)
-from tokenopt import OpenAI
-client = OpenAI()
-response = client.chat.completions.create(
-    model="gpt-4o",
-    messages=[{"role": "user", "content": "Long prompt..."}],
-)
+**My prompts aren't being compressed / saved tokens**
+- Optimization is **fails open** and conservative by default: on short
+  prompts the compressor only removes fillers/whitespace (truncation kicks
+  in above the `compression_ratio` token budget), so savings are small —
+  there is simply little to save.
+- Routing only applies when `enable_routing=True` and (for Anthropic/Local)
+  custom rules targeting that provider's models exist.
+- Summarization only triggers on multi-turn conversations above
+  `summarization_threshold` tokens.
+- Verify what happened: `client.get_metrics_summary()` shows
+  `optimization_usage` and `avg_token_reduction_pct` per request.
 
-# Check savings
-print(client.get_metrics_summary())
-```
+**Second identical call didn't hit the cache**
+Cache keys include the model and conversation; different `model` values are
+separate entries. In-memory cache lives on the client instance — create the
+client once and reuse it.
 
-## Multi-model / local models
+**I want to disable all optimization**
+`TokenOptConfig(enable_compression=False, cache_enabled=False,
+enable_routing=False, enable_summarization=False, observability_enabled=False)`
+— the SDK then behaves as a thin passthrough.
 
-```python
-from tokenopt import create_client, create_client_from_model
+**Does TokenOpt work with streaming?**
+Local clients accept `stream=True` passthrough; the base OpenAI/Anthropic
+flows are non-streaming in v0.1.0 (async/streaming is on the roadmap).
 
-# Auto-detect provider from model name
-client = create_client_from_model("claude-3-5-haiku", api_key=...)
-client = create_client_from_model("llama3.1", base_url="http://localhost:11434")
+**Do I need `sentence-transformers` for caching?**
+No — the in-memory cache falls back to deterministic hashing when the
+`sentence-transformers` extra isn't installed. Install `[semantic]` for
+near-duplicate (semantic) cache hits.
 
-# Explicit provider + endpoint
-local = create_client(
-    provider="local",
-    model="qwen2.5",
-    base_url="http://localhost:8000/v1",  # vLLM / llama.cpp / LM Studio
-)
-response = local.chat.completions.create(
-    messages=[{"role": "user", "content": "Hello"}]
-)
-```
-
-`LocalClient` auto-detects the backend: the default Ollama URL
-(`http://localhost:11434`) uses the native `ollama` package; any other
-`base_url` is treated as an OpenAI-compatible server.
-
-## Configuration
-
-```python
-from tokenopt import OpenAI, TokenOptConfig
-
-config = TokenOptConfig(
-    compression_ratio=0.5,
-    cache_enabled=True,
-    cache_ttl=3600,
-    enable_routing=True,
-    enable_summarization=True,
-    summarization_threshold=8000,
-    rag_max_chunks=5,
-    fewshot_max_examples=3,
-)
-client = OpenAI(config=config)
-```
+**Python version support?**
+Python ≥ 3.10; CI tests 3.10, 3.11, 3.12.
 
 ## Development
 
 ```bash
-pip install -e ".[dev]"
-pytest tests/
-ruff check tokenopt tests
-mypy tokenopt
-python -m build
+make dev                # or: pip install -e ".[dev]"
+make test               # pytest tests/
+make lint               # ruff check tokenopt tests
+make typecheck          # mypy tokenopt
+make build              # python -m build
+make audit              # pip-audit --path . (security scan)
 ```
+
+See `CONTRIBUTING.md` for the Definition of Done gates, CI pipeline, and
+branch protection recommendations.
 
 ## Continuous Integration
 
@@ -128,19 +277,8 @@ release readiness. It executes the DoD gates:
    **≥80% coverage gate** enforced by pytest itself
 3. **Package** — `python -m build` (sdist + wheel) plus a fresh-venv
    install and `import tokenopt` smoke test
-
-See `CONTRIBUTING.md` for workflow details, assumptions, and branch
-protection recommendations.
-
-## Definition of Done
-
-Every milestone and feature must satisfy the verification gates in
-`.ai/DOD.md` before it is committed.
-
-## Project layout
-
-See `.ai/ARCHITECTURE.md` for a full architecture overview and
-`.ai/ROADMAP.md` for the development plan.
+4. **Security** — `pip-audit` (dependency vulnerabilities) + `gitleaks`
+   (secret scan of full git history) — see `SECURITY.md`
 
 ## Status
 

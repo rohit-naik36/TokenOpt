@@ -1,15 +1,27 @@
 # Contributing to TokenOpt SDK
 
 > Development-focused guide: setup, Definition of Done gates, CI pipeline and
-> assumptions, and branch protection recommendations. A fuller onboarding
-> guide (Makefile, examples, templates) is planned for milestone M8.
+> assumptions, and branch protection recommendations. For user-facing
+> onboarding see `README.md` (Quick Start, examples, troubleshooting) and the
+> runnable scripts in `examples/`.
 
 ## Development setup
 
 ```bash
-pip install -e ".[dev]"   # runtime deps + pytest, pytest-asyncio, pytest-cov, ruff, mypy
+pip install -e ".[dev]"   # runtime deps + pytest, pytest-asyncio, pytest-cov, ruff, mypy, pip-audit
 pytest tests/             # unit + integration suite (offline, deterministic)
 ```
+
+On systems with `make` (Linux/macOS; or install `make` on Windows via
+chocolatey/winget), the same commands are available as targets — `make help`
+lists them (install, dev, lint, typecheck, test, coverage, build, audit,
+smoke, clean). They mirror the CI pipeline in `.github/workflows/ci.yml`.
+
+The runnable scripts in `examples/` demonstrate every primary workflow
+(quickstart, OpenAI, Anthropic, Local, pipeline config, observability).
+Each one reads API keys from the standard environment variables
+(`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`) or a custom endpoint via
+`OPENAI_BASE_URL` / `ANTHROPIC_BASE_URL` / `TOKENOPT_EXAMPLE_BASE_URL`.
 
 ## Definition of Done gates
 
