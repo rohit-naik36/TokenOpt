@@ -41,6 +41,11 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 - **Agent manual** — root `AGENTS.md` created (tool-agnostic operating manual:
   responsibilities, startup procedure, dev rules, docs rules, git rules,
   checkpoint rules, approval gates, session close, continuous improvement)
+- **AI Engineering Foundation (Phase 0, M0.1–M0.3)** — `.ai/STANDARDS/`
+  (8 normative standards), `.ai/WORKFLOWS/` (5 runbooks), `.ai/ROLES/`
+  (4 role definitions); manifest + AGENTS.md updated to reference them
+- **Implementation roadmap** — `.ai/IMPLEMENTATION_ROADMAP.md` approved with
+  Phase 0 modification; awaiting approval to begin M1 (fix mypy gate)
 - **Packaging** — `pip install -e .` verified, README exists
 - **Lint** — `ruff check tokenopt tests` fully clean (fixed 64+ findings incl.
   one latent bug: missing import in `pipeline/compressor.py`)
@@ -52,11 +57,13 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- Pipeline stage unit tests (compressor/cache/router/RAG/few-shot individually)
-- Integration tests (mock API servers)
+- **M1** — fix mypy/numpy type gate (roadmap-approved; awaiting go)
+- Pipeline stage unit tests (M2/M3), integration tests + coverage gate (M4),
+  CI (M5), release metadata (M6), security scans (M7), DX (M8), governance
+  docs extension (M10/M11 pending), cleanup (M12), refactor (M13), arch docs
+  (M14), release v0.1.0 (M15)
 - README usage examples complete; full config reference pending
 - Local client live verification against a real Ollama server
-- Phase 2 enhancements (see NEXT_STEPS.md)
 
 ## Verification
 

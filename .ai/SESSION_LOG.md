@@ -1,5 +1,24 @@
 # Session Log
 
+## 2026-08-01 — Session 3 (continued): Phase 0 — AI Engineering Foundation
+
+### Work performed
+- **M0.1** — Created `.ai/STANDARDS/` (8 normative docs): coding,
+  documentation, testing, git, release, security, ai-memory, checkpoint —
+  each with rules, rationale, and verification commands
+- **M0.2** — Created `.ai/WORKFLOWS/` (5 runbooks): implement-feature,
+  fix-bug, code-review, release, handover
+- **M0.3** — Created `.ai/ROLES/` (4 roles): architect, backend-engineer,
+  reviewer, technical-writer
+- Updated `PROJECT_MANIFEST.md` (§4 normative reference, §8 agent rules,
+  §9 folder tree) and `AGENTS.md` (startup procedure + continuous
+  improvement) to reference the new documents
+- **No production code changed**
+- Commits: standards / workflows / roles / manifest+manual references (4)
+- Memory updated (CURRENT_STATE, NEXT_STEPS); checkpoint created
+- Pushed to `rohit-naik36/TokenOpt` (remote verified per Decision 11)
+- **STOPPING — awaiting approval to begin M1** (mypy gate fix)
+
 ## 2026-08-01 — Session 3 (continued): Repository audit + implementation roadmap
 
 ### Work performed

@@ -2,23 +2,35 @@
 
 _Last updated: 2026-08-01_
 
-## Session-closing items
+## Approved roadmap — awaiting M1 go-ahead
 
-- ~~Fix `origin` remote~~ → Done: `https://github.com/rohit-naik36/TokenOpt.git`,
-  `main` pushed (all 11 commits)
+The implementation roadmap (`.ai/IMPLEMENTATION_ROADMAP.md`) is approved with
+Phase 0 (AI Engineering Foundation, M0.1–M0.3) completed. **M1 is next and
+awaits explicit approval to begin.**
 
-## Immediate
+1. **M1** — Fix the mypy/numpy type gate (pin `numpy` or mypy override;
+   ⚠ dependency change approval), make `mypy tokenopt` green
+2. **M2** — Pipeline stage tests: router + compressor + summarizer
+3. **M3** — Pipeline stage tests: cache + RAG + few-shot
+4. **M4** — Integration tests (mock servers) + formal 80% coverage gate
+   (⚠ new dev dep)
+5. **M5** — CI pipeline (GitHub Actions, Python 3.10–3.12 matrix)
+6. **M6** — Release metadata: license (⚠ user choice), classifiers, CHANGELOG,
+   `python -m build` verification
+7. **M7** — Security hardening: pip-audit + secret scanning + Dependabot
+   (⚠ new dev deps)
+8. **M8** — Onboarding: CONTRIBUTING.md, Makefile, examples/
+9. **M9** — Ratify `.ai/STANDARDS/` — **done in Phase 0** (superseded)
+10. **M10** — Extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (audit §5)
+11. **M11** — `.ai/PROMPTS/` (9 prompts; optional)
+12. **M12** — Structure cleanup: artifact dirs (⚠ deletion approval),
+    archive SESSION_BACKUP.md, GitHub templates
+13. **M13** — Maintainability refactor: response helpers, data-driven MODEL_COSTS
+14. **M14** — Architecture docs polish: Mermaid diagrams, normalization spec,
+    extension guide
+15. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
 
-1. **Pipeline stage unit tests** — compressor, cache (hits/eviction/Redis),
-   router (rules + complexity), RAG optimizer, few-shot selector, summarizer
-2. **Integration tests** — mock OpenAI/Anthropic-compatible servers
-   (responses library) exercising the full drop-in flow incl. cache persistence
-3. **README** — complete usage examples: drop-in, factory, local client,
-   configuration reference
-4. **Build verification** — `python -m build` (sdist/wheel); `pip install -e .`
-   already verified
-
-## Short term (Phase 2)
+## Short term (Phase 2, after M7 per roadmap)
 
 - **Router** — per-model cost/latency tracking, dynamic routing
 - **Cache** — persistence (Redis done, add file-backed), better eviction
