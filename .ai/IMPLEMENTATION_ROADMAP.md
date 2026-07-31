@@ -50,21 +50,43 @@ precede any new product features. Feature work resumes only after M1–M7._
 
 ---
 
-### M2 — Pipeline stage tests, part 1: router + compressor + summarizer
+### M2 — Pipeline stage tests, part 1: router + compressor + summarizer — ✅ DONE (2026-08-01)
 
-**Work** (all network-free, pure unit tests)
-- `tests/test_router.py` — default rules by priority; complexity fallback
-  (high/medium/low keyword scoring, token-count thresholds); empty-query path;
-  rule exceptions don't crash (fail-open).
-- `tests/test_compressor.py` — heuristic path (target ratio, truncation);
-  LLMLingua absence fallback; tiny/empty prompts; message format preserved.
-- `tests/test_summarizer.py` — threshold gating (below threshold = no-op);
-  custom `summarizer_fn` used when provided; extractive fallback; system-message
-  reconstruction.
+**Work** (all network-free, pure unit tests) — **as implemented:**
+- `tests/test_router.py` — 18 behavioral-contract tests: default rules by
+  priority (simple < code < reasoning) and custom rule priority ordering;
+  complexity fallback (high/medium/low keyword scoring, 200/1000-token
+  thresholds); empty-query/empty-messages/non-string-content paths (default
+  model); rule exceptions skipped without crashing (fail-open, incl.
+  all-rules-failing → complexity fallback); last-user-message selection;
+  first-match-stops-evaluation; determinism; no mutation of
+  `ctx.messages`/`original_messages`.
+- `tests/test_compressor.py` — 16 tests: heuristic path (whitespace collapse,
+  filler removal, per-message truncation to target); LLMLingua absence
+  fallback (`sys.modules` stub → None, cached when present); ML path with a
+  `_FakeCompressor` stub incl. fail-open fallback when ML raises; tiny/empty/
+  filler-only/missing-content prompts; message format preserved (roles, extra
+  keys, non-string content passthrough); determinism; no mutation.
+- `tests/test_summarizer.py` — 13 tests: threshold gating (below = no-op);
+  ≤2-message and ≤3-non-system no-ops; custom `summarizer_fn` used when
+  provided (called with history + model); extractive fallback (first/last
+  user query, 200-char truncation, no-user-messages); system-message
+  reconstruction (with and without system message); malformed content;
+  determinism; no mutation.
+- `tests/test_pipeline_config.py` — 5 tests: per-stage enable/disable gating
+  through `OptimizationPipeline` (defaults on, all-off skip, independent
+  switches).
+- **Defect found + fixed (minimal, no API change):** `ContextSummarizerStage`
+  kept the *first* 3 non-system messages as "recent" and summarized the
+  *newest* ones — opposite of the documented "Keep last 3 messages" intent
+  (latest user query could be summarized away). Fixed: recent =
+  `non_system[-3:]`, history = `non_system[:-3]`, drop `reversed()`.
 
 **Acceptance check**
-- New suites green; coverage for `router`/`compressor` rises above 70%
-  (measured ad hoc — gate formalized in M4); existing tests unaffected.
+- New suites green ✅ — `pytest tests/` 77 passed (23 pre-existing unaffected);
+- Coverage for `router`/`compressor` above 70% ✅ — router 27% → **100%**,
+  compressor (incl. summarizer) → **100%**, suite 62% → **72%** (ad hoc;
+  formal gate is M4) — measured with `pytest --cov`.
 
 ---
 

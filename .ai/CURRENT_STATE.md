@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1 complete — Verification Gates green)_
+_Last updated: 2026-08-01 (M1 + M2 complete — Verification Gates + Pipeline Stage Tests 1)_
 
-## Status: Phase 0 + Phase 1 + M1 complete; next is M2 (pipeline stage tests)
+## Status: Phase 0 + Phase 1 + M1 + M2 complete; next is M3 (cache/RAG/few-shot tests)
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -69,8 +69,28 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
   - Created `.ai/DOD.md` — permanent Definition of Done with the 5-gate
     verification pipeline (pytest, ruff, mypy, build, fresh-venv smoke)
   - AGENTS.md, README, git/coding standards updated to include `mypy` gate
-  - Full gate verified: 23 tests pass, ruff clean, mypy 0, build OK,
-    wheel installs + imports in a fresh venv
+- Full gate verified: 23 tests pass, ruff clean, mypy 0, build OK,
+  wheel installs + imports in a fresh venv
+- **M2 — Pipeline Stage Unit Tests (2026-08-01)**
+  - `tests/test_router.py` (18 tests) — priority-ordered custom/default rules,
+    complexity fallback (keywords + token thresholds), empty/malformed queries,
+    rule-exception fail-open, determinism, no shared-state mutation
+  - `tests/test_compressor.py` (16 tests) — heuristic path (whitespace, filler
+    removal, per-message truncation), LLMLingua stub for ML path + fail-open
+    fallback on ML failure, lazy-load gating (`sys.modules` stub), edge cases
+  - `tests/test_summarizer.py` (13 tests) — threshold gating, ≤2/≤3-message
+    no-ops, custom `summarizer_fn`, extractive fallback, system-message
+    reconstruction, malformed content, determinism, no mutation
+  - `tests/test_pipeline_config.py` (5 tests) — enable/disable gating per stage
+    via `OptimizationPipeline` (defaults on, independent switches)
+  - **Defect found + fixed (minimal)**: `ContextSummarizerStage` kept the
+    *first* 3 non-system messages as recent and summarized the *newest* ones
+    (opposite of the documented "Keep last 3 messages" intent); latest user
+    query could be summarized away. Fixed to keep the last 3 and summarize
+    older history (no API change).
+  - Coverage: `router.py` 27% → **100%**, `compressor.py` → **100%**
+    (summarizer included), suite total 62% → **72%**
+  - Suite: **77 tests passed** (54 new); ruff clean; mypy exit 0
 
 ## Open item
 
@@ -79,18 +99,16 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- **M2** — pipeline stage tests: router + compressor + summarizer (next)
-- Pipeline stage tests part 2 (M3), integration tests + coverage gate (M4),
-  CI (M5), release metadata (M6), security scans (M7), DX (M8), governance
-  docs extension (M10/M11 pending), cleanup (M12), refactor (M13), arch docs
-  (M14), release v0.1.0 (M15)
+- **M3** — pipeline stage tests: cache + RAG + few-shot (next)
+- Integration tests + coverage gate (M4), CI (M5), release metadata (M6),
+  security scans (M7), DX (M8), governance docs extension (M10/M11 pending),
+  cleanup (M12), refactor (M13), arch docs (M14), release v0.1.0 (M15)
 - README usage examples complete; full config reference pending
 - Local client live verification against a real Ollama server
 
 ## Verification
 
-- `pytest tests/` → 23 passed
+- `pytest tests/` → 77 passed
 - `ruff check tokenopt tests` → clean
-- `mypy tokenopt` → **green (exit 0)** — M1 fixed the gate
-- `python -m build` → sdist + wheel built
-- Fresh-venv wheel install + import smoke test → passed
+- `mypy tokenopt` → **green (exit 0)**
+- Coverage: router 100%, compressor 100%, suite 72% (ad hoc; formal 80% gate in M4)

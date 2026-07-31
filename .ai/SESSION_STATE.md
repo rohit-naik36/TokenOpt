@@ -1,32 +1,31 @@
 # Session State
 
-_Updated: 2026-08-01 01:40 (M1 complete — all verification gates green)_
+_Updated: 2026-08-01 (M2 complete — pipeline stage tests 1 green)_
 
 | Field | Value |
 |-------|-------|
-| **Current milestone** | **M1 — Verification Gates — DONE** |
-| **Current task** | (none in progress — awaiting approval to begin M2) |
-| **Current progress** | Phase 0 + Phase 1 + M1 complete; mypy gate green; DoD ratified |
+| **Current milestone** | **M2 — Pipeline Stage Tests 1 — DONE** |
+| **Current task** | (none in progress — awaiting approval to begin M3) |
+| **Current progress** | Phase 0 + Phase 1 + M1 + M2 complete; router/compressor coverage 100%; suite 77 green |
 | **Safe stopping point** | ✅ Yes — working tree clean, all work committed and pushed, checkpoint created |
-| **Remaining work** | M2–M15 per `.ai/IMPLEMENTATION_ROADMAP.md` (14 milestones) |
-| **Estimated effort remaining** | ~13.5 agent-days (M2 is ~0.5–1 day) |
-| **Recommended next action** | Begin **M2** — pipeline stage tests: router + compressor + summarizer (no approval gate) |
-| **Context risk** | Low — short focused session; M1 delivered |
-| **Timestamp** | 2026-08-01 01:40 |
+| **Remaining work** | M3–M15 per `.ai/IMPLEMENTATION_ROADMAP.md` (13 milestones) |
+| **Estimated effort remaining** | ~12.5 agent-days (M3 is ~0.5–1 day) |
+| **Recommended next action** | Begin **M3** — pipeline stage tests: cache + RAG + few-shot (no approval gate) |
+| **Context risk** | Low — short focused session; M2 delivered |
+| **Timestamp** | 2026-08-01 |
 
 ## Blockers
 
-None. M1's approval gate (numpy pin) was resolved by user approval; M2–M8
-contain no approval-gated work until M4 (HTTP stub dev dep) and M6 (license).
+None. M3 has no approval gate; next approval-gated milestones are M4 (HTTP
+stub dev dep) and M6 (license).
 
 ## Verification at close
 
 | Check | Result |
 |-------|--------|
-| `pytest tests/ -q` | 23 passed |
+| `pytest tests/ -q` | 77 passed (54 new) |
 | `ruff check tokenopt tests` | clean |
-| `mypy tokenopt` | **GREEN (exit 0)** — gate fixed in M1 |
-| `python -m build` | sdist + wheel built OK |
-| Fresh-venv wheel install + smoke | `import tokenopt` OK, version 0.1.0 |
+| `mypy tokenopt` | **GREEN (exit 0)** |
+| Coverage (ad hoc) | router 100%, compressor 100%, suite 72% (gate formalized in M4) |
 | `git status` | clean |
 | `git remote -v` | `https://github.com/rohit-naik36/TokenOpt.git` (valid, Decision 11) |

@@ -1,6 +1,6 @@
 # Task Queue
 
-_Updated: 2026-08-01 01:40 (M1 DONE — Verification Gates complete)_
+_Updated: 2026-08-01 (M2 DONE — Pipeline Stage Tests 1 complete)_
 
 Statuses: `READY` · `IN PROGRESS` · `BLOCKED` · `DONE`
 Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
@@ -20,12 +20,13 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 | Manifest + AGENTS.md references | §4/§8/§9 + startup procedure |
 | Session management policy adopted | Decision 12, this queue + SESSION_STATE.md |
 | **M1** — Verification Gates | `mypy tokenopt` exit 0; numpy pin `>=1.24,<2.5`; 37 typing fixes + latent summarizer bug; `.ai/DOD.md` ratified; docs gates updated |
+| **M2** — Pipeline Stage Tests 1 | 54 new behavioral-contract tests (router 18, compressor 16, summarizer 13, gating 5); router/compressor coverage 27%/… → **100%**; **defect fixed**: summarizer kept oldest messages as recent (now keeps last 3); suite 77 passed |
 
 ## IN PROGRESS
 
 | Task | Notes |
 |------|-------|
-| (none — awaiting approval) | resume with M2 |
+| (none — awaiting approval) | resume with M3 |
 
 ## BLOCKED
 
@@ -37,7 +38,6 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 
 | # | Task | Depends on |
 |---|------|------------|
-| M2 | Pipeline stage tests 1: router, compressor, summarizer | — |
 | M3 | Pipeline stage tests 2: cache, RAG, few-shot | M2 |
 | M4 | Integration tests + 80% coverage gate (⚠ new dev dep) | M2–M3 |
 | M5 | CI pipeline (GitHub Actions, py 3.10–3.12) | M4 |

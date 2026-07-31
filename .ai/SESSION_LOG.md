@@ -1,5 +1,44 @@
 # Session Log
 
+## 2026-08-01 — Session 5: M2 — Pipeline Stage Tests 1 (router, compressor, summarizer)
+
+### Work performed
+- **Wrote 54 behavioral-contract tests** (network-free, public-contract only):
+  - `tests/test_router.py` (18) — priority-ordered default rules
+    (simple < code < reasoning) and custom rules; complexity fallback
+    (high/medium/low keywords, 200/1000-token thresholds); empty messages,
+    empty query, non-string user content → default model; rule-exception
+    fail-open (skip rule, continue; all-failing → complexity fallback);
+    last-user-message selection; first-match-stops-evaluation; determinism;
+    no mutation of `ctx.messages`/`original_messages`.
+  - `tests/test_compressor.py` (16) — heuristic path (whitespace collapse,
+    filler-phrase removal, per-message truncation to target); message
+    structure preserved (roles, extra keys); non-string content passthrough;
+    empty/tiny/filler-only/missing-content edge cases; ML path via
+    `_FakeCompressor` stub (prompt/rate/force_tokens contract, single-message
+    replacement); ML failure → heuristic fallback (fail-open); lazy-load
+    `_get_llmlingua` via `sys.modules` stub (None on missing, cached instance
+    when present); determinism; no mutation.
+  - `tests/test_summarizer.py` (13) — ≤2-message and below-threshold no-ops;
+    ≤3 non-system no-op; reconstruction (system + summary + recent); no
+    system message; custom `summarizer_fn` called with (history, model);
+    extractive fallback (first/last user query, 200-char truncation,
+    no-user-messages); malformed (list) content; determinism; no mutation.
+  - `tests/test_pipeline_config.py` (5) — stage enable/disable gating through
+    `OptimizationPipeline` (defaults on, all-off skip, independent switches,
+    router rules applied, compressor compresses).
+- **Defect exposed and fixed (minimal, no API change)**: `ContextSummarizerStage`
+  kept the FIRST 3 non-system messages as "recent" and summarized the NEWEST
+  ones — the opposite of its documented intent ("Keep last 3 messages"); the
+  latest user query could be summarized away. Fixed with a two-pass split
+  (recent = `non_system[-3:]`, history = `non_system[:-3]`; drop `reversed()`).
+- **Verification (all green)**: `pytest tests/` 77 passed (23 existing
+  untouched + 54 new); ruff clean; `mypy tokenopt` exit 0.
+- **Coverage (ad hoc, per M2 acceptance)**: `router.py` 27% → **100%**,
+  `compressor.py` (incl. summarizer) → **100%**, suite total 62% → **72%**
+  (formal 80% gate is M4).
+- **STOPPING — awaiting approval to begin M3** (cache/RAG/few-shot tests).
+
 ## 2026-08-01 — Session 4: M1 — Verification Gates (mypy gate fixed, DoD ratified)
 
 ### Work performed

@@ -1,32 +1,33 @@
 # Next Steps
 
-_Last updated: 2026-08-01 (M1 complete — verification gates green, DoD ratified)_
+_Last updated: 2026-08-01 (M2 complete — pipeline stage tests 1 green)_
 
-## M1 done — M2 is next
+## M2 done — M3 is next
 
-M1 (Verification Gates) is complete: mypy gate green (numpy pin + 37 typing
-fixes + latent summarizer bug), `.ai/DOD.md` ratified, gates documented in
-AGENTS.md/README/standards. **M2 awaits go-ahead.**
+M2 (Pipeline Stage Tests 1) is complete: 54 new behavioral-contract tests
+(router 18, compressor 16, summarizer 13, pipeline gating 5); one defect found
+and fixed (summarizer kept oldest messages as "recent"); router and compressor
+coverage at 100%; suite 77 tests green, ruff clean, mypy exit 0. **M3 awaits
+go-ahead.**
 
-1. **M2** — Pipeline stage tests: router + compressor + summarizer
-   (acceptance: new suites green; router/compressor coverage > 70%)
-2. **M3** — Pipeline stage tests: cache + RAG + few-shot
-3. **M4** — Integration tests (mock servers) + formal 80% coverage gate
+1. **M3** — Pipeline stage tests: cache + RAG + few-shot
+   (acceptance: new suites green; rag_optimizer/cache coverage ≥ 70%)
+2. **M4** — Integration tests (mock servers) + formal 80% coverage gate
    (⚠ new dev dep)
-4. **M5** — CI pipeline (GitHub Actions, Python 3.10–3.12 matrix)
-5. **M6** — Release metadata: license (⚠ user choice), classifiers, CHANGELOG,
+3. **M5** — CI pipeline (GitHub Actions, Python 3.10–3.12 matrix)
+4. **M6** — Release metadata: license (⚠ user choice), classifiers, CHANGELOG,
    `python -m build` verification
-6. **M7** — Security hardening: pip-audit + secret scanning + Dependabot
+5. **M7** — Security hardening: pip-audit + secret scanning + Dependabot
    (⚠ new dev deps)
-7. **M8** — Onboarding: CONTRIBUTING.md, Makefile, examples/
-8. **M10** — Extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (audit §5)
-9. **M11** — `.ai/PROMPTS/` (9 prompts; optional)
-10. **M12** — Structure cleanup: artifact dirs (⚠ deletion approval),
-    archive SESSION_BACKUP.md, GitHub templates
-11. **M13** — Maintainability refactor: response helpers, data-driven MODEL_COSTS
-12. **M14** — Architecture docs polish: Mermaid diagrams, normalization spec,
+6. **M8** — Onboarding: CONTRIBUTING.md, Makefile, examples/
+7. **M10** — Extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (audit §5)
+8. **M11** — `.ai/PROMPTS/` (9 prompts; optional)
+9. **M12** — Structure cleanup: artifact dirs (⚠ deletion approval),
+   archive SESSION_BACKUP.md, GitHub templates
+10. **M13** — Maintainability refactor: response helpers, data-driven MODEL_COSTS
+11. **M14** — Architecture docs polish: Mermaid diagrams, normalization spec,
     extension guide
-13. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
+12. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
 
 ## Short term (Phase 2, after M7 per roadmap)
 
