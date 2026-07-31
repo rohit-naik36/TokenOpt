@@ -50,9 +50,10 @@ warn_unused_ignores = true
 disallow_untyped_defs = true
 
 # Optional extras are imported fail-open (try/except); type gate must not
-# require installing heavy optional dependencies (redis, llmlingua, ST).
+# require installing heavy optional dependencies (redis, llmlingua, ST,
+# ollama).
 [[tool.mypy.overrides]]
-module = ["redis.*", "llmlingua.*", "sentence_transformers.*"]
+module = ["redis.*", "llmlingua.*", "sentence_transformers.*", "ollama.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
