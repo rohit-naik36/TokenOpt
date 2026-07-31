@@ -21,6 +21,8 @@ what exists, what's next, what was decided, what happened, where work left off.
 | `SESSION_LOG.md` | Chronological record of sessions | Every session |
 | `CHECKPOINTS/` | Resumability snapshots | Per checkpoint rules |
 | `REPOSITORY_AUDIT.md` | Health baseline (read-only) | On re-audit |
+| `SESSION_STATE.md` | Live status: milestone, task, progress, stopping point, risk | Every session (especially shutdown) |
+| `TASK_QUEUE.md` | Task board: READY / IN PROGRESS / BLOCKED / DONE | When tasks change |
 
 ## Rules
 
@@ -38,6 +40,16 @@ what exists, what's next, what was decided, what happened, where work left off.
    previous row; a new row supersedes.
 7. **Memory is code-adjacent** — memory updates are committed with the work
    they describe (same milestone, same push).
+8. **Session state** — `SESSION_STATE.md` holds the live status (milestone,
+   task, progress, safe stopping point, remaining work, context risk) and is
+   updated at every session end or controlled shutdown.
+9. **Task queue** — `TASK_QUEUE.md` is the task board; move items between
+   READY / IN PROGRESS / BLOCKED / DONE as work progresses.
+10. **Controlled shutdown (Decision 12)** — when stopping early (milestone
+    done, ~40–60 interactions, ~60–90 min elapsed, natural stopping point):
+    stop production code, validate (pytest/ruff/mypy/build — record failures),
+    update ALL memory files, create a checkpoint, update SESSION_STATE +
+    TASK_QUEUE, commit, push, hand over, and stop.
 
 ## Definition of "memory updated"
 

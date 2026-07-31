@@ -15,6 +15,7 @@ _Last updated: 2026-08-01_
 | 9 | Factory auto-detects provider from model prefix (`gpt-`/`o1-`/`o3-` → openai, `claude` → anthropic, else local) or base_url containing `11434` | One entry point for multi-model routing; sensible defaults | Accepted |
 | 10 | Unknown models fall back to `cl100k_base` encoding in token counter | Robustness for local/private model names | Accepted |
 | 11 | Never modify the Git remote automatically; before any push verify `git remote -v`, ensure URL matches `github.com/<username>/<repository>.git`; if missing/malformed, stop and ask for approval; never guess or rewrite the remote URL | Prevents accidental pushes to wrong/malicious remotes; remote config is user-owned | Accepted |
+| 12 | AI Session Management Policy: the repository is the single source of truth (never the conversation); the agent's primary responsibility is resumability; controlled shutdown triggered by milestone completion, ~40–60 interactions, ~60–90 min elapsed, multiple areas modified, or any natural stopping point — stop EARLY, validate (pytest/ruff/mypy/build), update all memory incl. `SESSION_STATE.md` and `TASK_QUEUE.md`, create a checkpoint, commit, push, hand over, and STOP | Prevents context exhaustion from destroying project knowledge; guarantees any AI engineer can resume from the repo alone | Accepted |
 
 ## Rejected / deferred
 

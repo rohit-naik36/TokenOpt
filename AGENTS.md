@@ -70,7 +70,9 @@ The AI agent is responsible for:
 6. `.ai/ARCHITECTURE.md` — how the system is structured
 7. `.ai/SESSION_LOG.md` — what previous sessions did
 8. The most recent checkpoint in `.ai/CHECKPOINTS/` — where work left off
-9. `README.md` — the user-facing entry point
+9. `.ai/SESSION_STATE.md` — live status (milestone, task, risk)
+10. `.ai/TASK_QUEUE.md` — what is READY / IN PROGRESS / BLOCKED / DONE
+11. `README.md` — the user-facing entry point
 
 **Then, as applicable:**
 
@@ -191,15 +193,22 @@ Before ending a session, in order:
 
 1. Ensure `git status` is clean (all work committed).
 2. Run the test suite (`pytest tests/`) — all green.
-3. Run lint (`ruff check tokenopt tests`) — all clean.
-4. Update project memory (CURRENT_STATE, NEXT_STEPS, SESSION_LOG, and
-   ROADMAP/ARCHITECTURE if necessary).
+3. Run lint (`ruff check tokenopt tests`) — all clean. (Also `mypy` and
+   `python -m build` when applicable; record failures, never hide them.)
+4. Update project memory (CURRENT_STATE, NEXT_STEPS, SESSION_LOG,
+   SESSION_STATE, TASK_QUEUE, and ROADMAP/ARCHITECTURE if necessary).
 5. Create a checkpoint in `.ai/CHECKPOINTS/`.
 6. Commit the memory and checkpoint changes.
 7. Verify `git remote -v`, then push.
 8. Confirm the push succeeded (branch up to date with `origin/main`).
 9. Summarize the work completed for the user.
 10. Stop and wait for the next session.
+
+**Controlled shutdown (Decision 12):** stop EARLY — at milestone completion,
+~40–60 substantial interactions, ~60–90 minutes elapsed, or any natural
+stopping point. Never attempt to maximize context usage; one extra checkpoint
+is always better than lost work. The repository — never the conversation — is
+the single source of truth.
 
 ---
 
