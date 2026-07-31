@@ -1,9 +1,27 @@
 [project]
 name = "tokenopt"
 version = "0.1.0"
-description = "Token and prompt optimization SDK for LLMs"
+description = "Drop-in token & prompt optimization for OpenAI, Anthropic, and local LLM clients"
 readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "rohit-naik36" }]
+keywords = [
+    "llm", "openai", "anthropic", "ollama", "prompt", "optimization",
+    "compression", "caching", "routing", "summarization", "rag", "few-shot",
+    "cost", "latency",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "openai>=1.0.0",
     "anthropic>=0.25.0",
@@ -15,6 +33,13 @@ dependencies = [
     "numpy>=1.24,<2.5",
 ]
 
+[project.urls]
+Homepage = "https://github.com/rohit-naik36/TokenOpt"
+Repository = "https://github.com/rohit-naik36/TokenOpt"
+Issues = "https://github.com/rohit-naik36/TokenOpt/issues"
+Documentation = "https://github.com/rohit-naik36/TokenOpt#readme"
+CI = "https://github.com/rohit-naik36/TokenOpt/actions"
+
 [project.optional-dependencies]
 cache = ["redis>=5.0.0"]
 semantic = ["sentence-transformers>=3.0.0"]
@@ -24,7 +49,8 @@ dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "pytest-cov>=4.0.0", "ruff>=0.
 all = ["redis>=5.0.0", "sentence-transformers>=3.0.0", "llmlingua>=0.1.0", "ollama>=0.3.0"]
 
 [build-system]
-requires = ["setuptools>=68.0"]
+# setuptools>=77 required for PEP 639 SPDX license metadata (`license = "MIT"`)
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]

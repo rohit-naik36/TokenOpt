@@ -11,6 +11,29 @@ automatically reduces token usage and cost.
 - **Latency** — cheap-model routing for simple queries, cache hits avoid API calls
 - **Quality preservation** — quality-aware routing and similarity-based few-shot selection
 
+## Supported providers & features
+
+| Provider | Models | Backend |
+|----------|--------|---------|
+| OpenAI | `gpt-*`, `o1-*`, `o3-*` | official `openai` SDK |
+| Anthropic | `claude-*` | official `anthropic` SDK |
+| Local | Ollama (`http://localhost:11434`), vLLM, llama.cpp, LM Studio (`/v1`) | `ollama` package or `openai` SDK |
+
+Features (all configurable via `TokenOptConfig`): model routing, prompt
+compression, conversation summarization, semantic caching (in-memory or
+Redis), RAG chunk optimization, few-shot selection, metrics + cost
+estimation.
+
+## Optional extras
+
+```bash
+pip install -e ".[cache]"      # Redis-backed semantic cache
+pip install -e ".[semantic]"   # sentence-transformers embeddings
+pip install -e ".[compression]"  # LLMLingua compression
+pip install -e ".[local]"      # native Ollama support
+pip install -e ".[all]"        # everything
+```
+
 ## Install
 
 ```bash
@@ -119,6 +142,13 @@ Every milestone and feature must satisfy the verification gates in
 See `.ai/ARCHITECTURE.md` for a full architecture overview and
 `.ai/ROADMAP.md` for the development plan.
 
+## Status
+
+Pre-1.0 (**v0.1.0**): the public API is stabilizing but may still evolve.
+Optimization is best-effort and always fails open — an optimization error
+never blocks the underlying request. Feedback and contributions welcome via
+GitHub issues.
+
 ## License
 
-TBD
+[MIT](LICENSE)
