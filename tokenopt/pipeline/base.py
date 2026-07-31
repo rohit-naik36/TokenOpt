@@ -68,7 +68,11 @@ class OptimizationPipeline:
 
         for stage in self.stages:
             if self._should_run_stage(stage):
-                ctx = stage(ctx)
+                try:
+                    ctx = stage(ctx)
+                except Exception as e:
+                    # Fail open: optimization errors must never break the request
+                    ctx.metrics[f"{stage.name}_error"] = str(e)
 
         # Final metrics
         ctx.metrics["final_token_count"] = count_message_tokens(ctx.messages, ctx.model)
