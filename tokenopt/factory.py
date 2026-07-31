@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from tokenopt.clients import Anthropic, BaseOptimizedClient, LocalClient, OpenAI
 from tokenopt.config import TokenOptConfig
 
@@ -29,7 +31,7 @@ def create_client(
     config: TokenOptConfig | None = None,
     api_key: str | None = None,
     base_url: str | None = None,
-    **kwargs
+    **kwargs: Any
 ) -> BaseOptimizedClient:
     """Create an optimized client for the given provider or model.
 
@@ -63,7 +65,7 @@ def create_client(
     )
 
 
-def create_client_from_model(model: str, **kwargs) -> BaseOptimizedClient:
+def create_client_from_model(model: str, **kwargs: Any) -> BaseOptimizedClient:
     """Create a client by auto-detecting the provider from the model name."""
     return create_client(provider="auto", model=model, **kwargs)
 

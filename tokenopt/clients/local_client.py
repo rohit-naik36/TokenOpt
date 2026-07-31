@@ -30,7 +30,7 @@ class LocalClient(BaseOptimizedClient):
         model: str | None = None,
         api_key: str | None = None,
         base_url: str | None = None,
-        **kwargs
+        **kwargs: Any
     ):
         self.default_local_model = model or "llama3.1"
         super().__init__(
@@ -78,7 +78,7 @@ class LocalClient(BaseOptimizedClient):
     def _is_cloud_model(model: str) -> bool:
         return model.lower().startswith(("gpt-", "o1-", "o3-", "claude"))
 
-    def _call_api(self, messages: list[dict], model: str, **kwargs) -> Any:
+    def _call_api(self, messages: list[dict], model: str, **kwargs: Any) -> Any:
         if self._detect_backend() == "ollama":
             return self._normalize_ollama_response(
                 self._client.chat(
@@ -137,7 +137,7 @@ class LocalClient(BaseOptimizedClient):
             }
         return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
-    def chat_completion(self, messages: list[dict], model: str | None = None, **kwargs) -> Any:
+    def chat_completion(self, messages: list[dict], model: str | None = None, **kwargs: Any) -> Any:
         """Chat completion defaulting to the configured local model."""
         return super().chat_completion(messages, model or self.default_local_model, **kwargs)
 
@@ -145,10 +145,15 @@ class LocalClient(BaseOptimizedClient):
     @property
     def chat(self) -> Any:
         class ChatCompletions:
-            def __init__(self, outer):
+            def __init__(self, outer: Any):
                 self._outer = outer
 
-            def create(self, messages, model=None, **kwargs):
+            def create(
+                self,
+                messages: list[dict[str, Any]],
+                model: str | None = None,
+                **kwargs: Any
+            ) -> Any:
                 return self._outer.chat_completion(messages, model, **kwargs)
 
         return ChatCompletions(self)

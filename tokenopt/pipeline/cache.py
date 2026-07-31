@@ -37,7 +37,7 @@ class CacheStage(PipelineStage):
         self._embedding_provider = get_embedding_provider(fallback=True)
         self._redis = None
 
-    def _get_redis(self):
+    def _get_redis(self) -> Any:
         """Lazy-load Redis if configured."""
         if self._redis is None and self.config and self.config.redis_url:
             try:

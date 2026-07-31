@@ -19,7 +19,7 @@ class Anthropic(BaseOptimizedClient):
             **self.extra_kwargs
         )
 
-    def _call_api(self, messages: list[dict], model: str, **kwargs) -> Any:
+    def _call_api(self, messages: list[dict], model: str, **kwargs: Any) -> Any:
         # Convert messages format for Anthropic
         system = None
         anthropic_messages = []
@@ -59,10 +59,15 @@ class Anthropic(BaseOptimizedClient):
     @property
     def messages(self) -> Any:
         class Messages:
-            def __init__(self, outer):
+            def __init__(self, outer: Any):
                 self._outer = outer
 
-            def create(self, messages, model=None, **kwargs):
+            def create(
+                self,
+                messages: list[dict[str, Any]],
+                model: str | None = None,
+                **kwargs: Any
+            ) -> Any:
                 return self._outer.chat_completion(messages, model, **kwargs)
 
         return Messages(self)

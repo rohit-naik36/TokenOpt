@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
 
 from pydantic import BaseModel
+
+from tokenopt.observability.metrics import RequestMetrics
 
 
 class RoutingRule(BaseModel):
@@ -76,7 +77,7 @@ class TokenOptConfig:
 
     # Observability
     observability_enabled: bool = True
-    metrics_callback: Callable[[dict[str, Any]], None] | None = None
+    metrics_callback: Callable[[RequestMetrics], None] | None = None
 
     def __post_init__(self) -> None:
         if not 0 < self.compression_ratio <= 1:

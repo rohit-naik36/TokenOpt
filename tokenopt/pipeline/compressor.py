@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from typing import Any
 
 from tokenopt.pipeline.base import OptimizationContext, PipelineStage
@@ -16,9 +17,9 @@ class CompressorStage(PipelineStage):
 
     def __init__(self, config: Any = None):
         self.config = config
-        self._llmlingua = None
+        self._llmlingua: Any = None
 
-    def _get_llmlingua(self):
+    def _get_llmlingua(self) -> Any:
         """Lazy-load LLMLingua if available."""
         if self._llmlingua is None:
             try:
@@ -108,7 +109,12 @@ class ContextSummarizerStage(PipelineStage):
 
     name = "summarizer"
 
-    def __init__(self, summarizer_fn: callable = None):
+    def __init__(
+        self,
+        config: Any = None,
+        summarizer_fn: Callable[[list[dict], str], str] | None = None,
+    ):
+        self.config = config
         self.summarizer_fn = summarizer_fn
 
     def process(self, ctx: OptimizationContext) -> OptimizationContext:
@@ -120,9 +126,9 @@ class ContextSummarizerStage(PipelineStage):
             return ctx
 
         # Separate system message and recent messages
-        system_msg = None
-        recent_messages = []
-        history_messages = []
+        system_msg: dict[str, Any] | None = None
+        recent_messages: list[dict[str, Any]] = []
+        history_messages: list[dict[str, Any]] = []
 
         for msg in ctx.messages:
             if msg.get("role") == "system":

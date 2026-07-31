@@ -12,7 +12,7 @@ class RouterStage(PipelineStage):
 
     name = "router"
 
-    def __init__(self, config: TokenOptConfig = None):
+    def __init__(self, config: TokenOptConfig | None = None):
         self.config = config or TokenOptConfig()
         self._complexity_keywords = {
             "high": ["analyze", "compare", "detailed", "comprehensive", "reason", "step by step",

@@ -25,7 +25,7 @@ class OptimizationContext:
     original_messages: list[dict[str, Any]] = field(default_factory=list)
     original_token_count: int = 0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.original_messages:
             self.original_messages = [m.copy() for m in self.messages]
         if not self.original_token_count:
@@ -57,7 +57,7 @@ class OptimizationPipeline:
         self.stages = stages
         self.config = config
 
-    def run(self, messages: list[dict], model: str, **kwargs) -> OptimizationContext:
+    def run(self, messages: list[dict[str, Any]], model: str, **kwargs: Any) -> OptimizationContext:
         """Run the full optimization pipeline."""
         ctx = OptimizationContext(
             messages=messages,

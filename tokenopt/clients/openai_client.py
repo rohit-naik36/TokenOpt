@@ -19,7 +19,7 @@ class OpenAI(BaseOptimizedClient):
             **self.extra_kwargs
         )
 
-    def _call_api(self, messages: list[dict], model: str, **kwargs) -> Any:
+    def _call_api(self, messages: list[dict], model: str, **kwargs: Any) -> Any:
         return self._client.chat.completions.create(
             model=model,
             messages=messages,
@@ -42,10 +42,15 @@ class OpenAI(BaseOptimizedClient):
     @property
     def chat(self) -> Any:
         class ChatCompletions:
-            def __init__(self, outer):
+            def __init__(self, outer: Any):
                 self._outer = outer
 
-            def create(self, messages, model=None, **kwargs):
+            def create(
+                self,
+                messages: list[dict[str, Any]],
+                model: str | None = None,
+                **kwargs: Any
+            ) -> Any:
                 return self._outer.chat_completion(messages, model, **kwargs)
 
         return ChatCompletions(self)

@@ -102,7 +102,7 @@ class RAGOptimizerStage(PipelineStage):
         max_chunks = self.config.rag_max_chunks
         return deduplicated[:max_chunks]
 
-    def _deduplicate_chunks(self, chunks: list[dict], embeddings) -> list[dict]:
+    def _deduplicate_chunks(self, chunks: list[dict], embeddings: Any) -> list[dict]:
         """Remove near-duplicate chunks."""
         if len(chunks) <= 1:
             return chunks
@@ -148,7 +148,7 @@ class FewShotSelectorStage(PipelineStage):
 
     name = "fewshot"
 
-    def __init__(self, config: Any = None, examples: list[dict] = None):
+    def __init__(self, config: Any = None, examples: list[dict] | None = None):
         self.config = config
         self.examples = examples or []
         self._embedding_provider = get_embedding_provider(fallback=True)
@@ -218,7 +218,7 @@ class FewShotSelectorStage(PipelineStage):
 
         while len(selected) < max_examples and remaining:
             best_idx = -1
-            best_score = -1
+            best_score = -1.0
 
             for i, ex in enumerate(remaining):
                 # Score = similarity to query - max similarity to selected

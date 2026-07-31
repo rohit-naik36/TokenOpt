@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from typing import Any, cast
 
 import numpy as np
 
@@ -12,7 +13,8 @@ try:
     _HAS_ST = True
 except ImportError:
     _HAS_ST = False
-    SentenceTransformer = None  # type: ignore
+    # cast keeps the name assignable whether the optional package is installed
+    SentenceTransformer = cast(Any, None)
 
 
 class EmbeddingProvider:
@@ -36,11 +38,14 @@ class EmbeddingProvider:
     def embed(self, texts: list[str]) -> np.ndarray:
         """Generate embeddings for a list of texts."""
         model = self._ensure_model()
-        return model.encode(texts, convert_to_numpy=True, normalize_embeddings=True)
+        return cast(
+            np.ndarray,
+            model.encode(texts, convert_to_numpy=True, normalize_embeddings=True),
+        )
 
     def embed_single(self, text: str) -> np.ndarray:
         """Generate embedding for a single text."""
-        return self.embed([text])[0]
+        return cast(np.ndarray, self.embed([text])[0])
 
     def similarity(self, a: np.ndarray, b: np.ndarray) -> float:
         """Cosine similarity between two normalized embeddings."""
@@ -57,10 +62,10 @@ class SimpleEmbeddingProvider:
 
     def embed(self, texts: list[str]) -> np.ndarray:
         # Return hash-based pseudo-embeddings for exact matching only
-        return np.array([[hash_text(t)[:8]] for t in texts], dtype=object)
+        return cast(np.ndarray, np.array([[hash_text(t)[:8]] for t in texts], dtype=object))
 
     def embed_single(self, text: str) -> np.ndarray:
-        return self.embed([text])[0]
+        return cast(np.ndarray, self.embed([text])[0])
 
     def similarity(self, a: np.ndarray, b: np.ndarray) -> float:
         # Exact match only

@@ -27,7 +27,7 @@ class BaseOptimizedClient(ABC):
         config: TokenOptConfig | None = None,
         api_key: str | None = None,
         base_url: str | None = None,
-        **kwargs
+        **kwargs: Any
     ):
         self.config = config or get_default_config()
         self.api_key = api_key
@@ -64,7 +64,7 @@ class BaseOptimizedClient(ABC):
         return OptimizationPipeline(stages, self.config)
 
     @abstractmethod
-    def _call_api(self, messages: list[dict], model: str, **kwargs) -> Any:
+    def _call_api(self, messages: list[dict], model: str, **kwargs: Any) -> Any:
         """Call the underlying LLM API."""
         pass
 
@@ -82,7 +82,7 @@ class BaseOptimizedClient(ABC):
         self,
         messages: list[dict],
         model: str | None = None,
-        **kwargs
+        **kwargs: Any
     ) -> Any:
         """Main entry point for chat completions with optimization."""
         start_time = time.perf_counter()
@@ -121,7 +121,7 @@ class BaseOptimizedClient(ABC):
 
         # Store in cache
         cache_stage = next((s for s in self.pipeline.stages if s.name == "cache"), None)
-        if cache_stage:
+        if isinstance(cache_stage, CacheStage):
             cache_stage.store_response(ctx, response)
 
         # Record metrics
@@ -144,7 +144,7 @@ class BaseOptimizedClient(ABC):
         total_latency: float,
         response: Any = None,
         cache_hit: bool = False,
-        error: str = None
+        error: str | None = None
     ) -> None:
         """Record request metrics."""
         usage = (
@@ -184,7 +184,7 @@ class BaseOptimizedClient(ABC):
     def clear_cache(self) -> None:
         """Clear the semantic cache."""
         cache_stage = next((s for s in self.pipeline.stages if s.name == "cache"), None)
-        if cache_stage:
+        if isinstance(cache_stage, CacheStage):
             cache_stage.clear()
 
     # Delegate attribute access to underlying client
