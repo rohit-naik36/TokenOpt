@@ -10,7 +10,8 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 ## Complete
 
 - **Project setup** — `pyproject.toml` (valid TOML, numpy added to required deps,
-  optional extras: cache/semantic/compression/local/dev/all)
+  optional extras: cache/semantic/compression/local/dev/all; explicit
+  `[tool.setuptools] packages`; ruff config in correct sections)
 - **Core modules**
   - `tokenopt/config.py` — `TokenOptConfig`, `RoutingRule`, `get_default_config()`
   - `tokenopt/utils/` — tiktoken counting (`count_tokens`, `count_message_tokens`,
@@ -30,19 +31,22 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
   `detect_provider()` (model prefix / base_url detection)
 - **Package exports** — `tokenopt/__init__.py`, `tokenopt/clients/__init__.py`
 - **Tests** — 23 unit tests passing (imports, LocalClient, factory)
-- **Git** — repo initialized, baseline committed in logical chunks
-- **Project memory** — `.ai/` structure created
+- **Git** — repo initialized on `main`, baseline committed in 9 logical commits
+- **Project memory** — `.ai/` structure created, checkpoint taken
+- **Packaging** — `pip install -e .` verified, README exists
+- **Lint** — `ruff check tokenopt tests` fully clean (fixed 64+ findings incl.
+  one latent bug: missing import in `pipeline/compressor.py`)
 
 ## In progress / not started
 
 - Pipeline stage unit tests (compressor/cache/router/RAG/few-shot individually)
 - Integration tests (mock API servers)
-- README usage examples (file created, content minimal)
+- README usage examples complete; full config reference pending
 - Local client live verification against a real Ollama server
-- Pre-existing modules not yet lint-clean (64+ ruff findings) — deferred
+- Phase 2 enhancements (see NEXT_STEPS.md)
 
 ## Verification
 
 - `pytest tests/` → 23 passed
-- `ruff check` → new files clean; pre-existing modules have findings (deferred)
-- Build not yet run (`python -m build`); `pip install -e .` pending
+- `ruff check tokenopt tests` → clean
+- `pip install -e .` → success; `import tokenopt` → v0.1.0

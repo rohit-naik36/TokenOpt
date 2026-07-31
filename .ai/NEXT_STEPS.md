@@ -10,8 +10,8 @@ _Last updated: 2026-08-01_
    (responses library) exercising the full drop-in flow incl. cache persistence
 3. **README** — complete usage examples: drop-in, factory, local client,
    configuration reference
-4. **Build verification** — `pip install -e .` and `python -m build`; fix
-   packaging issues if any
+4. **Build verification** — `python -m build` (sdist/wheel); `pip install -e .`
+   already verified
 
 ## Short term (Phase 2)
 
