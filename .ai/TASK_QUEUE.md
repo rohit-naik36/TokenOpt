@@ -1,6 +1,6 @@
 # Task Queue
 
-_Updated: 2026-08-01 (M5 DONE — Continuous Integration pipeline green)_
+_Updated: 2026-08-01 (M6 DONE — Release Metadata complete)_
 
 Statuses: `READY` · `IN PROGRESS` · `BLOCKED` · `DONE`
 Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
@@ -24,12 +24,13 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 | **M3** — Pipeline Stage Tests 2 | 53 new tests (cache 18, RAG 15, few-shot 13, gating+7); cache 68%→**96%**, rag_optimizer 24%→**98%**, suite **89%**; **4 defects fixed**: cache key collision (non-string content), RAG dedup embedding misalignment, few-shot injection w/o system message, pipeline fail-open; suite 130 passed |
 | **M4** — Integration Tests + Coverage Gate | `INTEGRATION_TEST_STRATEGY.md`; `tests/integration/` 19 tests via `httpx.MockTransport` (**zero new deps** — `http_client=` kwarg); **2 defects fixed**: `chat.completions.create` drop-in surface (Decision 14), Anthropic router scoped to claude models (Decision 13); `[tool.coverage] fail_under=80` + `--cov` addopts; suite **149 passed, coverage 94%** |
 | **M5** — CI Pipeline | `.github/workflows/ci.yml` — lint / test matrix (3.10–3.12) / package+build+smoke; `CONTRIBUTING.md` (CI docs + branch protection notes); README badge; **verified green on GitHub** (run 30664914071); **2 CI-found defects fixed** (ollama mypy override; clear error for missing ollama — Decision 16); suite **150 passed, coverage 94%** |
+| **M6** — Release Metadata | MIT LICENSE (user decision); CHANGELOG.md (Keep a Changelog, `[0.1.0]`); pyproject metadata complete (author, keywords, 9 classifiers, URLs, PEP 639 `license = "MIT"`, `setuptools>=77` — Decision 17); README release review (providers/extras/status/license); **build ✅ + `twine check` PASSED + fresh-venv metadata ✅**; suite **150 passed, coverage 94%** |
 
 ## IN PROGRESS
 
 | Task | Notes |
 |------|-------|
-| (none — awaiting approval) | resume with M6 (⚠ approval: license choice) |
+| (none — awaiting approval) | resume with M7 (⚠ approval: pip-audit/gitleaks/Dependabot dev deps) |
 
 ## BLOCKED
 
@@ -41,7 +42,6 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 
 | # | Task | Depends on |
 |---|------|------------|
-| M6 | Release metadata: license (⚠ user choice), CHANGELOG, build | M5 |
 | M7 | Security: pip-audit + secret scan + Dependabot (⚠ dev deps) | M5 |
 | M8 | Onboarding: CONTRIBUTING.md (extend), Makefile, examples/ | — |
 | M10 | Extend WORKFLOWS/ + ROLES/ to full sets | — |
@@ -53,9 +53,10 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 
 ## Blocked-by-approval backlog
 
-- M6 (license choice) — user decides MIT or other
+- M7 (pip-audit/gitleaks dev deps + Dependabot enablement)
 - M12 (deleting 7 artifact dirs + archiving SESSION_BACKUP.md)
 - M15 (PyPI publish — optional)
+- Personalize author name before PyPI (currently GitHub handle, Decision 17)
 - RouterStage complexity-fallback hole (custom rules + no match → gpt-*
   rewrite; shared with LocalClient/Anthropic custom-rule paths) — needs a
   routing-behavior decision before refactor work

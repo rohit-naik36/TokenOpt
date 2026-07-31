@@ -1,5 +1,35 @@
 # Session Log
 
+## 2026-08-01 — Session 9: M6 — Release Metadata (MIT)
+
+### Work performed
+- **LICENSE** — MIT (user decision), Copyright (c) 2026 rohit-naik36.
+- **CHANGELOG.md** — Keep a Changelog format + SemVer; `[Unreleased]` +
+  `[0.1.0] - 2026-08-01` (Added: all core functionality, observability,
+  factory, CI, 150 tests; Fixed: the 8 defects found during M1–M5).
+- **pyproject.toml metadata** (Decision 17) — `authors = [rohit-naik36]`,
+  enriched description, 12 keywords, 9 classifiers (Alpha; Python
+  3.10–3.12; OS Independent; AI/ML topics), `[project.urls]`
+  (Homepage/Repository/Issues/Documentation/CI — cross-checked against
+  `git remote -v`), PEP 639 `license = "MIT"` (SPDX expression) with build
+  floor bumped to `setuptools>=77` (latest is 83.x; legacy license
+  classifier is rejected by setuptools 83 — removed it after build error).
+- **README release-readiness review** — added "Supported providers &
+  features" table (OpenAI gpt-*/o1-*/o3-*, Anthropic claude-*, Local
+  Ollama/vLLM/llama.cpp/LM Studio), "Optional extras" mapping, "Status"
+  (pre-1.0, fails open), License → MIT.
+- **Packaging verification** — `python -m build` ✅ (sdist + wheel);
+  `twine check` **PASSED** for both ✅; fresh-venv wheel install +
+  `import tokenopt` ✅; installed metadata via `importlib.metadata`:
+  version 0.1.0 (matches `tokenopt.__version__`), License-Expression MIT,
+  9 classifiers, 5 project URLs, 6 runtime deps + extras; sdist ships
+  LICENSE + README.
+- **No runtime functionality changed** (metadata/docs only).
+- **Verification (all green)**: `pytest tests/` **150 passed**; ruff clean;
+  `mypy tokenopt` exit 0; coverage **94%**.
+- **STOPPING — awaiting approval to begin M7** (security hardening;
+  ⚠ new dev deps: pip-audit, gitleaks, Dependabot).
+
 ## 2026-08-01 — Session 8: M5 — Continuous Integration
 
 ### Work performed

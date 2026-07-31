@@ -1,29 +1,33 @@
 # Next Steps
 
-_Last updated: 2026-08-01 (M5 complete — CI pipeline green on GitHub)_
+_Last updated: 2026-08-01 (M6 complete — release metadata ready)_
 
-## M5 done — M6 is next (⚠ approval: license choice)
+## M6 done — M7 is next (⚠ approval: new dev deps)
 
-M5 (Continuous Integration) is complete: `.github/workflows/ci.yml` with
-lint / test (matrix 3.10–3.12) / package jobs running the full DoD gate
-pipeline; CI verified green via GitHub API (run 30664914071); two CI-found
-defects fixed (ollama mypy override, clear error for missing ollama package —
-Decision 16); CONTRIBUTING.md documents the pipeline, assumptions, and branch
-protection recommendations. **M6 has an approval gate** (license choice).
+M6 (Release Metadata) is complete: MIT LICENSE (user decision), CHANGELOG.md
+(Keep a Changelog, `[0.1.0] - 2026-08-01`), full `pyproject.toml` metadata
+(author, keywords, 9 classifiers, project URLs, PEP 639 SPDX `license = "MIT"`
+with `setuptools>=77` floor — Decision 17), README release-review updates
+(providers table, extras, status, MIT license). Packaging verified end-to-end:
+build ✅, `twine check` PASSED ✅, fresh-venv install + metadata ✅.
+**M7 has an approval gate** (new dev deps: pip-audit, gitleaks, Dependabot).
 
-1. **M6** — Release metadata: license (⚠ user choice), classifiers, CHANGELOG,
-   `python -m build` verification
-2. **M7** — Security hardening: pip-audit + secret scanning + Dependabot
+1. **M7** — Security hardening: pip-audit + secret scanning + Dependabot
    (⚠ new dev deps)
-3. **M8** — Onboarding: CONTRIBUTING.md (extend), Makefile, examples/
-4. **M10** — Extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (audit §5)
-5. **M11** — `.ai/PROMPTS/` (9 prompts; optional)
-6. **M12** — Structure cleanup: artifact dirs (⚠ deletion approval),
+2. **M8** — Onboarding: CONTRIBUTING.md (extend), Makefile, examples/
+3. **M10** — Extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (audit §5)
+4. **M11** — `.ai/PROMPTS/` (9 prompts; optional)
+5. **M12** — Structure cleanup: artifact dirs (⚠ deletion approval),
    archive SESSION_BACKUP.md, GitHub templates
-7. **M13** — Maintainability refactor: response helpers, data-driven MODEL_COSTS
-8. **M14** — Architecture docs polish: Mermaid diagrams, normalization spec,
+6. **M13** — Maintainability refactor: response helpers, data-driven MODEL_COSTS
+7. **M14** — Architecture docs polish: Mermaid diagrams, normalization spec,
    extension guide
-9. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
+8. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
+
+## Notes
+
+- Author name is currently the GitHub handle (`rohit-naik36`, Decision 17);
+  personalize before publishing to PyPI.
 
 ## Known follow-ups (need approval/decision)
 

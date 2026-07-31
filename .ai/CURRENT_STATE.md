@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1–M5 complete — Verification Gates + Pipeline Stage Tests 1+2 + Integration Tests & Coverage Gate + CI)_
+_Last updated: 2026-08-01 (M1–M6 complete — through release metadata)_
 
-## Status: Phase 0 + Phase 1 + M1 + M2 + M3 + M4 + M5 complete; next is M6 (release metadata)
+## Status: Phase 0 + Phase 1 + M1–M6 complete; next is M7 (security hardening)
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -178,6 +178,26 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
        hint; factory tests no longer depend on the optional package
        (+1 regression test, `tests/test_factory.py`)
   - Suite: **150 tests passed**; coverage **94%**; ruff clean; mypy exit 0
+- **M6 — Release Metadata (2026-08-01)**
+  - **MIT LICENSE** (user decision; Copyright (c) 2026 rohit-naik36)
+  - **CHANGELOG.md** — Keep a Changelog format, SemVer, `[Unreleased]` +
+    `[0.1.0] - 2026-08-01` (Added: all core functionality; Fixed: the 8
+    defects found in M1–M5)
+  - **pyproject.toml metadata completed** (Decision 17): author
+    `rohit-naik36`, enriched description, 12 keywords, 9 classifiers
+    (Alpha, MIT via PEP 639 SPDX `license = "MIT"`, Python 3.10–3.12,
+    OS Independent, AI/ML topics), `[project.urls]` (Homepage/Repository/
+    Issues/Documentation/CI — verified against `git remote -v`), build
+    floor `setuptools>=77` (PEP 639). No runtime functionality changed.
+  - **README release-readiness review**: added "Supported providers &
+    features" table (OpenAI/Anthropic/Local + feature list), "Optional
+    extras" section, "Status" (pre-1.0, fails open), License → MIT link
+  - **Packaging verified**: `python -m build` sdist+wheel ✅; `twine check`
+    PASSED for both artifacts ✅; fresh-venv wheel install + `import tokenopt`
+    ✅; installed metadata verified via `importlib.metadata` (version 0.1.0
+    matches `tokenopt.__version__`, License-Expression MIT, 9 classifiers,
+    5 URLs, 6 runtime deps + extras); sdist ships LICENSE + README
+  - Suite: **150 tests passed**; coverage **94%**; ruff clean; mypy exit 0
 
 ## Open item
 
@@ -186,12 +206,15 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- **M6** — Release metadata: license (⚠ user choice), classifiers, CHANGELOG
-- Security scans (M7), DX (M8), governance
+- **M7** — Security hardening: pip-audit + secret scanning + Dependabot
+  (⚠ new dev deps — needs approval)
+- DX (M8), governance
   docs extension (M10/M11 pending), cleanup (M12), refactor (M13), arch docs
   (M14), release v0.1.0 (M15)
 - README usage examples complete; full config reference pending
 - Local client live verification against a real Ollama server
+- Personalize author name before PyPI publish (currently GitHub handle,
+  per Decision 17)
 - Known follow-up (needs decision): `RouterStage` complexity fallback still
   rewrites models when custom rules exist but none match — shared by
   LocalClient/Anthropic custom-rule paths; deferred to avoid changing OpenAI
@@ -202,5 +225,6 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 - `pytest tests/` → 150 passed (coverage gate enforced, 94%)
 - `ruff check tokenopt tests` → clean
 - `mypy tokenopt` → **green (exit 0)**
-- `python -m build` → sdist + wheel OK
-- **GitHub Actions CI** → full matrix green (lint, test 3.10/3.11/3.12, package+smoke) — verified via GitHub API
+- `python -m build` → sdist + wheel OK; **`twine check` PASSED**
+- Fresh-venv wheel install + import + metadata check → OK (v0.1.0, MIT)
+- **GitHub Actions CI** → full matrix green (verified via GitHub API)

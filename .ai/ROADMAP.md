@@ -23,7 +23,7 @@ _Last updated: 2026-08-01_
 - [x] M2/M3 pipeline stage unit tests
 - [x] M4 integration tests + coverage gate (94% ≥ 80% enforced by pytest)
 - [x] M5 CI pipeline (green on GitHub: lint / test 3.10–3.12 / package+smoke)
-- [ ] M6 release metadata (⚠ license)
+- [x] M6 release metadata (⚠ license — MIT chosen; changelog, classifiers, URLs, twine check PASSED)
 - [ ] M7 security scans (⚠ dev deps)
 - [ ] M8 onboarding (CONTRIBUTING, Makefile, examples)
 - [ ] M12 cleanup (⚠ deletions), M13 refactor, M14 arch docs
