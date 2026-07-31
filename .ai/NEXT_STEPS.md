@@ -4,8 +4,8 @@ _Last updated: 2026-08-01_
 
 ## Session-closing items
 
-- Fix `origin` remote (currently a mangled URL) and push `main` to GitHub —
-  needs a correct repo URL or `gh` CLI install (not present)
+- ~~Fix `origin` remote~~ → Done: `https://github.com/rohit-naik36/TokenOpt.git`,
+  `main` pushed (all 11 commits)
 
 ## Immediate
 

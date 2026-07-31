@@ -39,8 +39,8 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## Open item
 
-- GitHub remote `origin` URL is invalid (mangled command paste). Not pushed.
-  Waiting on user for a correct repo URL or repo creation via `gh` (not installed).
+- ~~GitHub remote `origin` URL is invalid~~ → **Fixed**: now points to
+  `https://github.com/rohit-naik36/TokenOpt.git`; `main` pushed, up to date.
 
 ## In progress / not started
 

@@ -5,8 +5,10 @@
 ### Work performed
 - Verified clean working tree and 10 committed logical commits
 - Diagnosed invalid `origin` remote (mangled URL from a pasted command —
-  `git-remote-add-origin-https---github.com--your-username--tokenopt...`);
-  not pushed; `gh` CLI not installed
+  `git-remote-add-origin-https---github.com--your-username--tokenopt...`)
+- User provided correct repo URL → fixed `origin` to
+  `https://github.com/rohit-naik36/TokenOpt.git` and pushed `main`
+  (11 commits, up to date)
 - Final checkpoint `CHECKPOINT_20260801_0046.md` created
 - Re-verified: tests 23 passed, ruff clean, editable install OK
 
