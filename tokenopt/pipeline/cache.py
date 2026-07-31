@@ -96,6 +96,8 @@ class CacheStage(PipelineStage):
             content = msg.get("content", "")
             if isinstance(content, str):
                 normalized.append(f"{msg.get('role', '')}:{content}")
+            else:
+                normalized.append(f"{msg.get('role', '')}:{json.dumps(content, sort_keys=True)}")
         return hash_text("|".join(normalized))
 
     def _messages_to_text(self, messages: list[dict]) -> str:
@@ -105,6 +107,8 @@ class CacheStage(PipelineStage):
             content = msg.get("content", "")
             if isinstance(content, str):
                 parts.append(content)
+            else:
+                parts.append(json.dumps(content, sort_keys=True))
         return "\n".join(parts)
 
     def _lookup_cache(self, cache_key: str, prompt_embedding: Any, model: str) -> CacheEntry | None:
