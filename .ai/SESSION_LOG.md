@@ -1,5 +1,18 @@
 # Session Log
 
+## 2026-08-01 — Session 3 (continued): Repository-wide AGENTS.md
+
+### Work performed
+- Created root `AGENTS.md` — tool-agnostic operating manual (OpenCode,
+  Claude Code, Cursor, GitHub Copilot, ChatGPT, Gemini, future agents):
+  project overview, agent responsibilities, startup procedure (9-step read
+  order), development rules, documentation rules, git rules, checkpoint rules,
+  approval gates, session close procedure, continuous improvement
+- Aligned with `.ai/PROJECT_MANIFEST.md` (manifest wins on conflict) and
+  Decision 11 (remote verification before push)
+- Committed: `docs: add repository-wide agent operating manual`
+- Updated CURRENT_STATE.md (AGENTS.md created)
+
 ## 2026-08-01 — Session 3 (continued): Project manifest ratified
 
 ### Work performed

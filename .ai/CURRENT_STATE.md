@@ -38,6 +38,9 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
   overview, product definition, technical vision, engineering standards,
   git strategy, workflow, DoD, AI agent rules, conventions, release process,
   long-term vision)
+- **Agent manual** — root `AGENTS.md` created (tool-agnostic operating manual:
+  responsibilities, startup procedure, dev rules, docs rules, git rules,
+  checkpoint rules, approval gates, session close, continuous improvement)
 - **Packaging** — `pip install -e .` verified, README exists
 - **Lint** — `ruff check tokenopt tests` fully clean (fixed 64+ findings incl.
   one latent bug: missing import in `pipeline/compressor.py`)
@@ -49,7 +52,6 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- Root `AGENTS.md` (referenced by manifest §8) — not yet created
 - Pipeline stage unit tests (compressor/cache/router/RAG/few-shot individually)
 - Integration tests (mock API servers)
 - README usage examples complete; full config reference pending
