@@ -127,16 +127,16 @@ class ContextSummarizerStage(PipelineStage):
 
         # Separate system message and recent messages
         system_msg: dict[str, Any] | None = None
-        recent_messages: list[dict[str, Any]] = []
-        history_messages: list[dict[str, Any]] = []
+        non_system_messages: list[dict[str, Any]] = []
 
         for msg in ctx.messages:
             if msg.get("role") == "system":
                 system_msg = msg
-            elif len(recent_messages) < 3:  # Keep last 3 messages
-                recent_messages.insert(0, msg)
             else:
-                history_messages.append(msg)
+                non_system_messages.append(msg)
+
+        recent_messages = non_system_messages[-3:]  # Keep last 3 messages
+        history_messages = non_system_messages[:-3]
 
         if not history_messages:
             return ctx
@@ -151,7 +151,7 @@ class ContextSummarizerStage(PipelineStage):
         new_messages.append(
             {"role": "system", "content": f"Previous conversation summary: {summary}"}
         )
-        new_messages.extend(reversed(recent_messages))
+        new_messages.extend(recent_messages)
 
         ctx.messages = new_messages
         ctx.metrics["summarization_applied"] = True
