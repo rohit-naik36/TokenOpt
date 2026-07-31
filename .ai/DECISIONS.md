@@ -14,6 +14,7 @@ _Last updated: 2026-08-01_
 | 8 | `LocalClient` drops the cloud router by default | Default routing rules target cloud models (gpt-*/claude*) and would break local servers; only routing rules targeting local models are honored | Accepted |
 | 9 | Factory auto-detects provider from model prefix (`gpt-`/`o1-`/`o3-` → openai, `claude` → anthropic, else local) or base_url containing `11434` | One entry point for multi-model routing; sensible defaults | Accepted |
 | 10 | Unknown models fall back to `cl100k_base` encoding in token counter | Robustness for local/private model names | Accepted |
+| 11 | Never modify the Git remote automatically; before any push verify `git remote -v`, ensure URL matches `github.com/<username>/<repository>.git`; if missing/malformed, stop and ask for approval; never guess or rewrite the remote URL | Prevents accidental pushes to wrong/malicious remotes; remote config is user-owned | Accepted |
 
 ## Rejected / deferred
 

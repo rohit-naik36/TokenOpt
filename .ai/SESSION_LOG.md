@@ -1,5 +1,14 @@
 # Session Log
 
+## 2026-08-01 — Session 3 (continued): Remote handling rule
+
+### Work performed
+- User rule: never modify the Git remote automatically; before any push verify
+  `git remote -v` and URL pattern `github.com/<username>/<repository>.git`;
+  if missing/malformed, stop and ask for approval; never guess or rewrite
+- Verified current remote: `https://github.com/rohit-naik36/TokenOpt.git` (valid)
+- Recorded as Decision 11 in `.ai/DECISIONS.md`
+
 ## 2026-08-01 — Session 3 (continued): Session close / handover
 
 ### Work performed
