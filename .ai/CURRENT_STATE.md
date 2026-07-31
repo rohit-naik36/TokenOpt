@@ -31,11 +31,16 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
   `detect_provider()` (model prefix / base_url detection)
 - **Package exports** — `tokenopt/__init__.py`, `tokenopt/clients/__init__.py`
 - **Tests** — 23 unit tests passing (imports, LocalClient, factory)
-- **Git** — repo initialized on `main`, baseline committed in 9 logical commits
-- **Project memory** — `.ai/` structure created, checkpoint taken
+- **Git** — repo initialized on `main`, 10 logical commits; working tree clean
+- **Project memory** — `.ai/` structure created, 2 checkpoints taken
 - **Packaging** — `pip install -e .` verified, README exists
 - **Lint** — `ruff check tokenopt tests` fully clean (fixed 64+ findings incl.
   one latent bug: missing import in `pipeline/compressor.py`)
+
+## Open item
+
+- GitHub remote `origin` URL is invalid (mangled command paste). Not pushed.
+  Waiting on user for a correct repo URL or repo creation via `gh` (not installed).
 
 ## In progress / not started
 

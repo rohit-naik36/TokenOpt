@@ -2,6 +2,11 @@
 
 _Last updated: 2026-08-01_
 
+## Session-closing items
+
+- Fix `origin` remote (currently a mangled URL) and push `main` to GitHub —
+  needs a correct repo URL or `gh` CLI install (not present)
+
 ## Immediate
 
 1. **Pipeline stage unit tests** — compressor, cache (hits/eviction/Redis),

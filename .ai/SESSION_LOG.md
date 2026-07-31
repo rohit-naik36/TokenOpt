@@ -1,5 +1,15 @@
 # Session Log
 
+## 2026-08-01 — Session 3 (continued): Session close / handover
+
+### Work performed
+- Verified clean working tree and 10 committed logical commits
+- Diagnosed invalid `origin` remote (mangled URL from a pasted command —
+  `git-remote-add-origin-https---github.com--your-username--tokenopt...`);
+  not pushed; `gh` CLI not installed
+- Final checkpoint `CHECKPOINT_20260801_0046.md` created
+- Re-verified: tests 23 passed, ruff clean, editable install OK
+
 ## 2026-08-01 — Session 3: Version control, project memory, baseline commits
 
 ### Work performed
