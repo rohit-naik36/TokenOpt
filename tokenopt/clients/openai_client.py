@@ -41,19 +41,21 @@ class OpenAI(BaseOptimizedClient):
     # Compatibility: expose chat.completions interface
     @property
     def chat(self) -> Any:
-        class ChatCompletions:
-            def __init__(self, outer: Any):
-                self._outer = outer
+        outer = self
 
+        class Completions:
             def create(
                 self,
                 messages: list[dict[str, Any]],
                 model: str | None = None,
                 **kwargs: Any
             ) -> Any:
-                return self._outer.chat_completion(messages, model, **kwargs)
+                return outer.chat_completion(messages, model, **kwargs)
 
-        return ChatCompletions(self)
+        class Chat:
+            completions = Completions()
+
+        return Chat()
 
 
 # For direct import compatibility
