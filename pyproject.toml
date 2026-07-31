@@ -1,0 +1,52 @@
+[project]
+name = "tokenopt"
+version = "0.1.0"
+description = "Token and prompt optimization SDK for LLMs"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "openai>=1.0.0",
+    "anthropic>=0.25.0",
+    "tiktoken>=0.7.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "numpy>=1.24.0",
+]
+
+[project.optional-dependencies]
+cache = ["redis>=5.0.0"]
+semantic = ["sentence-transformers>=3.0.0"]
+compression = ["llmlingua>=0.1.0"]
+local = ["ollama>=0.3.0"]
+dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "pytest-cov>=4.0.0", "ruff>=0.3.0", "mypy>=1.0.0"]
+all = ["redis>=5.0.0", "sentence-transformers>=3.0.0", "llmlingua>=0.1.0", "ollama>=0.3.0"]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = [
+    "tokenopt",
+    "tokenopt.clients",
+    "tokenopt.pipeline",
+    "tokenopt.observability",
+    "tokenopt.utils",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "W"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
