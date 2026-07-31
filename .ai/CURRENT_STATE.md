@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (controlled shutdown — session complete, awaiting M1 approval)_
+_Last updated: 2026-08-01 (M1 complete — Verification Gates green)_
 
-## Status: Phase 0 + Phase 1 complete; Phase 2 begins with M1 (approved roadmap, waiting go-ahead)
+## Status: Phase 0 + Phase 1 + M1 complete; next is M2 (pipeline stage tests)
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -51,6 +51,26 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 - **Packaging** — `pip install -e .` verified, `python -m build` OK; README exists
 - **Lint** — `ruff check tokenopt tests` fully clean (fixed 64+ findings incl.
   one latent bug: missing import in `pipeline/compressor.py`)
+- **M1 — Verification Gates complete (2026-08-01)**
+  - `mypy tokenopt` now exits 0 (was broken: numpy 2.5 stubs vs py3.10 target)
+  - **numpy pinned `>=1.24,<2.5`** in `pyproject.toml` (2.5 requires
+    Python ≥ 3.12, incompatible with declared `>=3.10`; stubs use PEP 695
+    syntax mypy can't parse under `python_version=3.10`)
+  - mypy overrides for optional extras (`redis.*`, `llmlingua.*`,
+    `sentence_transformers.*` — `ignore_missing_imports`) so the gate works
+    without installing heavy optional deps
+  - Fixed **37 real typing findings** across 11 files (no behavior change)
+  - Fixed **latent runtime bug**: `ContextSummarizerStage.__init__` accepted
+    a callable but `BaseOptimizedClient` passed the config positionally —
+    summarization would have crashed calling the config object (now
+    `config` + optional `summarizer_fn` params, matching all other stages)
+  - Fixed wrong `metrics_callback` type annotation in `config.py`
+    (runtime contract: callback receives `RequestMetrics`, not `dict`)
+  - Created `.ai/DOD.md` — permanent Definition of Done with the 5-gate
+    verification pipeline (pytest, ruff, mypy, build, fresh-venv smoke)
+  - AGENTS.md, README, git/coding standards updated to include `mypy` gate
+  - Full gate verified: 23 tests pass, ruff clean, mypy 0, build OK,
+    wheel installs + imports in a fresh venv
 
 ## Open item
 
@@ -59,8 +79,8 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- **M1** — fix mypy/numpy type gate (roadmap-approved; awaiting go)
-- Pipeline stage unit tests (M2/M3), integration tests + coverage gate (M4),
+- **M2** — pipeline stage tests: router + compressor + summarizer (next)
+- Pipeline stage tests part 2 (M3), integration tests + coverage gate (M4),
   CI (M5), release metadata (M6), security scans (M7), DX (M8), governance
   docs extension (M10/M11 pending), cleanup (M12), refactor (M13), arch docs
   (M14), release v0.1.0 (M15)
@@ -71,5 +91,6 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 - `pytest tests/` → 23 passed
 - `ruff check tokenopt tests` → clean
+- `mypy tokenopt` → **green (exit 0)** — M1 fixed the gate
 - `python -m build` → sdist + wheel built
-- `mypy tokenopt` → **FAILS** (numpy 2.5 stubs vs py3.10 target) — M1 task
+- Fresh-venv wheel install + import smoke test → passed

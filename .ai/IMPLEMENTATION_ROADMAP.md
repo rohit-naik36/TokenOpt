@@ -1,6 +1,6 @@
 # TokenOpt SDK — Prioritized Implementation Roadmap
 
-_Status: DRAFT — awaiting approval. Nothing in this roadmap has been implemented._
+_Status: APPROVED (2026-08-01, with Phase 0 modification). M1 DONE — see below._
 _Origin: `.ai/REPOSITORY_AUDIT.md` (2026-08-01, overall 6.4/10)_
 _Principle: engineering quality first — verification gates and test coverage
 precede any new product features. Feature work resumes only after M1–M7._
@@ -24,22 +24,29 @@ precede any new product features. Feature work resumes only after M1–M7._
 
 ## Phase A — Verification gates (M1–M5)
 
-### M1 — Fix the type-checking gate
+### M1 — Fix the type-checking gate — ✅ DONE (2026-08-01)
 
 **Problem:** `mypy tokenopt` fails before analyzing any project code (numpy 2.5
 `.pyi` files use Python ≥ 3.12 `type` statements; config targets 3.10).
 
-**Work**
-- Pin `numpy` to a version whose stubs parse under `python_version = 3.10`
-  (e.g. `<2.5`), **or** add a mypy override for numpy stubs.
-- Make `mypy tokenopt --ignore-missing-imports` run clean; fix any real typing
-  findings it then surfaces.
-- Add `mypy` to the documented commit gate (AGENTS.md git rules) and README dev section.
+**Resolution (as implemented):**
+- Pinned `numpy>=1.24,<2.5` in `pyproject.toml` — numpy 2.5 requires
+  Python ≥ 3.12 at runtime (incompatible with the declared `>=3.10` floor)
+  and its stubs are unparseable by mypy under `python_version = "3.10"`.
+  The pin fixes both runtime matrix and type gate.
+- Added per-module mypy overrides (`ignore_missing_imports`) for the optional
+  extras `redis.*`, `llmlingua.*`, `sentence_transformers.*` — the gate must
+  not require installing heavy optional dependencies.
+- Fixed 37 real typing findings mypy then surfaced (implicit Optional,
+  missing annotations, `callable` vs `Callable`, `no-any-return` casts,
+  wrong `metrics_callback` annotation, CacheStage narrowing), including one
+  latent runtime bug (ContextSummarizerStage receiving config where a
+  callable was expected).
+- `mypy` added to the commit gate: AGENTS.md Git Rules, README dev section,
+  `.ai/DOD.md`, git/coding standards.
 
-**Acceptance check**
-- `mypy tokenopt` exits 0; `pytest tests/` still 23/23; `ruff` still clean.
-
-**⚠ Approval needed:** dependency pin/override (dependency change).
+**Acceptance check** — `mypy tokenopt` exits 0 ✅; `pytest tests/` 23/23 ✅;
+`ruff` clean ✅; build + fresh-venv smoke ✅.
 
 ---
 

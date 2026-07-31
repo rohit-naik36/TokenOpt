@@ -1,5 +1,43 @@
 # Session Log
 
+## 2026-08-01 — Session 4: M1 — Verification Gates (mypy gate fixed, DoD ratified)
+
+### Work performed
+- **Root-caused the mypy failure**: two independent causes —
+  1. numpy 2.5 requires Python ≥ 3.12 (verified via wheel metadata
+     `Requires-Python: >=3.12`) while tokenopt declares `>=3.10`; its `.pyi`
+     stubs use PEP 695 `type` syntax that mypy cannot parse under
+     `python_version = "3.10"` → syntax error at `numpy/__init__.pyi:737`.
+  2. Optional extras (`redis`, `llmlingua`, `sentence_transformers`) not
+     installed → `import-not-found`; code imports them fail-open (try/except).
+- **Fix**: pinned `numpy>=1.24,<2.5` in `pyproject.toml` (runtime +
+  typing compatibility with the declared 3.10 floor); added per-module mypy
+  overrides `ignore_missing_imports` for the three optional extras so the
+  gate does not require heavy optional installs. Local numpy downgraded
+  2.5.1 → 2.4.6 to match the pin.
+- **Fixed 37 real typing findings** mypy then surfaced (11 files): implicit
+  Optional, missing `**kwargs: Any` / return annotations, `callable` vs
+  `Callable`, `best_score` int→float, unused `# type: ignore`, `no-any-return`
+  in embeddings (cast), `isinstance` narrowing for CacheStage, wrong
+  `metrics_callback` annotation in `config.py` (runtime passes
+  `RequestMetrics`, not `dict`).
+- **Fixed latent runtime bug (typing gate exposed it)**: the original
+  `ContextSummarizerStage.__init__(summarizer_fn)` was being called by
+  `BaseOptimizedClient._build_pipeline` with the config positionally —
+  any triggered summarization would have crashed calling the config object.
+  Constructor now `(config, summarizer_fn=None)`, consistent with all stages.
+- **Created `.ai/DOD.md`** — permanent Definition of Done: 5-gate pipeline
+  (pytest, ruff, mypy, build, fresh-venv install+smoke), checklist,
+  non-negotiables (no silent waivers), provenance.
+- **Updated gates in docs**: AGENTS.md Git Rules (+`mypy tokenopt`),
+  README Development section (+mypy, +build, +DoD link),
+  `git-standard.md` (commit gate + pre-push checklist),
+  `coding-standard.md` (type gate no longer "until fixed").
+- **Verification (all green)**: `pytest tests/` 23 passed; `ruff` clean;
+  `mypy tokenopt` exit 0; `python -m build` sdist+wheel; fresh venv wheel
+  install + `import tokenopt` smoke OK.
+- **STOPPING — awaiting approval to begin M2** (stage unit tests).
+
 ## 2026-08-01 — Session 3 (continued): Controlled shutdown per Decision 12
 
 ### Work performed
