@@ -17,8 +17,8 @@ Branching, commits, remotes, and history hygiene.
    ≤ 72 chars. Example: `feat: add streaming support`.
 3. **Small logical commits** — one change per commit; never one giant commit;
    never commit half-finished work.
-4. **Commit gate** — commit only when all of: tests pass, lint passes, docs
-   updated. (Type gate after M1.)
+4. **Commit gate** — commit only when all of: tests pass, lint passes, type
+   check passes (`mypy tokenopt`), docs updated. See `.ai/DOD.md`.
 5. **Remote policy (Decision 11)** — never modify or guess the remote URL.
    Before **every** push: `git remote -v`; continue only if the URL matches
    `github.com/<username>/<repository>.git`; otherwise stop and ask.
@@ -39,6 +39,7 @@ git status                 # clean or intentionally staged
 git remote -v              # matches github.com/<user>/<repo>.git
 pytest tests/ -q           # green
 ruff check tokenopt tests  # clean
+mypy tokenopt              # exit 0
 ```
 
 ## Commit message examples

@@ -15,8 +15,8 @@ Applies to all Python code in `tokenopt/`, `tests/`, and `examples/`.
    private). `Any` is allowed only where provider SDKs are inherently dynamic.
 3. **Lint gate** — `ruff check tokenopt tests` must report **zero findings**
    before any commit. Rules: `E, F, I, UP, W`, line length 100.
-4. **Type gate** — `mypy tokenopt` must exit 0 (see M1 of the implementation
-   roadmap; until fixed, type-hint discipline still applies).
+4. **Type gate** — `mypy tokenopt` must exit 0 (verified as part of M1; the
+   numpy pin and optional-extras overrides live in `pyproject.toml`).
 5. **Naming** — classes `PascalCase`; functions/methods/variables
    `snake_case`; constants `UPPER_SNAKE`; private helpers prefixed `_`.
 6. **Imports** — absolute imports, sorted (isort via ruff), stdlib first,

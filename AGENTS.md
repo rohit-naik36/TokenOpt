@@ -134,6 +134,7 @@ explain *why*, never *what*.
 - **Commit only after:**
   - tests pass (`pytest tests/`),
   - lint passes (`ruff check tokenopt tests`),
+  - type check passes (`mypy tokenopt`),
   - documentation is updated.
 - **Push after every completed milestone.**
 - **Never leave completed work only on the local machine.**

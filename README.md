@@ -88,7 +88,14 @@ client = OpenAI(config=config)
 pip install -e ".[dev]"
 pytest tests/
 ruff check tokenopt tests
+mypy tokenopt
+python -m build
 ```
+
+## Definition of Done
+
+Every milestone and feature must satisfy the verification gates in
+`.ai/DOD.md` before it is committed.
 
 ## Project layout
 
