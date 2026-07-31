@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1–M3 complete — Verification Gates + Pipeline Stage Tests 1+2)_
+_Last updated: 2026-08-01 (M1–M4 complete — Verification Gates + Pipeline Stage Tests 1+2 + Integration Tests & Coverage Gate)_
 
-## Status: Phase 0 + Phase 1 + M1 + M2 + M3 complete; next is M4 (integration tests + coverage gate)
+## Status: Phase 0 + Phase 1 + M1 + M2 + M3 + M4 complete; next is M5 (CI pipeline)
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -122,6 +122,38 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
   - Coverage: `cache.py` 68% → **96%**, `rag_optimizer.py` 24% → **98%**,
     suite total 72% → **89%**
   - Suite: **130 tests passed** (53 new); ruff clean; mypy exit 0
+- **M4 — Integration Tests & Coverage Gate (2026-08-01)**
+  - `INTEGRATION_TEST_STRATEGY.md` (repo root) — definition of integration
+    tests, offline execution policy, provider isolation mechanics, coverage
+    gate, determinism rules
+  - `tests/integration/` (19 tests, zero new dependencies — Decision 15):
+    - `conftest.py` — `httpx.MockTransport` handlers (OpenAI/Anthropic/500
+      payloads) + request-recording fixtures + client fixtures
+    - `test_openai_flow.py` (8) — full drop-in flow (routing → compression →
+      call → metrics), request-body optimization, cache-hit short-circuit
+      (1 provider call for 2 identical requests), provider 500 re-raise +
+      error metrics, stage failure fail-open end-to-end, disabled compression
+      passthrough, metrics callback, factory roundtrip
+    - `test_anthropic_flow.py` (5) — full messages flow (max_tokens default
+      + passthrough), system-message split into `system` param, gpt-targeted
+      default rules filtered, custom claude routing rule, cache short-circuit,
+      provider error metrics
+    - `test_local_client_flow.py` (5) — OpenAI-compatible backend full flow
+      (model/messages passthrough), cache short-circuit, provider error,
+      Ollama backend end-to-end (fake `ollama` module + transport), factory
+  - **2 genuine integration defects found + fixed (minimal, Decisions 13–14)**:
+    1. `chat` property nesting — documented drop-in surface
+       `client.chat.completions.create(...)` raised `AttributeError`
+       (`chat.create` only). Fixed in `openai_client.py` + `local_client.py`
+       to mirror the real SDK (`chat.completions.create`).
+    2. Anthropic adapter broken out of the box — default config routed
+       requests to `gpt-4o-mini`, sending a nonexistent model to the
+       Anthropic API. Fixed: router scoped to claude-targeted rules
+       (Decision 13, mirrors LocalClient precedent Decision 8).
+  - **Coverage gate**: `[tool.coverage] fail_under = 80` +
+    `addopts = --cov=tokenopt` in `pyproject.toml` — enforced by pytest itself
+  - Suite: **149 tests passed** (19 new); coverage **94%**; ruff clean;
+    mypy exit 0; build OK
 
 ## Open item
 
@@ -130,17 +162,22 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- **M4** — integration tests (mock servers) + formal 80% coverage gate
-  (⚠ new dev dep — needs approval)
-- CI (M5), release metadata (M6), security scans (M7), DX (M8), governance
+- **M5** — CI pipeline (GitHub Actions, Python 3.10–3.12 matrix)
+- Release metadata (M6), security scans (M7), DX (M8), governance
   docs extension (M10/M11 pending), cleanup (M12), refactor (M13), arch docs
   (M14), release v0.1.0 (M15)
 - README usage examples complete; full config reference pending
 - Local client live verification against a real Ollama server
+- Known follow-up (needs decision): `RouterStage` complexity fallback still
+  rewrites models when custom rules exist but none match — shared by
+  LocalClient/Anthropic custom-rule paths; deferred to avoid changing OpenAI
+  routing behavior without approval
 
 ## Verification
 
-- `pytest tests/` → 130 passed
+- `pytest tests/` → 149 passed (coverage gate enforced, 94%)
 - `ruff check tokenopt tests` → clean
 - `mypy tokenopt` → **green (exit 0)**
-- Coverage (ad hoc): cache 96%, rag_optimizer 98%, suite 89% (formal 80% gate in M4)
+- `python -m build` → sdist + wheel OK
+- Coverage gate: `[tool.coverage] fail_under = 80` in pyproject.toml, run on
+  every `pytest` invocation via `addopts`

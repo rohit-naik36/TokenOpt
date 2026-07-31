@@ -1,6 +1,6 @@
 # Task Queue
 
-_Updated: 2026-08-01 (M3 DONE — Pipeline Stage Tests 2 complete)_
+_Updated: 2026-08-01 (M4 DONE — Integration Tests & Coverage Gate complete)_
 
 Statuses: `READY` · `IN PROGRESS` · `BLOCKED` · `DONE`
 Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
@@ -22,12 +22,13 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 | **M1** — Verification Gates | `mypy tokenopt` exit 0; numpy pin `>=1.24,<2.5`; 37 typing fixes + latent summarizer bug; `.ai/DOD.md` ratified; docs gates updated |
 | **M2** — Pipeline Stage Tests 1 | 54 new behavioral-contract tests (router 18, compressor 16, summarizer 13, gating 5); router/compressor coverage 27%/… → **100%**; **defect fixed**: summarizer kept oldest messages as recent (now keeps last 3); suite 77 passed |
 | **M3** — Pipeline Stage Tests 2 | 53 new tests (cache 18, RAG 15, few-shot 13, gating+7); cache 68%→**96%**, rag_optimizer 24%→**98%**, suite **89%**; **4 defects fixed**: cache key collision (non-string content), RAG dedup embedding misalignment, few-shot injection w/o system message, pipeline fail-open; suite 130 passed |
+| **M4** — Integration Tests + Coverage Gate | `INTEGRATION_TEST_STRATEGY.md`; `tests/integration/` 19 tests via `httpx.MockTransport` (**zero new deps** — `http_client=` kwarg); **2 defects fixed**: `chat.completions.create` drop-in surface (Decision 14), Anthropic router scoped to claude models (Decision 13); `[tool.coverage] fail_under=80` + `--cov` addopts; suite **149 passed, coverage 94%** |
 
 ## IN PROGRESS
 
 | Task | Notes |
 |------|-------|
-| (none — awaiting approval) | resume with M4 (⚠ approval: HTTP stub dev dep) |
+| (none — awaiting approval) | resume with M5 (CI pipeline — no approval gate) |
 
 ## BLOCKED
 
@@ -39,7 +40,6 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 
 | # | Task | Depends on |
 |---|------|------------|
-| M4 | Integration tests + 80% coverage gate (⚠ new dev dep) | M2–M3 |
 | M5 | CI pipeline (GitHub Actions, py 3.10–3.12) | M4 |
 | M6 | Release metadata: license (⚠ user choice), CHANGELOG, build | M5 |
 | M7 | Security: pip-audit + secret scan + Dependabot (⚠ dev deps) | M5 |
@@ -53,7 +53,9 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 
 ## Blocked-by-approval backlog
 
-- M4 (HTTP stub dev dep) — future approval
 - M6 (license choice) — user decides MIT or other
 - M12 (deleting 7 artifact dirs + archiving SESSION_BACKUP.md)
 - M15 (PyPI publish — optional)
+- RouterStage complexity-fallback hole (custom rules + no match → gpt-*
+  rewrite; shared with LocalClient/Anthropic custom-rule paths) — needs a
+  routing-behavior decision before refactor work

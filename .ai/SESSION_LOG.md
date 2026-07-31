@@ -1,5 +1,52 @@
 # Session Log
 
+## 2026-08-01 — Session 7: M4 — Integration Tests & Coverage Gate
+
+### Work performed
+- **`INTEGRATION_TEST_STRATEGY.md`** (repo root) — integration-test
+  definition (≥2 layers through a public entry point), offline execution
+  policy, provider isolation mechanics, determinism rules, coverage gate.
+- **`tests/integration/` — 19 tests, zero new dependencies** (Decision 15):
+  - `conftest.py` — `httpx.MockTransport` handlers for OpenAI/Anthropic
+    payloads + HTTP 500, request-body recording fixtures, client fixtures.
+  - `test_openai_flow.py` (8) — full drop-in flow (route → compress →
+    call → metrics; body model gpt-4o-mini + routing counter), optimized
+    request body (filler removed, truncated, code-routed to gpt-4o),
+    cache-hit short-circuit (2 identical calls → 1 provider request,
+    cache_hit_rate 0.5), provider 500 → `openai.APIStatusError` + error
+    metrics, BoomStage fail-open end-to-end, disabled compression
+    passthrough, metrics callback receives `RequestMetrics`, factory
+    roundtrip.
+  - `test_anthropic_flow.py` (5) — full messages flow (model/max_tokens
+    passthrough, no routing), system split into `system` param +
+    `max_tokens` 4096 default, gpt-targeted default rules filtered out,
+    custom claude routing rule applied, cache short-circuit, provider
+    error metrics.
+  - `test_local_client_flow.py` (5) — OpenAI-compatible backend full flow
+    (model/messages passthrough), cache short-circuit, provider error,
+    Ollama backend end-to-end via fake `ollama` module (transport-level
+    HTTP, `_normalize_ollama_response` + metrics), factory roundtrip.
+- **2 genuine integration defects found + fixed (minimal):**
+  1. **Drop-in `chat.completions.create` surface broken** (Decision 14) —
+     the `chat` property exposed `chat.create(...)` only; the documented
+     surface (`README`, package docstring) raised `AttributeError`.
+     Fixed in `openai_client.py` + `local_client.py` to mirror the real
+     SDK nesting (`chat.completions.create`).
+  2. **Anthropic adapter broken out of the box** (Decision 13) — default
+     config routed requests to `gpt-4o-mini` (complexity fallback), sending
+     a nonexistent model to the Anthropic API. Fixed: `_build_pipeline`
+     drops the default router and keeps only claude-targeted rules,
+     mirroring the LocalClient precedent (Decision 8).
+- **Coverage gate** — `[tool.coverage] fail_under = 80` +
+  `addopts = "--cov=tokenopt --cov-report=term-missing"` in
+  `pyproject.toml`; enforced on every pytest run.
+- **Verification (all green)**: `pytest tests/` **149 passed** (130 existing
+  untouched + 19 new); ruff clean; `mypy tokenopt` exit 0; `python -m build`
+  sdist + wheel.
+- **Coverage**: suite 89% → **94%** (gate: ≥80%). Clients now 88–94%
+  (openai 92, anthropic 91, local 94, base 88).
+- **STOPPING — awaiting approval to begin M5** (CI; no approval gate).
+
 ## 2026-08-01 — Session 6: M3 — Pipeline Stage Tests 2 (cache, RAG, few-shot)
 
 ### Work performed

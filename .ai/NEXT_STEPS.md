@@ -1,32 +1,38 @@
 # Next Steps
 
-_Last updated: 2026-08-01 (M3 complete — pipeline stage tests 2 green)_
+_Last updated: 2026-08-01 (M4 complete — integration tests + coverage gate green)_
 
-## M3 done — M4 is next (⚠ approval gate)
+## M4 done — M5 is next
 
-M3 (Pipeline Stage Tests 2) is complete: 53 new behavioral-contract tests
-(cache 18, RAG 15, few-shot 13, pipeline gating +7); four defects found and
-fixed (cache key collision for non-string content, RAG dedup embedding
-misalignment, few-shot injection without system message, pipeline fail-open);
-cache 96% / rag_optimizer 98% coverage; suite 130 tests green, ruff clean,
-mypy exit 0. **M4 needs approval** (⚠ new dev dependency: HTTP stub library).
+M4 (Integration Tests & Coverage Gate) is complete: `tests/integration/` with
+19 tests over `httpx.MockTransport` (zero new deps — `http_client=` injection,
+Decision 15); `INTEGRATION_TEST_STRATEGY.md` added; `[tool.coverage]
+fail_under = 80` + `--cov` in pytest `addopts`; two genuine integration defects
+fixed (drop-in `chat.completions.create` surface restored — Decision 14;
+Anthropic router scoped to claude models — Decision 13); suite **149 green,
+coverage 94%**, ruff clean, mypy exit 0. **M5 has no approval gate.**
 
-1. **M4** — Integration tests (mock servers) + formal 80% coverage gate
-   (⚠ new dev dep — approval required before start)
-2. **M5** — CI pipeline (GitHub Actions, Python 3.10–3.12 matrix)
-3. **M6** — Release metadata: license (⚠ user choice), classifiers, CHANGELOG,
+1. **M5** — CI pipeline (GitHub Actions, Python 3.10–3.12 matrix)
+2. **M6** — Release metadata: license (⚠ user choice), classifiers, CHANGELOG,
    `python -m build` verification
-4. **M7** — Security hardening: pip-audit + secret scanning + Dependabot
+3. **M7** — Security hardening: pip-audit + secret scanning + Dependabot
    (⚠ new dev deps)
-5. **M8** — Onboarding: CONTRIBUTING.md, Makefile, examples/
-6. **M10** — Extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (audit §5)
-7. **M11** — `.ai/PROMPTS/` (9 prompts; optional)
-8. **M12** — Structure cleanup: artifact dirs (⚠ deletion approval),
+4. **M8** — Onboarding: CONTRIBUTING.md, Makefile, examples/
+5. **M10** — Extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (audit §5)
+6. **M11** — `.ai/PROMPTS/` (9 prompts; optional)
+7. **M12** — Structure cleanup: artifact dirs (⚠ deletion approval),
    archive SESSION_BACKUP.md, GitHub templates
-9. **M13** — Maintainability refactor: response helpers, data-driven MODEL_COSTS
-10. **M14** — Architecture docs polish: Mermaid diagrams, normalization spec,
-    extension guide
-11. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
+8. **M13** — Maintainability refactor: response helpers, data-driven MODEL_COSTS
+9. **M14** — Architecture docs polish: Mermaid diagrams, normalization spec,
+   extension guide
+10. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
+
+## Known follow-ups (need approval/decision)
+
+- **RouterStage complexity fallback** — when custom routing rules exist but
+  none match, the fallback rewrites the model to `gpt-*` (also affects
+  LocalClient/Anthropic custom-rule paths). Fixing changes OpenAI routing
+  behavior → needs a decision before M13/refactor work.
 
 ## Short term (Phase 2, after M7 per roadmap)
 

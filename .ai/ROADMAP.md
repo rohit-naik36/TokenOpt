@@ -19,9 +19,9 @@ _Last updated: 2026-08-01_
 - [x] Baseline unit tests (23)
 
 ## Phase 2 — Hardening & enhancements (NEXT)
-- [ ] M1 fix mypy/numpy type gate (⚠ approval: numpy pin) — **first action**
-- [ ] M2/M3 pipeline stage unit tests
-- [ ] M4 integration tests + coverage gate
+- [x] M1 fix mypy/numpy type gate (⚠ approval: numpy pin)
+- [x] M2/M3 pipeline stage unit tests
+- [x] M4 integration tests + coverage gate (94% ≥ 80% enforced by pytest)
 - [ ] M5 CI pipeline
 - [ ] M6 release metadata (⚠ license)
 - [ ] M7 security scans (⚠ dev deps)
