@@ -1,5 +1,50 @@
 # Session Log
 
+## 2026-08-01 — Session 6: M3 — Pipeline Stage Tests 2 (cache, RAG, few-shot)
+
+### Work performed
+- **Wrote 53 behavioral-contract tests** (network-free, public-contract only,
+  scripted embedding providers for determinism):
+  - `tests/test_cache.py` (18) — miss metadata + metric; store/exact-hit
+    roundtrip; stats/hit counts; LRU eviction at `cache_max_size`;
+    TTL expiry (exact and semantic paths); semantic hit/miss at
+    `cache_similarity_threshold`; model-mismatch no-hit; Redis roundtrip +
+    Redis-failure fail-open (fake clients, no network); `clear()` (memory +
+    Redis); non-string content; determinism; no mutation.
+  - `tests/test_rag_optimizer.py` (15) — `context:`/`retrieved:` line
+    extraction + `rag_chunks` structured key; relevance ranking, threshold
+    filtering, `rag_max_chunks` cap; dedup near-duplicates; no-context and
+    no-query no-ops; malformed content skipped; determinism; no mutation.
+  - `tests/test_fewshot.py` (13) — similarity/diversity/random strategies;
+    max-examples caps and fewer-than-max; default config (similarity, cap 3);
+    injection order/format (user/assistant pairs after system); example
+    without output; metrics; determinism; no mutation.
+  - `tests/test_pipeline_config.py` (+7) — cache enable/disable gating; RAG
+    and few-shot always-on by default; pipeline fail-open.
+- **4 defects found + fixed (minimal, no API change):**
+  1. **Cache key collision** — non-string message content (e.g. multimodal
+     lists) was skipped in `_make_cache_key`/`_messages_to_text`, so all such
+     prompts hashed to the same key and could serve each other's cached
+     responses. Fixed: serialize via `json.dumps(sort_keys=True)`.
+  2. **RAG dedup embedding misalignment** — `_optimize_chunks` re-sorted
+     chunks by relevance but passed `chunk_embeddings[:len(filtered)]`
+     (original order) to `_deduplicate_chunks`, comparing each chunk against
+     the wrong embedding; valid chunks could be dropped as "duplicates".
+     Fixed: embeddings carried through the sort in the scored tuples.
+  3. **Few-shot injection dropped without system message** — `fewshot_applied`
+     was set but nothing injected. Fixed: examples prepended when no system
+     message exists.
+  4. **Pipeline fail-open missing** — `OptimizationPipeline.run` let stage
+     exceptions propagate, breaking the request (violates manifest design
+     principle 3; `chat_completion` only guards `_call_api`). Fixed: per-stage
+     try/except records `{stage}_error` metric and continues.
+- **Verification (all green)**: `pytest tests/` 130 passed (77 existing
+  untouched + 53 new); ruff clean; `mypy tokenopt` exit 0.
+- **Coverage (ad hoc, per M3 acceptance)**: `cache.py` 68% → **96%**,
+  `rag_optimizer.py` 24% → **98%**, suite total 72% → **89%** (formal 80%
+  gate is M4).
+- **STOPPING — awaiting approval to begin M4** (⚠ new HTTP stub dev dep).
+
 ## 2026-08-01 — Session 5: M2 — Pipeline Stage Tests 1 (router, compressor, summarizer)
 
 ### Work performed

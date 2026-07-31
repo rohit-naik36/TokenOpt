@@ -90,19 +90,37 @@ precede any new product features. Feature work resumes only after M1–M7._
 
 ---
 
-### M3 — Pipeline stage tests, part 2: cache + RAG + few-shot
+### M3 — Pipeline stage tests, part 2: cache + RAG + few-shot — ✅ DONE (2026-08-01)
 
-**Work**
-- `tests/test_cache.py` — exact-key hit; semantic hit (threshold); TTL expiry;
-  LRU eviction at `cache_max_size`; model mismatch no-hit; `clear()`/`stats()`;
-  Redis path with a mocked client; store/retrieve round-trip.
-- `tests/test_rag_optimizer.py` — chunk parsing (`context:`/`retrieved:`);
-  similarity ranking and retention threshold; no-context no-op; query extraction.
-- `tests/test_fewshot.py` — similarity/diversity/random selection strategies;
-  no-examples and max-examples caps.
+**Work** (all network-free, pure unit tests, scripted embedding providers) —
+**as implemented:**
+- `tests/test_cache.py` (18) — exact-key hit/miss + store roundtrip; semantic
+  hit at threshold / miss below; TTL expiry (exact + semantic); LRU eviction
+  at `cache_max_size`; model-mismatch no-hit; `clear()`/`stats()`; Redis path
+  with mocked client (roundtrip + failure fail-open); store without metadata
+  no-op; non-string content; determinism; no mutation.
+- `tests/test_rag_optimizer.py` (15) — chunk parsing (`context:`/`retrieved:`
+  + `rag_chunks` key); similarity ranking, retention threshold, `rag_max_chunks`
+  cap; dedup (near-duplicates removed, distinct kept, correct embeddings after
+  reorder); no-context/no-query no-ops; malformed content; determinism; no
+  mutation.
+- `tests/test_fewshot.py` (13) — similarity/diversity/random selection
+  strategies; max-examples caps + fewer-than-max; default config; injection
+  order/format; metrics; determinism; no mutation.
+- `tests/test_pipeline_config.py` (+7) — cache gating; RAG/few-shot always-on;
+  pipeline fail-open.
+- **4 defects found + fixed (minimal, no API change):** (1) cache key
+  collision for non-string content (json-dump normalization); (2) RAG dedup
+  compared misaligned embeddings after re-sort (embeddings now carried
+  through sort); (3) few-shot nothing injected when no system message
+  (examples prepended); (4) pipeline stage exceptions broke requests —
+  `OptimizationPipeline.run` now fails open per stage with `{stage}_error`
+  metric (manifest design principle 3).
 
 **Acceptance check**
-- New suites green; coverage for `rag_optimizer`/`cache` ≥ 70%.
+- New suites green ✅ — `pytest tests/` 130 passed (77 pre-existing unaffected);
+- Coverage for `rag_optimizer`/`cache` ≥ 70% ✅ — cache 68% → **96%**,
+  rag_optimizer 24% → **98%**, suite 72% → **89%** (ad hoc; formal gate M4).
 
 ---
 

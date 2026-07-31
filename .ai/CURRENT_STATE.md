@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1 + M2 complete — Verification Gates + Pipeline Stage Tests 1)_
+_Last updated: 2026-08-01 (M1–M3 complete — Verification Gates + Pipeline Stage Tests 1+2)_
 
-## Status: Phase 0 + Phase 1 + M1 + M2 complete; next is M3 (cache/RAG/few-shot tests)
+## Status: Phase 0 + Phase 1 + M1 + M2 + M3 complete; next is M4 (integration tests + coverage gate)
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -91,6 +91,37 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
   - Coverage: `router.py` 27% → **100%**, `compressor.py` → **100%**
     (summarizer included), suite total 62% → **72%**
   - Suite: **77 tests passed** (54 new); ruff clean; mypy exit 0
+- **M3 — Pipeline Stage Tests 2 (2026-08-01)**
+  - `tests/test_cache.py` (18 tests) — miss/store/exact-hit roundtrip; stats
+    and hit counts; LRU eviction at `cache_max_size`; TTL expiry (exact +
+    semantic paths); semantic hit/miss at threshold (scripted provider);
+    model-mismatch no-hit; Redis roundtrip + failure fail-open (fake clients);
+    `clear()`; non-string content; determinism; no mutation
+  - `tests/test_rag_optimizer.py` (15 tests) — extraction (`context:`/
+    `retrieved:` + `rag_chunks` key); relevance ranking/threshold; `rag_max_chunks`
+    cap; dedup near-duplicates; no-context/no-query no-ops; malformed content;
+    determinism; no mutation
+  - `tests/test_fewshot.py` (13 tests) — similarity/diversity/random
+    strategies; max-examples caps; injection order/format after system;
+    metrics; determinism; no mutation
+  - `tests/test_pipeline_config.py` (+7) — cache gating (enabled/disabled);
+    RAG/few-shot always-on by default; **pipeline fail-open**
+  - **4 defects found + fixed (minimal, no API change)**:
+    1. Cache key collision — non-string message content (e.g. multimodal
+       lists) normalized to identical empty keys → different prompts could
+       cross-hit. Now serialized via `json.dumps(sort_keys=True)`.
+    2. RAG dedup embedding misalignment — `_deduplicate_chunks` received
+       `chunk_embeddings[:len(filtered)]` (original order) after chunks were
+       re-sorted by relevance → wrong chunk/embedding pairs compared, valid
+       chunks dropped. Embeddings now carried through the sort.
+    3. Few-shot injection dropped when no system message — `fewshot_applied`
+       claimed success but nothing was injected. Examples now prepended.
+    4. Pipeline stage exceptions propagated → request failure, violating
+       fail-open (manifest design principle 3). `OptimizationPipeline.run`
+       now catches per-stage errors and records `{stage}_error` metric.
+  - Coverage: `cache.py` 68% → **96%**, `rag_optimizer.py` 24% → **98%**,
+    suite total 72% → **89%**
+  - Suite: **130 tests passed** (53 new); ruff clean; mypy exit 0
 
 ## Open item
 
@@ -99,16 +130,17 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- **M3** — pipeline stage tests: cache + RAG + few-shot (next)
-- Integration tests + coverage gate (M4), CI (M5), release metadata (M6),
-  security scans (M7), DX (M8), governance docs extension (M10/M11 pending),
-  cleanup (M12), refactor (M13), arch docs (M14), release v0.1.0 (M15)
+- **M4** — integration tests (mock servers) + formal 80% coverage gate
+  (⚠ new dev dep — needs approval)
+- CI (M5), release metadata (M6), security scans (M7), DX (M8), governance
+  docs extension (M10/M11 pending), cleanup (M12), refactor (M13), arch docs
+  (M14), release v0.1.0 (M15)
 - README usage examples complete; full config reference pending
 - Local client live verification against a real Ollama server
 
 ## Verification
 
-- `pytest tests/` → 77 passed
+- `pytest tests/` → 130 passed
 - `ruff check tokenopt tests` → clean
 - `mypy tokenopt` → **green (exit 0)**
-- Coverage: router 100%, compressor 100%, suite 72% (ad hoc; formal 80% gate in M4)
+- Coverage (ad hoc): cache 96%, rag_optimizer 98%, suite 89% (formal 80% gate in M4)

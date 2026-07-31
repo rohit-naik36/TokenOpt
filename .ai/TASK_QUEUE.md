@@ -1,6 +1,6 @@
 # Task Queue
 
-_Updated: 2026-08-01 (M2 DONE — Pipeline Stage Tests 1 complete)_
+_Updated: 2026-08-01 (M3 DONE — Pipeline Stage Tests 2 complete)_
 
 Statuses: `READY` · `IN PROGRESS` · `BLOCKED` · `DONE`
 Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
@@ -21,12 +21,13 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 | Session management policy adopted | Decision 12, this queue + SESSION_STATE.md |
 | **M1** — Verification Gates | `mypy tokenopt` exit 0; numpy pin `>=1.24,<2.5`; 37 typing fixes + latent summarizer bug; `.ai/DOD.md` ratified; docs gates updated |
 | **M2** — Pipeline Stage Tests 1 | 54 new behavioral-contract tests (router 18, compressor 16, summarizer 13, gating 5); router/compressor coverage 27%/… → **100%**; **defect fixed**: summarizer kept oldest messages as recent (now keeps last 3); suite 77 passed |
+| **M3** — Pipeline Stage Tests 2 | 53 new tests (cache 18, RAG 15, few-shot 13, gating+7); cache 68%→**96%**, rag_optimizer 24%→**98%**, suite **89%**; **4 defects fixed**: cache key collision (non-string content), RAG dedup embedding misalignment, few-shot injection w/o system message, pipeline fail-open; suite 130 passed |
 
 ## IN PROGRESS
 
 | Task | Notes |
 |------|-------|
-| (none — awaiting approval) | resume with M3 |
+| (none — awaiting approval) | resume with M4 (⚠ approval: HTTP stub dev dep) |
 
 ## BLOCKED
 
@@ -38,7 +39,6 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 
 | # | Task | Depends on |
 |---|------|------------|
-| M3 | Pipeline stage tests 2: cache, RAG, few-shot | M2 |
 | M4 | Integration tests + 80% coverage gate (⚠ new dev dep) | M2–M3 |
 | M5 | CI pipeline (GitHub Actions, py 3.10–3.12) | M4 |
 | M6 | Release metadata: license (⚠ user choice), CHANGELOG, build | M5 |
