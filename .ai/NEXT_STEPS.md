@@ -1,34 +1,34 @@
 # Next Steps
 
-_Last updated: 2026-08-01 (M7 complete — security baseline in place)_
+_Last updated: 2026-08-01 (M8 complete — onboarding & DX)_
 
-## M7 done — M8 is next (no approval gate)
+## M8 done — M10 is next (governance docs; no gate)
 
-M7 (Security Baseline) is complete: author metadata personalized to
-**Rohit Naik** (pyproject + LICENSE), `pip-audit` in the `dev` extra +
-security CI job, `gitleaks` pinned 8.30.1 full-history scan in CI,
-`.github/dependabot.yml` (pip + github-actions, weekly), and `SECURITY.md`
-(supported versions, private reporting, scope, coordinated disclosure,
-release-blocker vs advisory policy). Local scans clean: pip-audit zero
-findings, gitleaks 58 commits / no leaks. CI security job green (Decision 18).
+M8 (Developer Onboarding & Experience) is complete: 6 runnable
+`examples/` scripts (quickstart, OpenAI, Anthropic, Local, pipeline config,
+observability), README rewritten (Quick Start, Installation incl. git-install
+until PyPI, extras table, provider examples, project structure,
+Troubleshooting/FAQ), `Makefile` (CI-mirroring targets), CONTRIBUTING
+updated. All examples validated end-to-end offline on a fresh venv against a
+stub server; git install + all 5 extras resolve cleanly.
 
-1. **M8** — Onboarding: CONTRIBUTING.md (extend), Makefile, examples/
-2. **M10** — Extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (audit §5)
-3. **M11** — `.ai/PROMPTS/` (9 prompts; optional)
-4. **M12** — Structure cleanup: artifact dirs (⚠ deletion approval),
+1. **M10** — Extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (audit §5)
+2. **M11** — `.ai/PROMPTS/` (9 prompts; optional)
+3. **M12** — Structure cleanup: artifact dirs (⚠ deletion approval),
    archive SESSION_BACKUP.md, GitHub templates
-5. **M13** — Maintainability refactor: response helpers, data-driven MODEL_COSTS
-6. **M14** — Architecture docs polish: Mermaid diagrams, normalization spec,
+4. **M13** — Maintainability refactor: response helpers, data-driven MODEL_COSTS
+5. **M14** — Architecture docs polish: Mermaid diagrams, normalization spec,
    extension guide
-7. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
+6. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
 
 ## Notes
 
 - Author metadata now uses the publisher name **Rohit Naik** (pyproject
-  `authors`, LICENSE copyright) — prerequisite applied at M7 start.
+  `authors`, LICENSE copyright) — applied at M7 start.
 - **Dependabot is active**: it opened initial update PRs for
   `actions/checkout`, `actions/setup-python`, and `actions/upload-artifact`
   (v4/v5 → v7). Merge after review when convenient; they are not blockers.
+- README documents install-from-git until PyPI publish (M15).
 
 ## Known follow-ups (need approval/decision)
 

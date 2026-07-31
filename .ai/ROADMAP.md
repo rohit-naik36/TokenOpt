@@ -25,7 +25,7 @@ _Last updated: 2026-08-01_
 - [x] M5 CI pipeline (green on GitHub: lint / test 3.10–3.12 / package+smoke)
 - [x] M6 release metadata (⚠ license — MIT chosen; changelog, classifiers, URLs, twine check PASSED)
 - [x] M7 security scans (pip-audit + gitleaks + Dependabot + SECURITY.md)
-- [ ] M8 onboarding (CONTRIBUTING, Makefile, examples)
+- [x] M8 onboarding (CONTRIBUTING, Makefile, examples)
 - [ ] M12 cleanup (⚠ deletions), M13 refactor, M14 arch docs
 - [ ] M15 release v0.1.0 (⚠ optional PyPI publish)
 - [ ] Pipeline stage unit tests

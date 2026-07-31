@@ -42,7 +42,6 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 
 | # | Task | Depends on |
 |---|------|------------|
-| M8 | Onboarding: CONTRIBUTING.md (extend), Makefile, examples/ | — |
 | M10 | Extend WORKFLOWS/ + ROLES/ to full sets | — |
 | M11 | `.ai/PROMPTS/` (optional) | M10 |
 | M12 | Cleanup: artifact dirs (⚠ deletion), archive SESSION_BACKUP.md, templates | — |

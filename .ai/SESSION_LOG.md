@@ -1,5 +1,35 @@
 # Session Log
 
+## 2026-08-01 — Session 11: M8 — Developer Onboarding & Experience
+
+### Work performed
+- **examples/** (6 runnable scripts, ruff-clean):
+  `quickstart.py`, `openai_basic.py` (2nd call demonstrates cache hit),
+  `anthropic_basic.py`, `local_basic.py` (env-overridable endpoint),
+  `pipeline_config.py` (custom routing rules + complexity fallback),
+  `metrics_observability.py` (callback + cost + token utils)
+- **README rewritten** — Quick Start, Installation (⚠ not on PyPI yet →
+  git install; core + 7 extras table), provider examples, factory, config,
+  project structure tree, Troubleshooting/FAQ (9 entries), dev/CI/security,
+  status, license. FAQ claims verified against stage code.
+- **Makefile** — help/install/dev/lint/typecheck/test/coverage/build/audit/
+  smoke/clean, mirroring CI.
+- **CONTRIBUTING.md** — dropped "M8 planned" note; documents Makefile,
+  examples, env vars.
+- **Validation on clean environment** (fresh venv, `pip install -e .`):
+  - All 6 examples executed against a local OpenAI/Anthropic-compatible
+    stub server (temp, not committed) — exit 0; routing (gpt-4o-mini/gpt-4o/
+    o1-mini), cache hit, anthropic messages API, local flow, callback all
+    verified end-to-end
+  - `pip install git+https://github.com/rohit-naik36/TokenOpt.git` dry-run ✅
+  - All 5 extras (`[cache] [local] [semantic] [compression] [all]`) resolve
+    via `pip install --dry-run` ✅
+- **Doc-discovered defect fixed**: `metrics_observability.py` forward-ref
+  `"RequestMetrics"` flagged F821 — replaced with a real import (public API
+  unchanged).
+- **Gates**: 150 passed (94%), ruff clean (incl. examples), mypy exit 0,
+  build + twine check PASSED.
+
 ## 2026-08-01 — Session 10: M7 — Security Baseline
 
 ### Work performed

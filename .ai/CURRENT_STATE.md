@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1–M7 complete — through security baseline)_
+_Last updated: 2026-08-01 (M1–M8 complete — through onboarding & DX)_
 
-## Status: Phase 0 + Phase 1 + M1–M7 complete; next is M8 (onboarding/DX)
+## Status: Phase 0 + Phase 1 + M1–M8 complete; next is M10 (governance docs)
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -216,6 +216,27 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
   - **CONTRIBUTING.md**: security job + local reproduction commands
   - CI run 30666354747: **all green** (lint, security, test ×3, package)
   - No SDK functionality changed (tooling/CI/docs only)
+- **M8 — Developer Onboarding & Experience (2026-08-01)**
+  - **examples/** (6 ruff-clean scripts): quickstart (drop-in), openai_basic
+    (config + cache-hit demo), anthropic_basic (messages API), local_basic
+    (endpoint env-overridable), pipeline_config (routing rules + complexity
+    fallback), metrics_observability (callback + cost + token utils)
+  - **README rewritten**: Quick Start, Installation (git install until PyPI,
+    core + 7-extras table), provider examples, factory, configuration,
+    project structure tree, **Troubleshooting/FAQ (9 entries)** — FAQ claims
+    verified against stage code, dev/CI/security/status/license sections
+  - **Makefile**: help/install/dev/lint/typecheck/test/coverage/build/audit/
+    smoke/clean mirroring CI
+  - **CONTRIBUTING.md**: M8 note removed; Makefile + examples documented
+  - **Clean-environment validation**: fresh venv + `pip install -e .`; all 6
+    examples executed against a local OpenAI/Anthropic-compatible stub server
+    (temp, uncommitted) — exit 0, routing + cache hit + anthropic + local +
+    callback verified; `pip install git+...` dry-run ✅; all 5 extras
+    `--dry-run` resolve ✅
+  - **Defect fixed**: `metrics_observability.py` F821 forward-ref
+    `"RequestMetrics"` → real import (public API unchanged)
+  - Suite: **150 passed**; coverage **94%**; ruff clean (incl. examples);
+    mypy exit 0; build + twine check PASSED
 
 ## Open item
 
@@ -224,10 +245,10 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- **M8** — Onboarding: CONTRIBUTING.md (extend), Makefile, examples/
-- M10/M11 governance docs, M12 cleanup (⚠), M13 refactor, M14 arch docs,
+- **M10** — Extend WORKFLOWS/ + ROLES/ to full sets (audit §5)
+- M11 governance prompts, M12 cleanup (⚠), M13 refactor, M14 arch docs,
   M15 release v0.1.0 (⚠ PyPI optional)
-- README usage examples complete; full config reference pending
+- Full config reference docs pending
 - Local client live verification against a real Ollama server
 - Merge Dependabot action-upgrade PRs (checkout/setup-python/upload-artifact
   → v7) when convenient — advisory, not blockers
