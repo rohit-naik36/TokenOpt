@@ -1,5 +1,7 @@
 # TokenOpt SDK
 
+[![CI](https://github.com/rohit-naik36/TokenOpt/actions/workflows/ci.yml/badge.svg)](https://github.com/rohit-naik36/TokenOpt/actions/workflows/ci.yml)
+
 Token and prompt optimization for LLM clients — a **drop-in replacement** for
 OpenAI/Anthropic (plus local models via Ollama/vLLM/llama.cpp) that
 automatically reduces token usage and cost.
@@ -91,6 +93,21 @@ ruff check tokenopt tests
 mypy tokenopt
 python -m build
 ```
+
+## Continuous Integration
+
+Every push to `main` and every pull request runs the CI pipeline
+(`.github/workflows/ci.yml`) — the project's single source of truth for
+release readiness. It executes the DoD gates:
+
+1. **Lint** — `ruff check tokenopt tests` + `mypy tokenopt`
+2. **Test** — `pytest tests/` on Python 3.10, 3.11, and 3.12, with the
+   **≥80% coverage gate** enforced by pytest itself
+3. **Package** — `python -m build` (sdist + wheel) plus a fresh-venv
+   install and `import tokenopt` smoke test
+
+See `CONTRIBUTING.md` for workflow details, assumptions, and branch
+protection recommendations.
 
 ## Definition of Done
 
