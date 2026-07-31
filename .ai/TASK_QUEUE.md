@@ -42,7 +42,6 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 
 | # | Task | Depends on |
 |---|------|------------|
-| M7 | Security: pip-audit + secret scan + Dependabot (⚠ dev deps) | M5 |
 | M8 | Onboarding: CONTRIBUTING.md (extend), Makefile, examples/ | — |
 | M10 | Extend WORKFLOWS/ + ROLES/ to full sets | — |
 | M11 | `.ai/PROMPTS/` (optional) | M10 |
@@ -53,10 +52,10 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 
 ## Blocked-by-approval backlog
 
-- M7 (pip-audit/gitleaks dev deps + Dependabot enablement)
 - M12 (deleting 7 artifact dirs + archiving SESSION_BACKUP.md)
 - M15 (PyPI publish — optional)
-- Personalize author name before PyPI (currently GitHub handle, Decision 17)
+- Merge Dependabot action-upgrade PRs (checkout/setup-python/upload-artifact
+  → v7) — opened 2026-08-01, not blockers
 - RouterStage complexity-fallback hole (custom rules + no match → gpt-*
   rewrite; shared with LocalClient/Anthropic custom-rule paths) — needs a
   routing-behavior decision before refactor work

@@ -1,5 +1,34 @@
 # Session Log
 
+## 2026-08-01 — Session 10: M7 — Security Baseline
+
+### Work performed
+- **Prerequisite (user instruction)**: author metadata personalized from
+  GitHub handle to **Rohit Naik** — `pyproject.toml` `authors` + LICENSE
+  copyright line. Repo ownership/URLs untouched. Verified in built wheel:
+  `Author: Rohit Naik`, `License: MIT`.
+- **pip-audit** — added `pip-audit>=2.7.0` to the `dev` extra (approved);
+  local scan `pip-audit --path . --desc` (2.10.1): **zero vulnerabilities**
+  (tokenopt itself skipped — not on PyPI, expected).
+- **gitleaks** — not a pip package (Go binary): pinned release **8.30.1**
+  downloaded in CI via curl; local full-history scan
+  `gitleaks detect --log-opts=--all`: **58 commits scanned, no leaks**.
+- **CI** — new `security` job (after `lint`): pip-audit + gitleaks, both
+  blocking; run 30666354747 fully green (lint, security, test ×3, package).
+- **Dependabot** — `.github/dependabot.yml`: weekly `pip` + `github-actions`
+  updates, `numpy>=2.5` ignored (breaks Python 3.10 + mypy), limit 5 PRs.
+  It activated immediately and opened 3 action-upgrade PRs
+  (checkout/setup-python/upload-artifact → v7) — advisory, user to merge.
+- **SECURITY.md** — supported versions (0.1.x ✅, <0.1.0 ❌, main dev),
+  private reporting (GitHub Security Advisories + email fallback, 7/14-day
+  timelines), security scope (package, runtime deps, committed secrets, CI
+  config; user-side keys/optional extras out of scope), coordinated
+  disclosure (90-day / immediate on public exploit, no bounty),
+  **release-blocker vs advisory classification table** with CI behavior.
+- **CONTRIBUTING.md** — security job row in pipeline table + "Security
+  checks" section with local reproduction commands.
+- **No SDK functionality changed** — tooling, CI, and docs only.
+
 ## 2026-08-01 — Session 9: M6 — Release Metadata (MIT)
 
 ### Work performed

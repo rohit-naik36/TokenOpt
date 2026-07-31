@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1–M6 complete — through release metadata)_
+_Last updated: 2026-08-01 (M1–M7 complete — through security baseline)_
 
-## Status: Phase 0 + Phase 1 + M1–M6 complete; next is M7 (security hardening)
+## Status: Phase 0 + Phase 1 + M1–M7 complete; next is M8 (onboarding/DX)
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -198,6 +198,24 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
     matches `tokenopt.__version__`, License-Expression MIT, 9 classifiers,
     5 URLs, 6 runtime deps + extras); sdist ships LICENSE + README
   - Suite: **150 tests passed**; coverage **94%**; ruff clean; mypy exit 0
+- **M7 — Security Baseline (2026-08-01)** (Decision 18)
+  - **Author metadata personalized** (prerequisite): `pyproject.toml`
+    `authors = ["Rohit Naik"]` + LICENSE copyright — verified in built wheel
+    (`Author: Rohit Naik`, `License: MIT`); repo ownership/URLs unchanged
+  - **pip-audit** in `dev` extra + CI `security` job: `pip-audit --path . --desc`
+    — local scan (2.10.1): **0 known vulnerabilities**; tokenopt itself
+    skipped (not on PyPI, expected)
+  - **gitleaks** pinned **8.30.1** (standalone binary, not a pip dep) in CI:
+    `detect --log-opts=--all` full-history — local scan: **58 commits, no leaks**
+  - **Dependabot** `.github/dependabot.yml`: weekly `pip` + `github-actions`
+    updates (numpy ≥2.5 ignored); activated immediately — 3 update PRs
+    opened (checkout/setup-python/upload-artifact → v7), advisory only
+  - **SECURITY.md**: supported versions, private reporting (7/14-day
+    timelines), scope (in/out), coordinated disclosure (90-day), release
+    **blocker vs advisory** classification table
+  - **CONTRIBUTING.md**: security job + local reproduction commands
+  - CI run 30666354747: **all green** (lint, security, test ×3, package)
+  - No SDK functionality changed (tooling/CI/docs only)
 
 ## Open item
 
@@ -206,15 +224,13 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- **M7** — Security hardening: pip-audit + secret scanning + Dependabot
-  (⚠ new dev deps — needs approval)
-- DX (M8), governance
-  docs extension (M10/M11 pending), cleanup (M12), refactor (M13), arch docs
-  (M14), release v0.1.0 (M15)
+- **M8** — Onboarding: CONTRIBUTING.md (extend), Makefile, examples/
+- M10/M11 governance docs, M12 cleanup (⚠), M13 refactor, M14 arch docs,
+  M15 release v0.1.0 (⚠ PyPI optional)
 - README usage examples complete; full config reference pending
 - Local client live verification against a real Ollama server
-- Personalize author name before PyPI publish (currently GitHub handle,
-  per Decision 17)
+- Merge Dependabot action-upgrade PRs (checkout/setup-python/upload-artifact
+  → v7) when convenient — advisory, not blockers
 - Known follow-up (needs decision): `RouterStage` complexity fallback still
   rewrites models when custom rules exist but none match — shared by
   LocalClient/Anthropic custom-rule paths; deferred to avoid changing OpenAI

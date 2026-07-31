@@ -1,25 +1,24 @@
 # Session State
 
-_Updated: 2026-08-01 (M6 complete — release metadata ready)_
+_Updated: 2026-08-01 (M7 complete — security baseline in place)_
 
 | Field | Value |
 |-------|-------|
-| **Current milestone** | **M6 — Release Metadata — DONE** |
-| **Current task** | (none in progress — awaiting approval to begin M7) |
-| **Current progress** | Phase 0 + Phase 1 + M1–M6 complete; suite 150 green; coverage 94%; packaging verified end-to-end (twine check PASSED) |
+| **Current milestone** | **M7 — Security Baseline — DONE** |
+| **Current task** | (none in progress — ready for M8, no approval gate) |
+| **Current progress** | Phase 0 + Phase 1 + M1–M7 complete; suite 150 green; coverage 94%; security scanners clean (pip-audit 0 findings; gitleaks 58 commits, no leaks) |
 | **Safe stopping point** | ✅ Yes — working tree clean, all work committed and pushed, checkpoint created |
-| **Remaining work** | M7–M15 per `.ai/IMPLEMENTATION_ROADMAP.md` (9 milestones) |
-| **Estimated effort remaining** | ~8.5 agent-days (M7 is ~0.5–1 day) |
-| **Recommended next action** | Begin **M7** — security hardening (**⚠ requires approval**: pip-audit/gitleaks dev deps + Dependabot) |
-| **Context risk** | Low — focused session; M6 delivered |
+| **Remaining work** | M8–M15 per `.ai/IMPLEMENTATION_ROADMAP.md` (8 milestones) |
+| **Estimated effort remaining** | ~8 agent-days (M8 is ~1 day) |
+| **Recommended next action** | Begin **M8** — onboarding: CONTRIBUTING extension, Makefile, examples/ |
+| **Context risk** | Low — focused session; M7 delivered |
 | **Timestamp** | 2026-08-01 |
 
 ## Blockers
 
-None for M6. **M7 has an approval gate** (new dev dependencies:
-pip-audit, gitleaks; Dependabot enablement). M15 (PyPI publish) later.
-Open decisions tracked in TASK_QUEUE: RouterStage fallback hole; personalize
-author name before publish (Decision 17).
+None. Dependabot opened 3 action-upgrade PRs (checkout/setup-python/
+upload-artifact → v7) — advisory, merge when convenient. Open decisions:
+RouterStage fallback hole; M15 (PyPI) gate later.
 
 ## Verification at close
 
@@ -29,8 +28,9 @@ author name before publish (Decision 17).
 | `ruff check tokenopt tests` | clean |
 | `mypy tokenopt` | **GREEN (exit 0)** |
 | Coverage gate | `[tool.coverage] fail_under = 80`; actual **94%** |
-| `python -m build` | sdist + wheel OK |
-| `twine check dist/*` | **PASSED** (wheel + sdist) |
-| Fresh-venv install | wheel installs, `import tokenopt` → 0.1.0, metadata renders (MIT, 9 classifiers, 5 URLs) |
+| `python -m build` + `twine check` | sdist + wheel OK, **PASSED**; wheel METADATA: `Author: Rohit Naik` |
+| `pip-audit --path .` | **0 known vulnerabilities** (tokenopt itself skipped — not on PyPI, expected) |
+| `gitleaks detect --log-opts=--all` (8.30.1) | **no leaks** (58 commits scanned) |
+| CI run 30666354747 | **completed/success** — lint, security, test ×3, package |
 | `git status` | clean |
 | `git remote -v` | `https://github.com/rohit-naik36/TokenOpt.git` (valid, Decision 11) |
