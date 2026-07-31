@@ -1,5 +1,15 @@
 # Session Log
 
+## 2026-08-01 — Session 3 (continued): Project manifest ratified
+
+### Work performed
+- Created `.ai/PROJECT_MANIFEST.md` (Revision 1.0) — project constitution with
+  11 sections: overview, product definition, technical vision, engineering
+  standards, git strategy, development workflow, definition of done, AI agent
+  rules, repository conventions, release process, long-term vision (v1/v2/v3)
+- Verified markdown formatting; committed `docs: add project manifest (constitution)`
+- Updated CURRENT_STATE.md (manifest ratified, AGENTS.md noted as missing)
+
 ## 2026-08-01 — Session 3 (continued): Remote handling rule
 
 ### Work performed

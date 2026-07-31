@@ -31,8 +31,13 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
   `detect_provider()` (model prefix / base_url detection)
 - **Package exports** — `tokenopt/__init__.py`, `tokenopt/clients/__init__.py`
 - **Tests** — 23 unit tests passing (imports, LocalClient, factory)
-- **Git** — repo initialized on `main`, 10 logical commits; working tree clean
-- **Project memory** — `.ai/` structure created, 2 checkpoints taken
+- **Git** — repo initialized on `main`, 12+ logical commits; working tree clean;
+  pushed to `https://github.com/rohit-naik36/TokenOpt.git`
+- **Project memory** — `.ai/` structure created, checkpoints taken
+- **Project manifest** — `.ai/PROJECT_MANIFEST.md` ratified (constitution:
+  overview, product definition, technical vision, engineering standards,
+  git strategy, workflow, DoD, AI agent rules, conventions, release process,
+  long-term vision)
 - **Packaging** — `pip install -e .` verified, README exists
 - **Lint** — `ruff check tokenopt tests` fully clean (fixed 64+ findings incl.
   one latent bug: missing import in `pipeline/compressor.py`)
@@ -44,6 +49,7 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
+- Root `AGENTS.md` (referenced by manifest §8) — not yet created
 - Pipeline stage unit tests (compressor/cache/router/RAG/few-shot individually)
 - Integration tests (mock API servers)
 - README usage examples complete; full config reference pending
