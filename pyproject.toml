@@ -10,7 +10,9 @@ dependencies = [
     "tiktoken>=0.7.0",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
-    "numpy>=1.24.0",
+    # numpy<2.5: 2.5 requires Python>=3.12 (declared floor is 3.10) and its
+    # .pyi stubs use PEP 695 syntax mypy cannot parse under python_version=3.10
+    "numpy>=1.24,<2.5",
 ]
 
 [project.optional-dependencies]
@@ -46,6 +48,12 @@ python_version = "3.10"
 warn_return_any = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
+
+# Optional extras are imported fail-open (try/except); type gate must not
+# require installing heavy optional dependencies (redis, llmlingua, ST).
+[[tool.mypy.overrides]]
+module = ["redis.*", "llmlingua.*", "sentence_transformers.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
