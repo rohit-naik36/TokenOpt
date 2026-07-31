@@ -86,17 +86,19 @@ class RAGOptimizerStage(PipelineStage):
         scored = []
         for i, chunk in enumerate(chunks):
             relevance = self._embedding_provider.similarity(query_embedding, chunk_embeddings[i])
-            scored.append((relevance, chunk))
+            scored.append((relevance, chunk, chunk_embeddings[i]))
 
         # Sort by relevance descending
         scored.sort(key=lambda x: -x[0])
 
         # Filter by threshold
         threshold = self.config.rag_similarity_threshold
-        filtered = [c for s, c in scored if s >= threshold]
+        filtered = [(s, c, e) for s, c, e in scored if s >= threshold]
 
         # Deduplicate similar chunks
-        deduplicated = self._deduplicate_chunks(filtered, chunk_embeddings[:len(filtered)])
+        deduplicated = self._deduplicate_chunks(
+            [c for _, c, _ in filtered], [e for _, _, e in filtered]
+        )
 
         # Limit to max chunks
         max_chunks = self.config.rag_max_chunks
@@ -253,6 +255,13 @@ class FewShotSelectorStage(PipelineStage):
 
     def _inject_fewshot(self, messages: list[dict], examples: list[dict]) -> list[dict]:
         """Inject few-shot examples into messages."""
+        example_pairs = []
+        for ex in examples:
+            if "input" in ex:
+                example_pairs.append({"role": "user", "content": ex["input"]})
+            if "output" in ex:
+                example_pairs.append({"role": "assistant", "content": ex["output"]})
+
         new_messages = []
         fewshot_injected = False
 
@@ -260,11 +269,10 @@ class FewShotSelectorStage(PipelineStage):
             new_messages.append(msg)
             if msg.get("role") == "system" and not fewshot_injected:
                 # Inject after system message
-                for ex in examples:
-                    if "input" in ex:
-                        new_messages.append({"role": "user", "content": ex["input"]})
-                    if "output" in ex:
-                        new_messages.append({"role": "assistant", "content": ex["output"]})
+                new_messages.extend(example_pairs)
                 fewshot_injected = True
+
+        if not fewshot_injected:
+            new_messages = example_pairs + new_messages
 
         return new_messages
