@@ -7,6 +7,7 @@ from typing import Any
 from anthropic import Anthropic as AnthropicClient
 
 from tokenopt.clients.base import BaseOptimizedClient
+from tokenopt.pipeline import OptimizationPipeline, RouterStage
 
 
 class Anthropic(BaseOptimizedClient):
@@ -18,6 +19,19 @@ class Anthropic(BaseOptimizedClient):
             base_url=self.base_url,
             **self.extra_kwargs
         )
+
+    def _build_pipeline(self) -> OptimizationPipeline:
+        # The default router targets OpenAI models (gpt-*); routing an
+        # Anthropic request to a gpt model would break the API call, so only
+        # keep custom rules that target Anthropic models.
+        stages = [s for s in super()._build_pipeline().stages if s.name != "router"]
+        claude_rules = [r for r in self.config.routing_rules if "claude" in r.model.lower()]
+        if claude_rules:
+            from dataclasses import replace
+
+            router_config = replace(self.config, routing_rules=claude_rules)
+            stages.insert(0, RouterStage(router_config))
+        return OptimizationPipeline(stages, self.config)
 
     def _call_api(self, messages: list[dict], model: str, **kwargs: Any) -> Any:
         # Convert messages format for Anthropic
