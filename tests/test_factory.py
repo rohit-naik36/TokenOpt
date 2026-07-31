@@ -1,5 +1,7 @@
 """Tests for the client factory."""
 
+import sys
+
 import pytest
 
 from tokenopt import Anthropic, LocalClient, OpenAI, create_client, create_client_from_model
@@ -30,7 +32,12 @@ def test_create_client_anthropic():
 
 
 def test_create_client_local():
-    client = create_client(provider="local", model="llama3.1", api_key="test")
+    client = create_client(
+        provider="local",
+        model="llama3.1",
+        api_key="test",
+        base_url="http://localhost:8000/v1",
+    )
     assert isinstance(client, LocalClient)
     assert client.default_local_model == "llama3.1"
 
@@ -38,7 +45,18 @@ def test_create_client_local():
 def test_create_client_auto_detection():
     assert isinstance(create_client(model="gpt-4o", api_key="test"), OpenAI)
     assert isinstance(create_client(model="claude-3-5-haiku", api_key="test"), Anthropic)
-    assert isinstance(create_client(model="mistral", api_key="test"), LocalClient)
+    assert isinstance(
+        create_client(
+            model="mistral", api_key="test", base_url="http://localhost:8000/v1"
+        ),
+        LocalClient,
+    )
+
+
+def test_create_client_local_ollama_missing_package(monkeypatch):
+    monkeypatch.setitem(sys.modules, "ollama", None)
+    with pytest.raises(RuntimeError, match=r"tokenopt\[local\]"):
+        create_client(provider="local", model="llama3.1", api_key="test")
 
 
 def test_create_client_from_model():

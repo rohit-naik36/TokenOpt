@@ -49,7 +49,14 @@ class LocalClient(BaseOptimizedClient):
 
     def _create_client(self) -> Any:
         if self._detect_backend() == "ollama":
-            import ollama
+            try:
+                import ollama
+            except ImportError as e:
+                raise RuntimeError(
+                    "The 'ollama' package is required for the Ollama backend "
+                    "(base_url contains '11434' or 'ollama'). Install it with: "
+                    "pip install tokenopt[local]"
+                ) from e
 
             return ollama.Client(host=self.base_url or self.OLLAMA_DEFAULT_URL)
 
