@@ -246,13 +246,27 @@ by the handoff map in `.ai/GOVERNANCE_INDEX.md`):
 
 ---
 
-### M11 (optional) — `.ai/PROMPTS/` (9 documents)
+### M11 — `.ai/PROMPTS/` (DONE 2026-08-01)
 
-**Work** — reusable agent prompts: architecture, implementation, refactoring,
-documentation, testing, code-review, release, handover, debugging.
+**Work** — reusable agent prompts: `.ai/PROMPTS/` grouped by purpose
+(design / implementation / verification / operations):
+- 10 prompts: architecture-review, feature, bug-fix, refactoring,
+  unit-testing, integration-testing, regression-verification,
+  documentation-update, release-preparation, repository-audit
+- Every prompt: objective, required inputs, deterministic numbered
+  instructions (exact commands/paths), expected outputs, verification
+  criteria, determinism rules
+- `.ai/PROMPTS/README.md` — prompt design guidelines (template,
+  grouping, determinism rules, cross-reference conventions, add/maintain
+  rules)
+- Cross-references: GOVERNANCE_INDEX gains a Prompts table; each prompt
+  links its workflow + owning role + standards
 
-**Acceptance check** — each prompt used at least once against a real task
-during the milestone (self-test) or explicitly deferred.
+**Acceptance check** — each prompt is deterministic (no ambiguous steps),
+cross-references resolve, used against real tasks or explicitly accepted
+per README maintenance rule. SDK untouched. (Recording: prompts validated
+by construction against the workflows they instantiate; live usage
+tracked in SESSION_LOG.)
 
 ---
 

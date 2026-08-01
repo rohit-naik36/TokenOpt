@@ -28,6 +28,7 @@ _Last updated: 2026-08-01_
 - [x] M8 onboarding (CONTRIBUTING, Makefile, examples)
 - [x] M8.2 value demonstrations (routing_reason, examples as showcases)
 - [x] M10 governance expansion (14 workflows, 11 roles, index + review)
+- [x] M11 prompt library (10 prompts, grouped by purpose)
 - [ ] M12 cleanup (⚠ deletions), M13 refactor, M14 arch docs
 - [ ] M15 release v0.1.0 (⚠ optional PyPI publish)
 - [ ] Pipeline stage unit tests

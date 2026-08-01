@@ -47,6 +47,25 @@ owning role via the tables below, then read the referenced file(s).
 coding, documentation, testing, git, release, security, ai-memory,
 checkpoint — `.ai/STANDARDS/` (normative detail of manifest §4).
 
+## Prompts (10)
+
+`.ai/PROMPTS/` — execution-layer instruction sets (grouped by purpose).
+
+| Prompt | Group | Owned by | Governed by workflow |
+|--------|-------|----------|----------------------|
+| architecture-review | design | architect | architecture-review |
+| feature | implementation | backend-engineer | implement-feature |
+| bug-fix | implementation | backend-engineer | fix-bug |
+| refactoring | implementation | backend-engineer | refactoring |
+| unit-testing | implementation | qa-engineer (strategy) | testing-standard |
+| integration-testing | verification | qa-engineer (strategy) | INTEGRATION_TEST_STRATEGY.md |
+| regression-verification | verification | qa-engineer | regression-verification |
+| documentation-update | operations | technical-writer | documentation-update |
+| release-preparation | operations | release-manager | release |
+| repository-audit | operations | repository-auditor | repository-audit |
+
+Design rules: `.ai/PROMPTS/README.md` (template + determinism rules).
+
 ## Ownership matrix (no conflicts)
 
 | Area | Sole owner |
