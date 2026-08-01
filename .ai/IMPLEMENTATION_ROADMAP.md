@@ -314,12 +314,25 @@ tracked in SESSION_LOG.)
 
 ## Phase E — Documentation polish + first release (M14–M15)
 
-### M14 — Architecture documentation polish
+### M14 — Architecture documentation polish — ✅ DONE 2026-08-01
 
-**Work**
-- Add Mermaid sequence diagrams (request lifecycle: cache hit / miss / error).
-- Write the response-normalization contract spec (LocalClient → OpenAI shape).
-- Add "how to add a provider / custom stage" extension guide to README.
+**Work performed**
+- **Architecture Knowledge Base** `.ai/KNOWLEDGE_BASE/` (10 files):
+  README index; 01 System Overview; 02 Request Lifecycle (with Mermaid
+  sequence diagram — cache hit/miss/error); 03 Pipeline; 04 Provider Layer
+  (incl. response-normalization contract spec LocalClient → OpenAI shape);
+  05 Configuration; 06 Metrics; 07 Architectural Contracts (C1–C8,
+  normative); 08 Extension Guide (provider/stage/metrics/config recipes);
+  09 Internal Assessment (Software Factory view + ADB-11..13).
+- ARCHITECTURE.md pointer section; GOVERNANCE_INDEX Knowledge Base
+  registry (owners, normative rule); README pointer line updated.
+- Docs-only milestone: no runtime code changed (behavioral freeze).
+
+**Acceptance check**
+- ✅ Docs match implementation (Decision 24 precedence paths, routing_reason
+  fallback, metrics vocabulary, config groups cross-checked against code);
+  all links + inline paths resolve; examples untouched; suite 167 passed
+  unchanged; CI green after push.
 
 **Acceptance check**
 - Diagrams render; contract spec reviewed against `local_client.py` behavior;

@@ -1,6 +1,6 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1–M8 + UAT + M8.2 + M10 + M11 + M12 + M13 complete; next is M14)_
+_Last updated: 2026-08-01 (M1–M8 + UAT + M8.2 + M10 + M11 + M12 + M13 + M14 complete; next is M15)_
 
 ## Status: Phase 0 + Phase 1 + M1–M8 + Post-M8 UAT refinements + M8.2 + M10 + M11 + M12 complete
 
@@ -428,6 +428,28 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
   - **Docs**: DECISIONS.md Decision 25 (future completion-report format),
     IMPLEMENTATION_ROADMAP M13 completion + deviation notes, README
     untouched (no user-facing change)
+- **M14 — Architecture Knowledge Base (2026-08-01)** (session 19;
+  docs-only, behavioral freeze)
+  - **Deliverable**: `.ai/KNOWLEDGE_BASE/` — 10 files: README index;
+    01 System Overview (goals, philosophies, package structure); 02 Request
+    Lifecycle (full flow + Mermaid, cache hit/miss/error branches);
+    03 Pipeline (order, responsibilities, interactions, fail-open, context
+    lifecycle, gating); 04 Provider Layer (abstraction + normalization
+    contract spec); 05 Configuration (hierarchy, defaults, overrides,
+    validation, extension); 06 Metrics (ownership, propagation,
+    routing_reason/precedence, latency, cost); 07 **Architectural
+    Contracts C1–C8** (normative); 08 Extension Guide (recipes);
+    09 Internal Assessment (Software Factory view + **ADB-11** internal
+    architecture contracts, ADB-12 manifest, ADB-13 normalization
+    enforcement)
+  - **Wiring**: ARCHITECTURE.md pointer section; GOVERNANCE_INDEX
+    Knowledge Base registry (owners + normative rule); README pointer line
+  - **Validation**: Decision 24 paths + routing_reason fallback + metrics
+    vocabulary + config groups cross-checked vs code; 29 md links + 31
+    inline paths resolve (2 test-path typos fixed); examples untouched;
+    suite 167 unchanged; no runtime code changed
+  - **Docs**: IMPLEMENTATION_ROADMAP M14 ✅, TASK_QUEUE, NEXT_STEPS,
+    SESSION_STATE, ROADMAP checkbox; README pointer updated
 
 ## Open item
 
@@ -436,10 +458,9 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- **M14** — architecture docs polish (Mermaid diagrams, normalization spec,
-  extension guide), **M15** — release v0.1.0 (⚠ PyPI optional)
-- Immediate Recs from M13 self-review (ADB-01..10 backlog; CI hardening,
-  pip-audit/Dependabot/secret-scanning at M15, extension guide)
+- **M15** — release v0.1.0 (⚠ PyPI publish gate at start; audit P0.5:
+  pip-audit, Dependabot merges, secret scanning; CI hardening)
+- Post-v0.1.0 ADB backlog: High — ADB-03, ADB-11; Medium — ADB-01/02/05/12/13
 - Prompt-library live-usage tracking: prompts become "live" after real
   task use or user acceptance (per `.ai/PROMPTS/README.md` maintenance
   rule)

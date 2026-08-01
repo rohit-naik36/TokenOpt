@@ -1,6 +1,6 @@
 # Task Queue
 
-_Updated: 2026-08-01 (M13 DONE — Structural Refactoring & Architecture Stabilization complete)_
+_Updated: 2026-08-01 (M14 DONE — Architecture Knowledge Base complete)_
 
 Statuses: `READY` · `IN PROGRESS` · `BLOCKED` · `DONE`
 Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
@@ -34,12 +34,13 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 | **M12** — Repository Curation (Decision 23) | Deleted: 7 empty artifact dirs (`C?ProjectsNew/`, `Idea_Factory/`, `Projecttests/`, `Projecttokenopt*`) + generated artifacts (`dist/`, `tokenopt.egg-info/`, `.coverage`, `.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`, 8× `__pycache__/`). Archived: `SESSION_BACKUP.md` → `.ai/ARCHIVE/` (git mv, history intact; audit finding 9 closed). Created: `.ai/REPOSITORY_RETENTION_POLICY.md` (permanent/archived/regenerated/disposable/user-owned) + `.ai/REPOSITORY_INVENTORY.md` (classification + ledger). Added: GitHub PR/issue templates + CODEOWNERS (single-maintainer). Updated: REPOSITORY_AUDIT §7 dated closure (findings 6+9, plan item 8), GOVERNANCE_INDEX Policies section, repository-audit workflow (curation step). Link check 79/79; suite **158 passed**; SDK untouched |
 | **Pre-M13** — Routing Precedence (Decision 24) | Five-level contract (least surprise): explicit caller model wins → matching rule → custom no-match **preserves caller's model** → no custom rules = complexity routing → provider default. `RoutingRule.builtin` provenance (default rules marked; default-config behavior unchanged); `model_explicit` plumbing (OptimizationContext + pipeline.run + chat_completion, additive); RouterStage records `routing_precedence` (explicit/rule/preserve/complexity/provider_default); `routing_reason` += "preserved (no rule matched)"; `RequestMetrics.routing_precedence` (additive). **Fixes**: no `gpt-*` rewrite on no-match (Anthropic/local invalid-model break). Review: `.ai/ROUTING_PRECEDENCE_REVIEW.md`. Tests +9 (167 total); examples revalidated 6/6 exit 0 against stub; docs: ARCHITECTURE/README/CHANGELOG |
 | **M13** — Structural Refactoring & Architecture Stabilization (Decision 25) | Internal-only, behavioral freeze (no public API / routing / metrics / governance changes). **R1** `utils/messages.py::get_user_query` (3 copies removed; `_reconstruct_messages` precomputes query); **R2** `config: TokenOptConfig|None` + default in all 5 stage constructors; **R3** `_extract_openai_shape_usage` shared by OpenAI/LocalClient; **R4** `clients/_compat.py::_CompatShim` (3 identical shim forwarders removed); **R5** `_build_pipeline(routing_rule_filter)` — Anthropic/LocalClient pass model-compatibility filters (duplicated rebuild pattern + `replace` dance removed); **R6** `FewShotSelectorStage` → `pipeline/fewshot.py` (exports unchanged; test imports updated). **Deferred with rationale** (ADB): diversity re-embedding (H7), `compression_attempted` alias (H8), stage gating (H9), MODEL_COSTS (H10), unkeyed metrics dicts (H11). **Deliverable**: `.ai/M13_ARCHITECTURE_REVIEW.md` (hotspots, refactoring summary, architecture assessment, 4-way debt report, Immediate Recs + ADB-01..10, validation). **Verification**: 167 passed / 94% (baseline unchanged), ruff clean, mypy green, build + twine check PASSED, 6/6 examples vs stub, link check 83 files; CI green |
+| **M14** — Architecture Knowledge Base | Docs-only (behavioral freeze: no runtime code changed). **Deliverable**: `.ai/KNOWLEDGE_BASE/` (10 files) — index; 01 System Overview (goals, fail-open/optimization/routing philosophy); 02 Request Lifecycle (full flow + Mermaid sequence diagram, cache hit/miss/error); 03 Pipeline (order, responsibilities, interactions, fail-open, context lifecycle, gating); 04 Provider Layer (abstraction, 3 providers, **response-normalization contract spec**); 05 Configuration (hierarchy, defaults, overrides, validation, extension strategy); 06 Metrics (ownership, propagation, routing_reason, routing_precedence, latency, cost); 07 **Architectural Contracts C1–C8** (normative guarantees + why + enforcement); 08 Extension Guide (provider/stage/metrics/config recipes, principles, approval rules); 09 Internal Assessment (Software Factory view + **ADB-11** internal architecture contracts, ADB-12 machine-readable manifest, ADB-13 normalization enforcement). ARCHITECTURE.md pointer + GOVERNANCE_INDEX KB registry + README pointer. **Validation**: Decision 24 paths, routing_reason fallback, metrics vocabulary, config groups cross-checked vs code; 29 md links + 31 inline paths resolve; examples untouched; suite 167 unchanged; CI green |
 
 ## IN PROGRESS
 
 | Task | Notes |
 |------|-------|
-| (none) | M14 (arch docs) next |
+| (none) | M15 (release v0.1.0) next |
 
 ## BLOCKED
 
@@ -51,7 +52,6 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 
 | # | Task | Depends on |
 |---|------|------------|
-| M14 | Arch docs: Mermaid, normalization spec, extension guide | — (M13 done) |
 | M15 | Release v0.1.0: tag, notes, optional PyPI (⚠ publish) | M6–M14 |
 
 ## Blocked-by-approval backlog

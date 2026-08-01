@@ -693,3 +693,48 @@
   attribute (already a single named constant).
 - Commits: see git log — 5 logical commits (refactor ×3, docs, chore memory).
 - Suite **167 passed, coverage 94%**; pushed; CI green (polled badge).
+
+## 2026-08-01 — Session 19: M14 — Architecture Knowledge Base
+
+### Work performed
+- Phase 1 review: read ARCHITECTURE.md, GOVERNANCE_INDEX.md, README
+  structure/Project-structure section — no inconsistencies found to fix in
+  runtime code (docs-only milestone; behavioral freeze).
+- **Phase 2 — Knowledge Base** `.ai/KNOWLEDGE_BASE/` (10 files):
+  README (index + reading order); 01 System Overview (goals, drop-in
+  philosophy, fail-open, optimization philosophy, routing philosophy,
+  package structure); 02 Request Lifecycle (7 transitions explained,
+  lifecycle branches, Mermaid sequence diagram — cache hit/miss/error);
+  03 Pipeline (execution order + why, stage responsibilities table, stage
+  interactions, fail-open, gating map, context lifecycle); 04 Provider
+  Layer (4-seam abstraction, provider responsibilities, OpenAI/Anthropic/
+  LocalClient, **response-normalization contract spec**, factory);
+  05 Configuration (hierarchy, groups table, defaults incl. builtin rules,
+  overrides, validation, extension strategy); 06 Metrics (ownership
+  layers, propagation flow, routing_reason 3-way, routing_precedence 5
+  values, latency trio, cost, observability philosophy).
+- **Phase 3 — Contracts** 07_ARCHITECTURAL_CONTRACTS.md: C1 public API
+  stability, C2 routing precedence, C3 fail-open, C4 pipeline order,
+  C5 metrics ownership, C6 provider abstraction, C7 configuration
+  ownership, C8 local normalization — each with contract/why/enforcement,
+  plus "how contracts change".
+- **Phase 4 — Extension Guide** 08_EXTENSION_GUIDE.md: principles +
+  recipes for provider/stage/metrics/config/optimization stages + what
+  requires approval (no implementation).
+- **Phase 5 — Internal Assessment** 09_INTERNAL_ASSESSMENT.md: Software
+  Factory view — strengths, limitations, reusable components/patterns,
+  extension points, **ADB-11** (internal architecture contracts,
+  required), **ADB-12** (machine-readable manifest), **ADB-13**
+  (normalization enforcement).
+- Wiring: ARCHITECTURE.md pointer section; GOVERNANCE_INDEX Knowledge
+  Base registry (owners, normative rule); README pointer line.
+- **Phase 6 — Validation**: Decision 24 precedence paths (router.py
+  grep), routing_reason fallback (base.py), metrics vocabulary, config
+  groups cross-checked vs code — all match; 29/29 markdown links +
+  31/31 KB inline paths resolve (2 `test_metrics_clarity.py` path typos
+  found + fixed); examples untouched (git status); suite 167 unchanged.
+- Memory: IMPLEMENTATION_ROADMAP M14 ✅, ROADMAP checkbox, TASK_QUEUE,
+  NEXT_STEPS, SESSION_STATE, CURRENT_STATE; checkpoint
+  CHECKPOINT_20260801_M14.md.
+- Commits: `docs:` ×2 (knowledge base + memory/checkpoint); pushed;
+  CI green (polled badge).

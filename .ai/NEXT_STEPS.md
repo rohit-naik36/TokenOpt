@@ -1,26 +1,25 @@
 # Next Steps
 
-_Last updated: 2026-08-01 (M13 complete — structural refactoring under
-behavioral freeze; M14 next)_
+_Last updated: 2026-08-01 (M14 complete — Architecture Knowledge Base;
+M15 next)_
 
-## M13 done — M14 next
+## M14 done — M15 next
 
-M13 (Structural Refactoring & Architecture Stabilization) is complete and
-verified: shared query/usage/shim helpers, typed stage configs, consolidated
-pipeline composition (`_build_pipeline(routing_rule_filter)`), and the
-few-shot module split — all behavior-preserving (167 tests, 94% coverage,
-ruff/mypy/build/twine/examples green). Full report:
-`.ai/M13_ARCHITECTURE_REVIEW.md` (hotspots H1–H11, assessment, debt report,
-Immediate Recommendations, ADB-01..10).
+M14 built the permanent Architecture Knowledge Base at
+`.ai/KNOWLEDGE_BASE/` (10 files: system overview, request lifecycle with
+Mermaid, pipeline, provider layer + normalization spec, configuration,
+metrics, normative architectural contracts C1–C8, extension guide, internal
+assessment + ADB-11..13). Docs-only — no runtime code changed; Decision 24
+paths, metrics vocabulary, and config cross-checked against code.
 
-1. **M14** — Architecture docs polish: Mermaid diagrams, normalization
-   spec, extension guide
-2. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish);
-   run the M13 validation suite verbatim as the pre-release baseline; close
-   audit P0.5 (pip-audit, Dependabot, secret scanning)
-3. **Immediate Recs (from M13 §5.1)** — CI hardening (3.10–3.12 matrix,
-   coverage gate, build+twine in CI), extension guide, keep metrics
-   semantics frozen through v0.1.0
+1. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish
+   gate at start). Run the M13 validation suite verbatim as the
+   pre-release regression baseline; close audit P0.5 (pip-audit, Dependabot
+   merges, secret scanning); CI hardening per M13 Immediate Recs
+   (3.10–3.12 matrix, hard coverage gate, build+twine in CI).
+2. **ADB backlog (post-v0.1.0)** — consume ADB items: High — ADB-03 plugin
+   architecture, ADB-11 internal architecture contracts; Medium — ADB-01,
+   ADB-02, ADB-05, ADB-12, ADB-13.
 
 ## Notes
 
