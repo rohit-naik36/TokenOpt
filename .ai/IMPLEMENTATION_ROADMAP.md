@@ -214,23 +214,35 @@ precede any new product features. Feature work resumes only after M1–M7._
 rationale, and the verification command/check. AGENTS.md and manifest stay the
 entry points; standards become the normative detail.
 
-**Acceptance check**
-- Each standard is internally consistent with manifest + AGENTS.md (review);
-  no code changes; memory updated.
+**Status: covered by M0.1** — the 8 standards were ratified during Phase 0
+(M0.1); this milestone was never executed separately and is marked complete
+by that work. No further action.
 
 ---
 
-### M10 — Ratify `.ai/WORKFLOWS/` (subset) + `.ai/ROLES/`
+### M10 — Expand `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (DONE 2026-08-01)
 
-**Work** (per audit §5 opinion — start with the subset that has real users here)
-- `WORKFLOWS/`: `Idea_to_PRD.md`, `PRD_to_Architecture.md`,
-  `Story_to_Implementation.md`, `Test_to_Release.md`
-- `ROLES/`: `ProductManager.md`, `SolutionArchitect.md`, `BackendEngineer.md`,
-  `QAEngineer.md`, `TechnicalWriter.md`, `Reviewer.md`
+**Work** (user-approved scope — supersedes the original audit §5 proposal of
+SDLC-flow runbooks with operational runbooks; the SDLC flow is represented
+by the handoff map in `.ai/GOVERNANCE_INDEX.md`):
+- `WORKFLOWS/`: 5 existing runbooks rewritten on a unified template
+  (purpose, prerequisites, steps, verification, expected outputs,
+  completion criteria) + 9 new: refactoring, architecture-review,
+  documentation-update, dependency-upgrade, security-response,
+  performance-investigation, uat-execution, regression-verification,
+  repository-audit → **14 total**
+- `ROLES/`: 4 existing roles extended (authority, required inputs, success
+  criteria) + 7 new: product-strategist, product-manager, qa-engineer,
+  security-reviewer, release-manager, devops-engineer, repository-auditor
+  → **11 total**
+- `.ai/GOVERNANCE_INDEX.md` — machine-consumable registry (roles ↔
+  workflows ↔ standards, ownership matrix, approval gates, handoff map)
+- `.ai/GOVERNANCE_REVIEW.md` — review summary (findings I1–I8, multi-agent
+  validation, rationale)
 
 **Acceptance check**
-- Workflows cross-reference the ceremonies in AGENTS.md; roles map to
-  responsibilities therein; review-consistent.
+- Governance documents coherent; cross-references resolve (link check);
+  no SDK code/tests/API touched; CI green; memory + checkpoint updated.
 
 ---
 

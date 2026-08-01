@@ -79,10 +79,15 @@ The AI agent is responsible for:
 - `.ai/STANDARDS/` — normative engineering rules (coding, documentation,
   testing, git, release, security, ai-memory, checkpoint). Read the ones
   relevant to the task before acting.
-- `.ai/WORKFLOWS/` — follow the matching workflow (implement-feature,
-  fix-bug, code-review, release, handover) when one applies.
-- `.ai/ROLES/` — adopt the applicable role definition (architect,
-  backend-engineer, reviewer, technical-writer) when the task demands it.
+- `.ai/GOVERNANCE_INDEX.md` — the machine-consumable registry: resolves
+  task → workflow → owning role. Consult before choosing a workflow.
+- `.ai/WORKFLOWS/` — follow the matching workflow (14 runbooks:
+  implement-feature, fix-bug, refactoring, code-review, architecture-review,
+  documentation-update, dependency-upgrade, security-response,
+  performance-investigation, uat-execution, regression-verification,
+  repository-audit, release, handover) when one applies.
+- `.ai/ROLES/` — adopt the applicable role definition (11 roles; see
+  GOVERNANCE_INDEX.md for the ownership matrix) when the task demands it.
 
 Only then begin implementation.
 

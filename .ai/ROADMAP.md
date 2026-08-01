@@ -4,8 +4,8 @@ _Last updated: 2026-08-01_
 
 ## Phase 0 — AI Engineering Foundation (DONE)
 - [x] M0.1 `.ai/STANDARDS/` (8 normative standards)
-- [x] M0.2 `.ai/WORKFLOWS/` (5 runbooks)
-- [x] M0.3 `.ai/ROLES/` (4 role definitions)
+- [x] M0.2 `.ai/WORKFLOWS/` (14 runbooks after M10 expansion)
+- [x] M0.3 `.ai/ROLES/` (11 role definitions after M10 expansion)
 - [x] Manifest + AGENTS.md reference updates
 - [x] Session management policy (Decision 12): SESSION_STATE.md + TASK_QUEUE.md
 
@@ -26,6 +26,8 @@ _Last updated: 2026-08-01_
 - [x] M6 release metadata (⚠ license — MIT chosen; changelog, classifiers, URLs, twine check PASSED)
 - [x] M7 security scans (pip-audit + gitleaks + Dependabot + SECURITY.md)
 - [x] M8 onboarding (CONTRIBUTING, Makefile, examples)
+- [x] M8.2 value demonstrations (routing_reason, examples as showcases)
+- [x] M10 governance expansion (14 workflows, 11 roles, index + review)
 - [ ] M12 cleanup (⚠ deletions), M13 refactor, M14 arch docs
 - [ ] M15 release v0.1.0 (⚠ optional PyPI publish)
 - [ ] Pipeline stage unit tests
