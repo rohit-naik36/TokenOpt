@@ -250,11 +250,22 @@ config = TokenOptConfig(
 client = OpenAI(config=config)
 ```
 
-Run it: `examples/pipeline_config.py` — four prompts, four routing decisions
-(custom rule → `o1-mini`, complexity fallback → `gpt-4o`/`gpt-4o-mini`), each
-with its `routing_reason`, plus routing OFF vs ON; and
-`examples/metrics_observability.py` — every metric annotated, the latency
-split explained, and the callback hook for your own monitoring.
+Routing precedence (least surprise, Decision 24):
+
+1. an explicitly passed `model=` is always honored — never overridden;
+2. a matching rule picks its model (highest priority wins);
+3. custom rules that match nothing **preserve the requested model**
+   (`routing_reason = "preserved (no rule matched)"`);
+4. with no custom rules configured (the SDK's built-in default rules
+   don't count), the complexity heuristic picks the model
+   (`routing_reason = "complexity-based (low|medium|high)"`).
+
+Run it: `examples/pipeline_config.py` — matching rules (`o1-mini`,
+`gpt-4o`), preserved no-match requests on the default model, complexity
+routing without custom rules, each with its `routing_reason`, plus
+routing OFF vs ON; and `examples/metrics_observability.py` — every metric
+annotated, the latency split explained, and the callback hook for your own
+monitoring.
 
 ## Supported providers & features
 

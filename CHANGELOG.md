@@ -13,9 +13,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   model: the matched rule name (e.g. `math_tasks`) or
   `complexity-based (low|medium|high)` for the fallback heuristic.
   Additive only — no existing fields changed.
+- Routing precedence contract (Decision 24) — `RequestMetrics`
+  `routing_precedence` (`explicit | rule | preserve | complexity |
+  provider_default`) records the routing decision in machine-readable
+  form; `routing_reason` additionally reports `preserved (no rule matched)`
+  for unmatched custom rules.
 
 ### Changed
 
+- **Routing precedence (principle of least surprise, Decision 24)** —
+  an explicitly passed `model=` is never overridden by routing; custom
+  routing rules that match nothing now **preserve the caller's requested
+  model** instead of rewriting it via the complexity fallback (this also
+  stops `gpt-*` rewrites on Anthropic/local backends, where they would
+  break the API call). Complexity routing still applies when no custom
+  rules are configured (including the SDK's built-in default rules), so
+  default-config behavior is unchanged. `RoutingRule.builtin` marks the
+  SDK's own default rules.
 - `examples/` are now value demonstrations: each script leads with a
   "Demonstrates / Expected outcome" header, sends realistic long prompts,
   shows compression OFF vs ON and cache miss → hit comparisons, and prints

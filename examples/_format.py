@@ -99,8 +99,9 @@ def explain(metrics: RequestMetrics) -> None:
     if metrics.summarization_applied:
         lines.append("Summarization condensed the conversation history because "
                      "it exceeded the configured token threshold.")
-    if metrics.routing_applied and metrics.routing_reason:
-        lines.append(f"Routing picked {metrics.model} ({metrics.routing_reason}).")
+    if metrics.routing_reason:
+        verb = "Routing picked" if metrics.routing_applied else "Routing kept"
+        lines.append(f"{verb} {metrics.model} ({metrics.routing_reason}).")
     if not metrics.cache_hit and metrics.model_latency_ms > 0:
         share = metrics.pipeline_latency_ms / metrics.latency_ms * 100
         lines.append(
