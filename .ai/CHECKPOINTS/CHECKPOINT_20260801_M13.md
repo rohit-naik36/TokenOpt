@@ -73,7 +73,7 @@ observable change).
 - `4e760f3` — `refactor: extract shared query, usage, and drop-in shim helpers` (R1/R3/R4/R5/R6)
 - `ab7ff79` — `refactor: type pipeline stage configs with TokenOptConfig defaults` (R2)
 - `afdaaad` — `docs: add M13 architecture review`
-- `(chore memory commit follows)` — `chore: update memory and checkpoint for M13`
+- `6dd6443` — `chore: update memory and checkpoint for M13`
 
 ## Blockers / open items
 
