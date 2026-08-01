@@ -86,14 +86,14 @@ never blocks the underlying request.
 
 ## Installation
 
-> ⚠️ TokenOpt is **not on PyPI yet** (v0.1.0 is pre-release). Install from
-> GitHub until v0.1.0 is published.
+```bash
+# From PyPI (regular use)
+pip install tokenopt
+```
+
+Or clone + editable install (recommended for development):
 
 ```bash
-# From GitHub (regular use)
-pip install git+https://github.com/rohit-naik36/TokenOpt.git
-
-# Or clone + editable install (recommended for development)
 git clone https://github.com/rohit-naik36/TokenOpt.git
 cd TokenOpt
 pip install -e .
@@ -104,12 +104,12 @@ summarization, in-memory caching, RAG, few-shot, metrics):
 
 | Extras | Enables | Command |
 |--------|---------|---------|
-| (none) | core as above | `pip install -e .` |
-| `[local]` | native Ollama support | `pip install -e ".[local]"` |
-| `[cache]` | Redis-backed semantic cache | `pip install -e ".[cache]"` |
-| `[semantic]` | sentence-transformers embeddings | `pip install -e ".[semantic]"` |
-| `[compression]` | LLMLingua compression | `pip install -e ".[compression]"` |
-| `[all]` | everything above | `pip install -e ".[all]"` |
+| (none) | core as above | `pip install tokenopt` |
+| `[local]` | native Ollama support | `pip install "tokenopt[local]"` |
+| `[cache]` | Redis-backed semantic cache | `pip install "tokenopt[cache]"` |
+| `[semantic]` | sentence-transformers embeddings | `pip install "tokenopt[semantic]"` |
+| `[compression]` | LLMLingua compression | `pip install "tokenopt[compression]"` |
+| `[all]` | everything above | `pip install "tokenopt[all]"` |
 | `[dev]` | test/lint/type/audit tools | `pip install -e ".[dev]"` |
 
 Requires **Python ≥ 3.10**.

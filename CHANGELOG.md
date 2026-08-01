@@ -5,49 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Added
-
-- `RequestMetrics.routing_reason` records WHY a request was routed to its
-  model: the matched rule name (e.g. `math_tasks`) or
-  `complexity-based (low|medium|high)` for the fallback heuristic.
-  Additive only — no existing fields changed.
-- Routing precedence contract (Decision 24) — `RequestMetrics`
-  `routing_precedence` (`explicit | rule | preserve | complexity |
-  provider_default`) records the routing decision in machine-readable
-  form; `routing_reason` additionally reports `preserved (no rule matched)`
-  for unmatched custom rules.
-
-### Changed
-
-- **Routing precedence (principle of least surprise, Decision 24)** —
-  an explicitly passed `model=` is never overridden by routing; custom
-  routing rules that match nothing now **preserve the caller's requested
-  model** instead of rewriting it via the complexity fallback (this also
-  stops `gpt-*` rewrites on Anthropic/local backends, where they would
-  break the API call). Complexity routing still applies when no custom
-  rules are configured (including the SDK's built-in default rules), so
-  default-config behavior is unchanged. `RoutingRule.builtin` marks the
-  SDK's own default rules.
-- `examples/` are now value demonstrations: each script leads with a
-  "Demonstrates / Expected outcome" header, sends realistic long prompts,
-  shows compression OFF vs ON and cache miss → hit comparisons, and prints
-  `explain()` lines derived only from the recorded metrics — the printed
-  claims can never drift from what the pipeline actually did.
-- README example sections describe the demonstrated value per script.
-
-- Per-request metrics now distinguish compression **attempted** (stage ran)
-  from **effective** (tokens actually reduced) via `compression_attempted`,
-  `compression_effective`, `tokens_saved`, and `reduction_percentage`;
-  latency is split into `model_latency_ms` (inference) and
-  `pipeline_latency_ms` (TokenOpt overhead). Existing fields unchanged.
-- Example scripts print concise, human-readable metrics (model, cache hit,
-  compression outcome, tokens, latency split, estimated cost) instead of
-  raw structured JSON; JSON logging is unchanged for production use.
-- README gained a 5-Minute Quick Start and `docs/UAT.md` became the
-  permanent manual acceptance checklist.
-
 ## [0.1.0] - 2026-08-01
 
 ### Added
@@ -72,8 +29,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   project URLs).
 - CI pipeline (GitHub Actions) enforcing the Definition of Done gates:
   ruff, mypy, pytest with ≥80% coverage across Python 3.10–3.12, package
-  build, and fresh-venv smoke install.
-- 150 unit + integration tests (offline, deterministic, no network).
+  build + twine check, fresh-venv smoke install, pip-audit, and gitleaks
+  secret scan.
+- 167 unit + integration tests (offline, deterministic, no network).
+- `RequestMetrics.routing_reason` records WHY a request was routed to its
+  model: the matched rule name (e.g. `math_tasks`) or
+  `complexity-based (low|medium|high)` for the fallback heuristic.
+  Additive only — no existing fields changed.
+- Routing precedence contract (Decision 24) — `RequestMetrics`
+  `routing_precedence` (`explicit | rule | preserve | complexity |
+  provider_default`) records the routing decision in machine-readable
+  form; `routing_reason` additionally reports `preserved (no rule matched)`
+  for unmatched custom rules.
+- `docs/UAT.md` — permanent manual acceptance checklist for every release.
+
+### Changed
+
+- **Routing precedence (principle of least surprise, Decision 24)** —
+  an explicitly passed `model=` is never overridden by routing; custom
+  routing rules that match nothing now **preserve the caller's requested
+  model** instead of rewriting it via the complexity fallback (this also
+  stops `gpt-*` rewrites on Anthropic/local backends, where they would
+  break the API call). Complexity routing still applies when no custom
+  rules are configured (including the SDK's built-in default rules), so
+  default-config behavior is unchanged. `RoutingRule.builtin` marks the
+  SDK's own default rules.
+- `examples/` are now value demonstrations: each script leads with a
+  "Demonstrates / Expected outcome" header, sends realistic long prompts,
+  shows compression OFF vs ON and cache miss → hit comparisons, and prints
+  `explain()` lines derived only from the recorded metrics — the printed
+  claims can never drift from what the pipeline actually did.
+- README example sections describe the demonstrated value per script.
+- Per-request metrics now distinguish compression **attempted** (stage ran)
+  from **effective** (tokens actually reduced) via `compression_attempted`,
+  `compression_effective`, `tokens_saved`, and `reduction_percentage`;
+  latency is split into `model_latency_ms` (inference) and
+  `pipeline_latency_ms` (TokenOpt overhead). Existing fields unchanged.
+- Example scripts print concise, human-readable metrics (model, cache hit,
+  compression outcome, tokens, latency split, estimated cost) instead of
+  raw structured JSON; JSON logging is unchanged for production use.
+- README gained a 5-Minute Quick Start; installation from PyPI
+  (`pip install tokenopt`) plus extras table.
 
 ### Fixed
 
@@ -95,5 +91,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - mypy gate missed the optional `ollama` import (type gate requires no
   optional extras).
 
-[Unreleased]: https://github.com/rohit-naik36/TokenOpt/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/rohit-naik36/TokenOpt/releases/tag/v0.1.0
