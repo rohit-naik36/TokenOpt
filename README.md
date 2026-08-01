@@ -294,7 +294,9 @@ examples/             # runnable scripts for every primary workflow
 tests/                # unit + integration suite (offline, deterministic)
 ```
 
-See `.ai/ARCHITECTURE.md` for a full architecture overview.
+See `.ai/ARCHITECTURE.md` for a compact overview and
+`.ai/KNOWLEDGE_BASE/` for the full Architecture Knowledge Base (system
+design, request lifecycle, architectural contracts, and extension guide).
 
 ## Troubleshooting / FAQ
 

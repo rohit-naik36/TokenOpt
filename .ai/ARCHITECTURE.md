@@ -81,3 +81,17 @@ tokenopt/
   ollama are optional extras.
 - Unknown model names fall back to `cl100k_base` tokenizer.
 - Sync-only for v0.1 (async deferred).
+
+## Architecture Knowledge Base (M14)
+
+This file is the compact reference. The full permanent knowledge base lives
+in `.ai/KNOWLEDGE_BASE/`:
+
+- 01 System Overview · 02 Request Lifecycle · 03 Pipeline ·
+  04 Provider Layer · 05 Configuration · 06 Metrics ·
+  07 Architectural Contracts · 08 Extension Guide ·
+  09 Internal Assessment (Software Factory view, ADB-11..13)
+
+Start at `.ai/KNOWLEDGE_BASE/README.md`. The contracts in KB-07 are
+normative; changing one requires an architecture decision
+(`AGENTS.md` approval gate).

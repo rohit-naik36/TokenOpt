@@ -73,6 +73,30 @@ Design rules: `.ai/PROMPTS/README.md` (template + determinism rules).
 | `.ai/REPOSITORY_RETENTION_POLICY.md` | repository-auditor | what is permanent / archived / regenerated / disposable; deletion gate |
 | `.ai/REPOSITORY_INVENTORY.md` | repository-auditor | classified inventory + deletion ledger (companion to the policy) |
 
+## Knowledge Base (M14)
+
+`.ai/KNOWLEDGE_BASE/` — the permanent architecture knowledge base
+(documented 2026-08-01, M14; docs-only, no runtime change). Owned by
+`architect` (content) + `technical-writer` (freshness); consumed by all
+roles, AI agents, and future Software Factory orchestration systems.
+
+| Doc | Content | Normative for |
+|-----|---------|---------------|
+| `README.md` | index + reading order | every agent on task start |
+| `01_SYSTEM_OVERVIEW.md` | goals, philosophies, package structure | onboarding |
+| `02_REQUEST_LIFECYCLE.md` | full request flow incl. Mermaid | implement-feature, fix-bug |
+| `03_PIPELINE.md` | stage order, responsibilities, fail-open, context | refactoring, performance-investigation |
+| `04_PROVIDER_LAYER.md` | provider abstraction + normalization contract | adding providers (C6/C8) |
+| `05_CONFIGURATION.md` | config ownership, defaults, validation | configuration changes (C7) |
+| `06_METRICS.md` | metrics ownership + vocabulary | metrics changes (C5) |
+| `07_ARCHITECTURAL_CONTRACTS.md` | C1–C8 guarantees (normative) | architecture-review gate |
+| `08_EXTENSION_GUIDE.md` | provider/stage/metrics/config recipes | contributors |
+| `09_INTERNAL_ASSESSMENT.md` | strengths, limitations, ADB-11..13 | roadmap/audit input |
+
+Change rule: KB-07 contracts are normative; changing one requires the
+architecture-review workflow + user approval. Documentation updates follow
+the documentation-update workflow.
+
 ## Ownership matrix (no conflicts)
 
 | Area | Sole owner |
