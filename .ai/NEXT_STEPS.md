@@ -1,16 +1,16 @@
 # Next Steps
 
-_Last updated: 2026-08-01 (M8 complete — onboarding & DX)_
+_Last updated: 2026-08-01 (Post-M8 UAT refinements complete; M10 next)_
 
-## M8 done — M10 is next (governance docs; no gate)
+## UAT refinements done — M10 is next (governance docs; no gate)
 
-M8 (Developer Onboarding & Experience) is complete: 6 runnable
-`examples/` scripts (quickstart, OpenAI, Anthropic, Local, pipeline config,
-observability), README rewritten (Quick Start, Installation incl. git-install
-until PyPI, extras table, provider examples, project structure,
-Troubleshooting/FAQ), `Makefile` (CI-mirroring targets), CONTRIBUTING
-updated. All examples validated end-to-end offline on a fresh venv against a
-stub server; git install + all 5 extras resolve cleanly.
+Post-M8 UAT refinements complete: per-request metrics now separate
+compression attempted/effective + tokens saved + reduction % + model
+latency split (additive fields, no API break); all examples print concise
+readable output (JSON preserved for production); `local_basic.py`
+demonstrates cache miss→hit; README has a 5-Minute Quick Start;
+**docs/UAT.md** is the permanent release acceptance checklist; 5 regression
+tests added (155 total). All gates green.
 
 1. **M10** — Extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (audit §5)
 2. **M11** — `.ai/PROMPTS/` (9 prompts; optional)

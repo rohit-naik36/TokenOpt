@@ -1,5 +1,38 @@
 # Session Log
 
+## 2026-08-01 — Session 12: Post-M8 UAT Refinements
+
+### Work performed
+- **Metrics clarity (SDK, additive — no API break)**: `RequestMetrics` gains
+  `compression_attempted` / `compression_effective` / `tokens_saved` /
+  `reduction_percentage` + `model_latency_ms` (inference = total - overhead),
+  populated in `base._record_metrics`; structured JSON log enriched with the
+  same fields (production logging preserved). `compression_applied` kept
+  for backward compatibility (now documented as "stage ran").
+- **Example output (UX)**: new `examples/_format.py` — `quiet()`
+  (suppresses INFO JSON via `logging.disable(INFO)` + tokenopt level),
+  `print_request()` (Model, Cache hit, Compression attempted/effective,
+  Tokens, Latency total|model|TokenOpt overhead, Estimated cost, Response),
+  `print_summary()`. All 6 examples rewritten to use it; local_basic now
+  demonstrates miss→hit with two identical requests + per-instance cache
+  note; examples gained short explanatory comments.
+- **README**: "5-Minute Quick Start" (7 steps + expected output) near top.
+- **docs/UAT.md**: permanent manual acceptance checklist — 10 scenario
+  groups (env, install, quick start, OpenAI, Anthropic, Local/Ollama,
+  cache, routing, metrics, error handling, clean uninstall) + sign-off.
+- **Regression tests** (`tests/integration/test_metrics_clarity.py`, 5):
+  short prompt = attempted-but-not-effective; long prompt = effective with
+  tokens_saved>0; latency split total = model + overhead; cache-hit records
+  clarified fields; disabled compression = not attempted.
+- **CHANGELOG [Unreleased]**: Changed entries for metrics + examples + UAT.
+- **Validation (clean env)**: fresh venv + `pip install -e .` + stub server
+  — all 6 examples exit 0 with clean readable output; routing (gpt-4o-mini/
+  gpt-4o/o1-mini), cache miss→hit, anthropic, callback all verified.
+- **Defect fixed en route**: my own `_format.py` edit corrupted a print
+  statement (SyntaxError) — caught by validation, fixed immediately.
+- **Gates**: 155 passed (94%), ruff clean (incl. examples), mypy exit 0,
+  build + twine PASSED, CI badge passing.
+
 ## 2026-08-01 — Session 11: M8 — Developer Onboarding & Experience
 
 ### Work performed

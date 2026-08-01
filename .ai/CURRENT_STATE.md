@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1–M8 complete — through onboarding & DX)_
+_Last updated: 2026-08-01 (M1–M8 + UAT refinements complete; next is M10)_
 
-## Status: Phase 0 + Phase 1 + M1–M8 complete; next is M10 (governance docs)
+## Status: Phase 0 + Phase 1 + M1–M8 + Post-M8 UAT refinements complete
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -237,6 +237,24 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
     `"RequestMetrics"` → real import (public API unchanged)
   - Suite: **150 passed**; coverage **94%**; ruff clean (incl. examples);
     mypy exit 0; build + twine check PASSED
+- **Post-M8 UAT Refinements (2026-08-01)** (session 12)
+  - **Metrics clarity (additive)**: `RequestMetrics` +
+    `compression_attempted`/`compression_effective`/`tokens_saved`/
+    `reduction_percentage` + `model_latency_ms` (inference time); populated
+    in `base._record_metrics`; JSON log enriched; `compression_applied`
+    kept (documented as "stage ran")
+  - **Example output**: `examples/_format.py` (quiet + print_request +
+    print_summary); all 6 examples → readable blocks (Model, Cache hit,
+    Compression attempted/effective, Tokens, Latency total|model|overhead,
+    Estimated cost, Response); local_basic = miss→hit demo + per-instance
+    cache note
+  - **README**: 5-Minute Quick Start (7 steps + expected output)
+  - **docs/UAT.md**: permanent manual release acceptance checklist
+    (10 scenario groups + sign-off)
+  - **Regression tests**: 5 new (`tests/integration/test_metrics_clarity.py`)
+  - **CHANGELOG [Unreleased]**: Changed entries
+  - Suite: **155 passed**; coverage **94%**; ruff clean; mypy exit 0;
+    build + twine PASSED; CI badge passing
 
 ## Open item
 
