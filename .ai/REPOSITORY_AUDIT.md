@@ -397,5 +397,22 @@ stage unit tests → CI + coverage gate → license/metadata → CHANGELOG → t
 
 ---
 
+## 7. M12 closure (2026-08-01)
+
+Dated closure of audit findings after the repository-curation milestone
+(evidence: `.ai/REPOSITORY_INVENTORY.md`, `.ai/REPOSITORY_RETENTION_POLICY.md`).
+
+| # | Finding (original) | Status |
+|---|--------------------|--------|
+| 6 | Artifact dirs at root | **Closed** — 7 empty artifact dirs deleted (2026-08-01); root tree now contains only intentional entries |
+| 9 | SESSION_BACKUP.md duplication risk | **Closed** — archived to `.ai/ARCHIVE/SESSION_BACKUP.md` via `git mv` (history intact); retention policy classifies it as Historical archive |
+| 8 (plan item) | Remove artifact dirs; archive SESSION_BACKUP.md | **Done** — plus GitHub PR/issue templates and CODEOWNERS (single-maintainer posture) added |
+
+New governance documents created by M12: `REPOSITORY_INVENTORY.md`
+(classification + deletion ledger) and `REPOSITORY_RETENTION_POLICY.md`
+(permanent / archived / regenerated / disposable / user-owned rules).
+
+---
+
 _End of audit. No repository changes were made. Awaiting approval for any
 recommended implementation._

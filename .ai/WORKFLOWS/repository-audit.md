@@ -7,13 +7,16 @@ _Standards: all (evidence-based scoring); related: `.ai/REPOSITORY_AUDIT.md`, `.
 
 Periodically re-assess repository health against the audit categories and
 produce an evidence-based improvement plan — the refresh loop that keeps
-the baseline audit (`REPOSITORY_AUDIT.md`) from going stale.
+the baseline audit (`REPOSITORY_AUDIT.md`) from going stale. Curation
+(deletions/archives) follows `.ai/REPOSITORY_RETENTION_POLICY.md`.
 
 ## Prerequisites
 
 - A trigger: milestone completion, quarterly cadence, or a major structure
   change.
 - Read the previous audit as the baseline.
+- Read the retention policy (`REPOSITORY_RETENTION_POLICY.md`) before any
+  deletion or archive action.
 
 ## Steps
 
@@ -26,20 +29,26 @@ the baseline audit (`REPOSITORY_AUDIT.md`) from going stale.
 4. **Update** — refresh `REPOSITORY_AUDIT.md` scores and the prioritized
    improvement plan; keep history (append a dated section, never rewrite
    evidence).
-5. **Route** — improvements become NEXT_STEPS / TASK_QUEUE items with
+5. **Curation** — classify changes against `REPOSITORY_RETENTION_POLICY.md`;
+   delete only regenerated/disposable entries, archive historical ones
+   (`git mv` to `.ai/ARCHIVE/`), escalate anything else; update
+   `REPOSITORY_INVENTORY.md` ledger.
+6. **Route** — improvements become NEXT_STEPS / TASK_QUEUE items with
    owners (by role) and dependencies; approval-gated items flagged.
-6. **Commit + push** — `docs: update repository audit` (git-standard);
+7. **Commit + push** — `docs: update repository audit` (git-standard);
    verify remote (Decision 11).
 
 ## Verification
 
 - Every score traceable to a command or file in this repo.
 - No improvement item without an owner and a next step.
+- Retention policy consulted for every deletion/archive; ledger current.
 
 ## Expected outputs
 
 - Updated audit with dated evidence
 - Prioritized improvement plan routed to NEXT_STEPS / TASK_QUEUE
+- (Curation passes) updated inventory + retention-policy disposition log
 
 ## Completion criteria
 

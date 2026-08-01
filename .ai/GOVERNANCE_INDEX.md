@@ -66,6 +66,13 @@ checkpoint — `.ai/STANDARDS/` (normative detail of manifest §4).
 
 Design rules: `.ai/PROMPTS/README.md` (template + determinism rules).
 
+## Policies (2)
+
+| Policy | Owner | Governs |
+|--------|-------|---------|
+| `.ai/REPOSITORY_RETENTION_POLICY.md` | repository-auditor | what is permanent / archived / regenerated / disposable; deletion gate |
+| `.ai/REPOSITORY_INVENTORY.md` | repository-auditor | classified inventory + deletion ledger (companion to the policy) |
+
 ## Ownership matrix (no conflicts)
 
 | Area | Sole owner |
