@@ -67,8 +67,8 @@ pushed, CI green.
 
 ## Commit hashes (M14 series, main)
 
-`<filled after commit>` — `docs: add architecture knowledge base` +
-`chore: update memory and checkpoint for M14`.
+`6f5e8fc` — `docs: add architecture knowledge base` (KB + wiring)
+`25e88ff` — `chore: update memory and checkpoint for M14`
 
 ## Blockers / open items
 
