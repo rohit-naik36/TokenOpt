@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1–M8 + UAT + M8.2 + M10 + M11 complete; next is M12)_
+_Last updated: 2026-08-01 (M1–M8 + UAT + M8.2 + M10 + M11 + M12 complete; next is M13)_
 
-## Status: Phase 0 + Phase 1 + M1–M8 + Post-M8 UAT refinements + M8.2 + M10 + M11 complete
+## Status: Phase 0 + Phase 1 + M1–M8 + Post-M8 UAT refinements + M8.2 + M10 + M11 + M12 complete
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -351,6 +351,25 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
   - **Verification**: link check over 75 md files (all resolve); prompt →
     workflow/role cross-refs 10/10 resolve; suite 158 green; ruff/mypy
     clean; SDK/tests/examples untouched
+- **M12 — Repository Curation (2026-08-01)** (session 16)
+  - **Deleted (regenerated)**: `dist/`, `tokenopt.egg-info/`, `.coverage`,
+    `.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`, 8× `__pycache__/`
+  - **Deleted (duplicates/disposable)**: 7 empty artifact dirs
+    (`C?ProjectsNew/`, `Idea_Factory/`, `Projecttests/`,
+    `Projecttokenopt{clients,observability,pipeline,utils}/`)
+  - **Archived**: `SESSION_BACKUP.md` → `.ai/ARCHIVE/` (`git mv`, history
+    intact) — audit finding 9 closed
+  - **Added**: `.ai/REPOSITORY_INVENTORY.md` (classification + deletion
+    ledger), `.ai/REPOSITORY_RETENTION_POLICY.md` (permanent / archived /
+    regenerated / disposable / user-owned), `.github/` PR template + issue
+    templates (bug, feature) + CODEOWNERS (single-maintainer posture)
+  - **Updated**: REPOSITORY_AUDIT.md §7 dated closure (findings 6, 9 + plan
+    item 8 closed), GOVERNANCE_INDEX Policies section, repository-audit
+    workflow (curation step + retention-policy prerequisite)
+  - **Verification**: link check 79/79 resolve; git history intact (85
+    commits, rename detected); suite 158 green; ruff/mypy clean;
+    SDK/tests/examples untouched; root tree contains only intentional
+    entries
 
 ## Open item
 
@@ -359,8 +378,9 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- **M12** — cleanup (⚠), M13 refactor, M14 arch docs,
-  M15 release v0.1.0 (⚠ PyPI optional)
+- **M13** — maintainability refactor: response helpers, data-driven MODEL_COSTS
+- **M14** — architecture docs polish, **M15** — release v0.1.0
+  (⚠ PyPI optional)
 - Prompt-library live-usage tracking: prompts become "live" after real
   task use or user acceptance (per `.ai/PROMPTS/README.md` maintenance
   rule)

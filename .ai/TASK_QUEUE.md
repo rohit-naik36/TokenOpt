@@ -1,6 +1,6 @@
 # Task Queue
 
-_Updated: 2026-08-01 (M11 DONE — AI Prompt Library complete)_
+_Updated: 2026-08-01 (M12 DONE — Repository Curation complete)_
 
 Statuses: `READY` · `IN PROGRESS` · `BLOCKED` · `DONE`
 Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
@@ -31,12 +31,13 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 | **M8.2** — Value Demonstration & Showcase | `RequestMetrics.routing_reason` (additive, from ctx.metrics — rule name or `complexity-based (low|medium|high)`); `_format.py` `explain()` + `print_comparison()`; 6 examples rewritten as value demos (header docstrings, long prompts, OFF vs ON + miss→hit, truthful explanations); README/CHANGELOG; +3 regression tests (158 total); clean-env validation 6/6 exit 0, cross-checked truthful; commits `203b3d4`/`ec4f638`/`2a6093f`; suite **158 passed, coverage 94%**, CI green |
 | **M10** — AI Engineering Governance Expansion (Decision 21) | Review findings I1–I8 fixed; WORKFLOWS 5 → **14** (9 new: refactoring, architecture-review, documentation-update, dependency-upgrade, security-response, performance-investigation, uat-execution, regression-verification, repository-audit; unified template + standardized gates); ROLES 4 → **11** (7 new: product-strategist, product-manager, qa-engineer, security-reviewer, release-manager, devops-engineer, repository-auditor; authority/inputs/success criteria); `.ai/GOVERNANCE_INDEX.md` registry + `.ai/GOVERNANCE_REVIEW.md`; AGENTS.md + roadmaps updated (M9 marked covered-by-M0.1); link check 64/64 resolve; SDK untouched; commits `72ddef0`→`104d366`; suite **158 passed** |
 | **M11** — AI Prompt Library (Decision 22) | `.ai/PROMPTS/` grouped by purpose: design (architecture-review), implementation (feature, bug-fix, refactoring, unit-testing), verification (integration-testing, regression-verification), operations (documentation-update, release-preparation, repository-audit) — **10 prompts**; fixed template (objective, inputs, deterministic steps with exact commands/paths, outputs, verification criteria, determinism rules); `.ai/PROMPTS/README.md` design guidelines (layer model, add/maintain rules); GOVERNANCE_INDEX Prompts table; cross-refs 10/10 resolve; link check 75/75; SDK untouched; suite **158 passed** |
+| **M12** — Repository Curation (Decision 23) | Deleted: 7 empty artifact dirs (`C?ProjectsNew/`, `Idea_Factory/`, `Projecttests/`, `Projecttokenopt*`) + generated artifacts (`dist/`, `tokenopt.egg-info/`, `.coverage`, `.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`, 8× `__pycache__/`). Archived: `SESSION_BACKUP.md` → `.ai/ARCHIVE/` (git mv, history intact; audit finding 9 closed). Created: `.ai/REPOSITORY_RETENTION_POLICY.md` (permanent/archived/regenerated/disposable/user-owned) + `.ai/REPOSITORY_INVENTORY.md` (classification + ledger). Added: GitHub PR/issue templates + CODEOWNERS (single-maintainer). Updated: REPOSITORY_AUDIT §7 dated closure (findings 6+9, plan item 8), GOVERNANCE_INDEX Policies section, repository-audit workflow (curation step). Link check 79/79; suite **158 passed**; SDK untouched |
 
 ## IN PROGRESS
 
 | Task | Notes |
 |------|-------|
-| (none) | M12 (⚠ deletion approval) next |
+| (none) | M13 (refactor) next — RouterStage fallback decision first |
 
 ## BLOCKED
 
@@ -48,8 +49,7 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 
 | # | Task | Depends on |
 |---|------|------------|
-| M12 | Cleanup: artifact dirs (⚠ deletion), archive SESSION_BACKUP.md, templates | — |
-| M13 | Refactor: response helpers, data-driven MODEL_COSTS | M4 |
+| M13 | Refactor: response helpers, data-driven MODEL_COSTS | RouterStage fallback decision |
 | M14 | Arch docs: Mermaid, normalization spec, extension guide | M13 |
 | M15 | Release v0.1.0: tag, notes, optional PyPI (⚠ publish) | M6–M14 |
 

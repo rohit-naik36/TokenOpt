@@ -1,5 +1,42 @@
 # Session Log
 
+## 2026-08-01 — Session 16: M12 — Repository Curation
+
+### Work performed
+- **Inventoried the repository** (root + sub-trees) and classified every
+  entry: active governance / generated artifact / duplicate / historical
+  archive / future reference / user-owned — `.ai/REPOSITORY_INVENTORY.md`.
+- **Deleted (approved scope: duplicates + regenerated only)**:
+  - 7 empty artifact dirs: `C?ProjectsNew/`, `Idea_Factory/`,
+    `Projecttests/`, `Projecttokenoptclients/`,
+    `Projecttokenoptobservability/`, `Projecttokenoptpipeline/`,
+    `Projecttokenoptutils/`
+  - generated artifacts: `dist/`, `tokenopt.egg-info/`, `.coverage`,
+    `.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`, 8× `__pycache__/`
+- **Archived**: `SESSION_BACKUP.md` → `.ai/ARCHIVE/` via `git mv`
+  (history intact; audit finding 9 closed).
+- **Created `.ai/REPOSITORY_RETENTION_POLICY.md`**: five categories
+  (permanent / archived / regenerated / disposable / user-owned) + rules
+  (deletion gate, append-only `.ai/`, archive-not-delete, curation
+  procedure, disposition log).
+- **Added GitHub templates**: `PULL_REQUEST_TEMPLATE.md`,
+  `ISSUE_TEMPLATE/bug_report.md`, `ISSUE_TEMPLATE/feature_request.md`,
+  `CODEOWNERS` (single-maintainer posture → `@rohit-naik36`).
+- **Updated governance**: REPOSITORY_AUDIT.md §7 dated closure (findings
+  6 + 9 and plan item 8 closed, evidence-based); GOVERNANCE_INDEX gains
+  Policies section (2 policies, owner = repository-auditor);
+  repository-audit workflow gains a curation step + retention-policy
+  prerequisite.
+- **Kept**: `docs/UAT.md` (active governance — referenced by qa-engineer
+  role + uat-execution workflow), all `.ai/` memory, `TEST.txt`
+  (user-owned scratch, untouched).
+- **Verification**: link check 79/79 resolve; git history intact (85
+  commits, `SESSION_BACKUP.md` rename detected); root tree now only
+  intentional entries; suite **158 passed**; ruff/mypy clean; SDK/tests/
+  examples untouched.
+- **Commits**: (see checkpoint — logical commits: retention docs,
+  curation, templates, governance closure, memory).
+
 ## 2026-08-01 — Session 15: M11 — AI Prompt Library
 
 ### Work performed

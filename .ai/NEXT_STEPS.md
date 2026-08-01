@@ -1,30 +1,34 @@
 # Next Steps
 
-_Last updated: 2026-08-01 (M11 prompt library complete; M12 next, ⚠ deletion approval)_
+_Last updated: 2026-08-01 (M12 repository curation complete; M13 next)_
 
-## M11 done — M12 (⚠) next
+## M12 done — M13 next
 
-M11 complete: `.ai/PROMPTS/` holds 10 prompts grouped by purpose
-(design / implementation / verification / operations), each with
-objective, required inputs, deterministic instructions (exact commands +
-paths), expected outputs, verification criteria, and determinism rules;
-`.ai/PROMPTS/README.md` codifies the design guidelines (template, layer
-model, add/maintain rules); GOVERNANCE_INDEX gains the Prompts table;
-all cross-references resolve; SDK untouched; suite 158 green.
-Decision 22.
+M12 complete: 7 empty artifact dirs + all generated artifacts (`dist/`,
+`tokenopt.egg-info/`, `.coverage`, caches, `__pycache__/`) deleted;
+`SESSION_BACKUP.md` archived to `.ai/ARCHIVE/` (git mv, history intact);
+`.ai/REPOSITORY_RETENTION_POLICY.md` (permanent / archived / regenerated /
+disposable / user-owned) + `.ai/REPOSITORY_INVENTORY.md` (classification
++ deletion ledger) created; GitHub PR/issue templates + CODEOWNERS added;
+audit findings 6 + 9 and plan item 8 closed (dated §7); GOVERNANCE_INDEX
+Policies section; repository-audit workflow gains curation step. Root tree
+contains only intentional entries; suite 158 green; SDK untouched.
+Retention policy Decision → see DECISIONS.md (Decision 23).
 
-1. **M12** — Structure cleanup: artifact dirs (⚠ deletion approval),
-   archive SESSION_BACKUP.md, GitHub templates
-2. **M13** — Maintainability refactor: response helpers, data-driven MODEL_COSTS
-3. **M14** — Architecture docs polish: Mermaid diagrams, normalization spec,
-   extension guide
-4. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
+1. **M13** — Maintainability refactor (behavior-preserving): response
+   helpers, data-driven MODEL_COSTS (⚠ confirm RouterStage fallback
+   decision first — known follow-up below)
+2. **M14** — Architecture docs polish: Mermaid diagrams, normalization
+   spec, extension guide
+3. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
 
 ## Notes
 
 - Prompt library "live" status: prompts are validated by construction
   (instantiate the workflows they reference); record real-task usage in
   SESSION_LOG per `.ai/PROMPTS/README.md` maintenance rule.
+- Curation passes are periodic (repository-audit workflow); deletions
+  always follow `.ai/REPOSITORY_RETENTION_POLICY.md`.
 
 ## Notes
 
