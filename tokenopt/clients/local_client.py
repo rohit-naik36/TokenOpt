@@ -144,9 +144,21 @@ class LocalClient(BaseOptimizedClient):
             }
         return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
-    def chat_completion(self, messages: list[dict], model: str | None = None, **kwargs: Any) -> Any:
+    def chat_completion(
+        self,
+        messages: list[dict],
+        model: str | None = None,
+        model_explicit: bool | None = None,
+        **kwargs: Any
+    ) -> Any:
         """Chat completion defaulting to the configured local model."""
-        return super().chat_completion(messages, model or self.default_local_model, **kwargs)
+        explicit = model is not None if model_explicit is None else model_explicit
+        return super().chat_completion(
+            messages,
+            model or self.default_local_model,
+            model_explicit=explicit,
+            **kwargs
+        )
 
     # Compatibility: expose chat.completions interface
     @property

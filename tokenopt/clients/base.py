@@ -82,15 +82,23 @@ class BaseOptimizedClient(ABC):
         self,
         messages: list[dict],
         model: str | None = None,
+        model_explicit: bool | None = None,
         **kwargs: Any
     ) -> Any:
-        """Main entry point for chat completions with optimization."""
+        """Main entry point for chat completions with optimization.
+
+        ``model_explicit`` records whether the caller passed ``model=``;
+        it is derived from ``model is not None`` when not given. An
+        explicit caller model is never overridden by routing
+        (precedence 1, Decision 24).
+        """
         start_time = time.perf_counter()
+        explicit = model is not None if model_explicit is None else model_explicit
         model = model or self.config.default_model
 
         # Run optimization pipeline
         pipeline_start = time.perf_counter()
-        ctx = self.pipeline.run(messages, model, **kwargs)
+        ctx = self.pipeline.run(messages, model, model_explicit=explicit, **kwargs)
         pipeline_latency = (time.perf_counter() - pipeline_start) * 1000
 
         # Check for cache hit
@@ -159,6 +167,8 @@ class BaseOptimizedClient(ABC):
         routing_reason = ctx.metrics.get("routing_rule", "")
         if not routing_reason and "routing_complexity" in ctx.metrics:
             routing_reason = f"complexity-based ({ctx.metrics['routing_complexity']})"
+        if not routing_reason and ctx.metrics.get("routing_precedence") == "preserve":
+            routing_reason = "preserved (no rule matched)"
 
         metrics = RequestMetrics(
             model=model,
@@ -179,6 +189,7 @@ class BaseOptimizedClient(ABC):
                 ctx.metrics.get("routing_applied", False) or "routed_model" in ctx.metrics
             ),
             routing_reason=routing_reason,
+            routing_precedence=ctx.metrics.get("routing_precedence", ""),
             rag_optimization_applied=ctx.metrics.get("rag_optimization_applied", False),
             fewshot_applied=ctx.metrics.get("fewshot_applied", False),
             latency_ms=total_latency,

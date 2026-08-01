@@ -11,12 +11,25 @@ from tokenopt.observability.metrics import RequestMetrics
 
 
 class RoutingRule(BaseModel):
-    """Rule for model routing based on query characteristics."""
+    """Rule for model routing based on query characteristics.
+
+    Attributes:
+        name: Unique rule name (surfaces in ``routing_reason`` on match).
+        condition: Callable ``(query, messages) -> bool``.
+        model: Model to route to when the condition matches.
+        priority: Higher wins when several rules match.
+        builtin: True for rules shipped with ``get_default_config()``.
+            The routing precedence contract (Decision 24) only treats
+            non-builtin (custom) rules as "custom routing configuration";
+            built-in rules alone still fall back to complexity routing on
+            no match, so default-config behavior is unchanged.
+    """
 
     name: str
     condition: Callable[[str, list[dict]], bool]  # (query, messages) -> bool
     model: str
     priority: int = 0
+    builtin: bool = False
 
 
 @dataclass
@@ -32,7 +45,10 @@ class TokenOptConfig:
         cache_max_size: Maximum number of cached entries (in-memory).
         redis_url: Optional Redis URL for distributed caching.
         enable_routing: Whether to enable model routing.
-        routing_rules: Custom routing rules (evaluated in priority order).
+        routing_rules: Routing rules (evaluated in priority order). Rules
+            shipped by ``get_default_config()`` are marked ``builtin``;
+            user-supplied rules are "custom" per the routing precedence
+            contract (Decision 24).
         default_model: Default model if no routing rule matches.
         enable_summarization: Whether to summarize conversation history.
         summarization_threshold: Token count threshold to trigger summarization.
@@ -99,6 +115,7 @@ def get_default_config() -> TokenOptConfig:
                 ),
                 model="gpt-4o-mini",
                 priority=10,
+                builtin=True,
             ),
             RoutingRule(
                 name="code_tasks",
@@ -108,6 +125,7 @@ def get_default_config() -> TokenOptConfig:
                 ),
                 model="gpt-4o",
                 priority=20,
+                builtin=True,
             ),
             RoutingRule(
                 name="reasoning_tasks",
@@ -116,6 +134,7 @@ def get_default_config() -> TokenOptConfig:
                 ),
                 model="o1-mini",
                 priority=30,
+                builtin=True,
             ),
         ]
     )

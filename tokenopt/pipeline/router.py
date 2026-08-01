@@ -1,4 +1,23 @@
-"""Model routing stage for cost/quality optimization."""
+"""Model routing stage for cost/quality optimization.
+
+Routing precedence contract (Decision 24, principle of least surprise):
+
+1. **Explicit caller model** — a model passed to the client is never
+   overridden (``ctx.model_explicit``).
+2. **Matching routing rule** — rules (custom and built-in) are evaluated
+   in priority order; the first match wins.
+3. **Custom rules exist but none match** — the caller's requested model
+   is preserved (a no-match never rewrites the model; fail-open friendly).
+4. **No custom routing configuration** — built-in complexity routing
+   (keyword + token-count heuristic) applies.
+5. **Provider default (last resort)** — nothing routes; the resolved
+   model stands.
+
+Every decision records ``routing_precedence``
+(``explicit | rule | preserve | complexity | provider_default``) in
+``ctx.metrics``; matches also record ``routing_rule`` + ``routed_model``,
+and complexity routing records ``routing_complexity``.
+"""
 
 from __future__ import annotations
 
@@ -23,30 +42,49 @@ class RouterStage(PipelineStage):
         }
 
     def process(self, ctx: OptimizationContext) -> OptimizationContext:
-        # Get user query (last user message)
-        user_query = self._get_user_query(ctx.messages)
-        if not user_query:
-            ctx.model = self.config.default_model
+        # Precedence 1: an explicit caller model is never overridden.
+        if ctx.model_explicit:
+            ctx.metrics["routing_precedence"] = "explicit"
             return ctx
 
-        # Check custom routing rules first
+        # Precedence 5: without a query there is nothing to route on; the
+        # resolved (caller or default) model stands.
+        user_query = self._get_user_query(ctx.messages)
+        if not user_query:
+            ctx.metrics["routing_precedence"] = "provider_default"
+            return ctx
+
+        # Precedence 2: first matching rule (custom or built-in) wins.
         for rule in sorted(self.config.routing_rules, key=lambda r: -r.priority):
             try:
                 if rule.condition(user_query, ctx.messages):
                     ctx.model = rule.model
                     ctx.metrics["routing_rule"] = rule.name
                     ctx.metrics["routed_model"] = rule.model
+                    ctx.metrics["routing_precedence"] = "rule"
                     return ctx
             except Exception:
                 continue
 
-        # Fallback to complexity-based routing
+        # Precedence 3: custom rules exist but none matched — preserve the
+        # caller's requested model instead of rewriting it.
+        if self._has_custom_rules():
+            ctx.metrics["routing_precedence"] = "preserve"
+            return ctx
+
+        # Precedence 4: no custom routing configuration — built-in
+        # complexity routing.
         complexity = self._estimate_complexity(user_query)
         ctx.model = self._select_model_by_complexity(complexity)
         ctx.metrics["routing_complexity"] = complexity
         ctx.metrics["routed_model"] = ctx.model
+        ctx.metrics["routing_precedence"] = "complexity"
 
         return ctx
+
+    def _has_custom_rules(self) -> bool:
+        """True when any user-supplied (non-builtin) rule is configured."""
+        return any(not rule.builtin for rule in self.config.routing_rules)
 
     def _get_user_query(self, messages: list[dict]) -> str:
         """Extract last user message as query."""

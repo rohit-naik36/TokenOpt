@@ -18,6 +18,7 @@ class OptimizationContext:
     messages: list[dict[str, Any]]
     model: str
     config: TokenOptConfig
+    model_explicit: bool = False  # caller passed model= to the client
     metadata: dict[str, Any] = field(default_factory=dict)
     metrics: dict[str, Any] = field(default_factory=dict)
 
@@ -57,12 +58,19 @@ class OptimizationPipeline:
         self.stages = stages
         self.config = config
 
-    def run(self, messages: list[dict[str, Any]], model: str, **kwargs: Any) -> OptimizationContext:
+    def run(
+        self,
+        messages: list[dict[str, Any]],
+        model: str,
+        model_explicit: bool = False,
+        **kwargs: Any
+    ) -> OptimizationContext:
         """Run the full optimization pipeline."""
         ctx = OptimizationContext(
             messages=messages,
             model=model,
             config=self.config,
+            model_explicit=model_explicit,
             metadata=kwargs,
         )
 
