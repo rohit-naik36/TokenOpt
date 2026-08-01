@@ -1,23 +1,24 @@
 # Session State
 
-_Updated: 2026-08-01 (M8.2 value demonstrations complete)_
+_Updated: 2026-08-01 (M10 governance expansion complete)_
 
 | Field | Value |
 |-------|-------|
-| **Current milestone** | **M8.2 Value Demonstration & Showcase — DONE** |
-| **Current task** | (none in progress — ready for M10, no approval gate) |
-| **Current progress** | Phase 0 + Phase 1 + M1–M8 + UAT refinements + M8.2 complete; suite 158 green; coverage 94% |
+| **Current milestone** | **M10 AI Engineering Governance Expansion — DONE** |
+| **Current task** | (none in progress — M11 optional; M12 next, ⚠ deletion approval) |
+| **Current progress** | Phase 0 + Phase 1 + M1–M8 + UAT + M8.2 + M10 complete; suite 158 green; coverage 94% |
 | **Safe stopping point** | ✅ Yes — working tree clean, all work committed and pushed, checkpoint created |
-| **Remaining work** | M10–M15 per `.ai/IMPLEMENTATION_ROADMAP.md` (6 milestones) |
-| **Estimated effort remaining** | ~6 agent-days (M10 is ~1 day) |
-| **Recommended next action** | Begin **M10** — extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets |
-| **Context risk** | Low — focused session; M8.2 delivered (field + examples + docs) |
+| **Remaining work** | M11–M15 per `.ai/IMPLEMENTATION_ROADMAP.md` (M11 optional) |
+| **Estimated effort remaining** | ~5 agent-days (M11 ~0.5; M12 ~0.5; M13 ~1; M14 ~1; M15 ~2) |
+| **Recommended next action** | **M12** — structure cleanup (⚠ deletion approval first) or **M11** (optional prompts) |
+| **Context risk** | Low — focused session; governance expansion delivered |
 | **Timestamp** | 2026-08-01 |
 
 ## Blockers
 
-None. Dependabot action-upgrade PRs (→ v7) advisory. Open decisions:
-RouterStage fallback hole; M15 (PyPI) gate later; M12 cleanup (⚠).
+None. M12 (⚠ deletion approval) is the next approval-gated item. Open
+decisions: RouterStage fallback hole; M15 (PyPI) gate; Dependabot action
+PRs advisory.
 
 ## Verification at close
 
@@ -26,10 +27,9 @@ RouterStage fallback hole; M15 (PyPI) gate later; M12 cleanup (⚠).
 | `pytest tests/ -q` | **158 passed**; coverage gate enforced |
 | `ruff check tokenopt examples tests` | clean |
 | `mypy tokenopt` | **GREEN (exit 0)** |
-| Coverage gate | `[tool.coverage] fail_under = 80`; actual **94%** |
-| `python -m build` + `twine check` | sdist + wheel OK, **PASSED** |
-| Examples on clean env (fresh venv + stub) | **6/6 exit 0**; explanations truthful vs metrics; routing_reason live-verified |
-| Regression tests (routing_reason) | 3/3 pass (rule match, complexity fallback, disabled) |
-| `git status` | clean (TEST.txt untracked — user scratch file, left alone) |
+| Governance link check | all relative links resolve (64 md files) |
+| Workflow→role resolution | 14/14 owners map to real role files |
+| SDK scope | untouched (docs-only milestone: .ai/ + AGENTS.md) |
+| `git status` | clean (TEST.txt untracked — user scratch file) |
 | `git remote -v` | `https://github.com/rohit-naik36/TokenOpt.git` (valid, Decision 11) |
-| CI badge (main) | passing (re-check after M8.2 push) |
+| CI badge (main) | passing (re-check after M10 push) |

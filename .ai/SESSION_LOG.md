@@ -1,5 +1,45 @@
 # Session Log
 
+## 2026-08-01 — Session 14: M10 — AI Engineering Governance Expansion
+
+### Work performed
+- **Phase 1 review** — audited WORKFLOWS (5), ROLES (4), STANDARDS (8),
+  AGENTS.md, manifest, roadmaps, checkpoints. 8 inconsistencies fixed
+  (I1–I8): stale "(mypy after M1 fix)"; divergent verification blocks;
+  release.md owner "maintainer" (no such role); fix-bug missing checkpoint
+  standard; no DOD links; ROADMAP counts; IMPLEMENTATION_ROADMAP M10
+  pre-execution scope; no registry. Found no blocking duplication
+  (self-contained runbooks accepted as an agent feature).
+- **WORKFLOWS 5 → 14** — unified template (Purpose / Prerequisites /
+  Steps / Verification / Expected outputs / Completion criteria). New:
+  refactoring, architecture-review, documentation-update,
+  dependency-upgrade, security-response, performance-investigation,
+  uat-execution, regression-verification, repository-audit. Existing 5
+  rewritten in place (content preserved; gates standardized to
+  pytest + ruff + mypy; DOD linked).
+- **ROLES 4 → 11** — extended template (Authority / Required inputs /
+  Expected outputs / Success criteria added). New: product-strategist,
+  product-manager, qa-engineer, security-reviewer, release-manager,
+  devops-engineer, repository-auditor. Existing 4 extended. Single-owner
+  matrix prevents overlap (reviewer vs qa vs security scoped explicitly).
+- **`.ai/GOVERNANCE_INDEX.md`** — machine-consumable registry: 11 roles,
+  14 workflows, 8 standards, ownership matrix, single approval gate, ASCII
+  handoff map (Idea → Software Factory substrate).
+- **`.ai/GOVERNANCE_REVIEW.md`** — findings table (I1–I8), multi-agent
+  validation matrix (no circularity, no conflicting ownership, no missing
+  gates, deterministic order, clear handoffs), rationale.
+- **Reference updates** — AGENTS.md WORKFLOWS/ROLES lines point to the
+  index; ROADMAP Phase 0 counts + M10 done (removed a fabricated "M9 done"
+  line — M9 was never executed separately, marked "covered by M0.1" in the
+  implementation roadmap instead); DECISIONS +21.
+- **Verification** — link check: all relative links in 64 md files
+  resolve; all 14 workflow owners map to real role files; gates green
+  (158 passed, ruff clean, mypy exit 0); SDK/tests/examples/README
+  untouched (docs-only milestone).
+- **Commits**: `72ddef0` (9 workflows), `76a83b4` (template unification),
+  `588d182` (7 roles), `e49d6c1` (role extensions), `2cf461f` (index +
+  review), `104d366` (references); memory commit follows; pushed; CI green.
+
 ## 2026-08-01 — Session 13: M8.2 Value Demonstration & Showcase
 
 ### Work performed

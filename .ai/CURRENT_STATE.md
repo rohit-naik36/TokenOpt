@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1–M8 + UAT refinements + M8.2 complete; next is M10)_
+_Last updated: 2026-08-01 (M1–M8 + UAT refinements + M8.2 + M10 complete; next is M11)_
 
-## Status: Phase 0 + Phase 1 + M1–M8 + Post-M8 UAT refinements + M8.2 complete
+## Status: Phase 0 + Phase 1 + M1–M8 + Post-M8 UAT refinements + M8.2 + M10 complete
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -296,6 +296,37 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
     (the default `reasoning_tasks` rule matches the substring "think",
     routing the demo to o1-mini); header claims match measured values
     (44.4% vs "~44%")
+- **M10 — AI Engineering Governance Expansion (2026-08-01)** (session 14;
+  Decision 21; no SDK changes)
+  - **Review (Phase 1)**: 8 inconsistencies found + fixed (I1–I8):
+    stale "(mypy after M1 fix)" in implement-feature; divergent
+    verification blocks per workflow; release.md "maintainer" owner that
+    didn't exist; fix-bug missing checkpoint standard; no DOD links;
+    ROADMAP count drift; IMPLEMENTATION_ROADMAP M10 pre-execution scope;
+    no workflow/role registry
+  - **WORKFLOWS/ 5 → 14**: unified template (purpose, prerequisites,
+    steps, verification, expected outputs, completion criteria); 9 new:
+    refactoring, architecture-review, documentation-update,
+    dependency-upgrade, security-response, performance-investigation,
+    uat-execution, regression-verification, repository-audit; all gates
+    standardized to pytest + ruff + mypy
+  - **ROLES/ 4 → 11**: extended template (authority, required inputs,
+    success criteria); 7 new: product-strategist, product-manager,
+    qa-engineer, security-reviewer, release-manager, devops-engineer,
+    repository-auditor; single-owner matrix (no overlap)
+  - **`.ai/GOVERNANCE_INDEX.md`** — machine-consumable registry:
+    role↔workflow↔standard tables, ownership matrix, single approval
+    gate, handoff map (Idea → Software Factory substrate)
+  - **`.ai/GOVERNANCE_REVIEW.md`** — review summary + multi-agent
+    validation (no circularity/conflicts; deterministic order; handoffs)
+  - **Consistency fixes**: AGENTS.md points to the index; ROADMAP Phase 0
+    counts + M10 done; IMPLEMENTATION_ROADMAP M10 = executed scope, M9
+    marked "covered by M0.1" (never executed separately); DECISIONS +21
+  - **Verification**: link check over 64 md files (all resolve); workflow
+    owners all resolve to real roles; suite 158 green; ruff/mypy clean;
+    SDK/tests/examples/README untouched
+  - Commits: `72ddef0`, `76a83b4`, `588d182`, `e49d6c1`, `2cf461f`,
+    `104d366` (memory commit follows); pushed to main; CI green
 
 ## Open item
 
@@ -304,8 +335,8 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- **M10** — Extend WORKFLOWS/ + ROLES/ to full sets (audit §5)
-- M11 governance prompts, M12 cleanup (⚠), M13 refactor, M14 arch docs,
+- **M11** — `.ai/PROMPTS/` (optional; depends on M10)
+- M12 cleanup (⚠), M13 refactor, M14 arch docs,
   M15 release v0.1.0 (⚠ PyPI optional)
 - Full config reference docs pending
 - Local client live verification against a real Ollama server

@@ -1,25 +1,23 @@
 # Next Steps
 
-_Last updated: 2026-08-01 (M8.2 value demonstrations complete; M10 next)_
+_Last updated: 2026-08-01 (M10 governance expansion complete; M11 optional, M12 next)_
 
-## M8.2 done — M10 is next (governance docs; no gate)
+## M10 done — M11 (optional) or M12 (⚠) next
 
-M8.2 complete: `RequestMetrics.routing_reason` (additive — rule name or
-`complexity-based (low|medium|high)`) with 3 regression tests (158 total);
-all 6 examples are now value demonstrations (header docstrings, realistic
-long prompts, compression OFF vs ON + cache miss→hit comparisons,
-`explain()` lines derived only from recorded metrics, routing decisions
-with reasons); README example sections + CHANGELOG updated; validated in a
-clean env with truthful output. All gates green.
+M10 complete: WORKFLOWS 5 → 14 (9 new runbooks on a unified template with
+standardized gates), ROLES 4 → 11 (7 new roles with authority/inputs/
+success criteria), `.ai/GOVERNANCE_INDEX.md` (machine-consumable registry
++ ownership matrix + handoff map) and `.ai/GOVERNANCE_REVIEW.md` (findings
+I1–I8 + multi-agent validation). All links verified, all workflow owners
+resolve to real roles, SDK untouched, suite 158 green. Decision 21.
 
-1. **M10** — Extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (audit §5)
-2. **M11** — `.ai/PROMPTS/` (9 prompts; optional)
-3. **M12** — Structure cleanup: artifact dirs (⚠ deletion approval),
+1. **M11** — `.ai/PROMPTS/` (9 reusable prompts; optional)
+2. **M12** — Structure cleanup: artifact dirs (⚠ deletion approval),
    archive SESSION_BACKUP.md, GitHub templates
-4. **M13** — Maintainability refactor: response helpers, data-driven MODEL_COSTS
-5. **M14** — Architecture docs polish: Mermaid diagrams, normalization spec,
+3. **M13** — Maintainability refactor: response helpers, data-driven MODEL_COSTS
+4. **M14** — Architecture docs polish: Mermaid diagrams, normalization spec,
    extension guide
-6. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
+5. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
 
 ## Notes
 
