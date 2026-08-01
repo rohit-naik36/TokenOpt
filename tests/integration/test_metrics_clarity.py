@@ -143,7 +143,6 @@ def test_routing_reason_custom_rule_match(openai_transport: httpx.MockTransport)
     )
 
     client.chat.completions.create(
-        model="gpt-4o-mini",
         messages=[{"role": "user", "content": "Solve the equation x^2 = 49 for x."}],
     )
 
@@ -151,6 +150,7 @@ def test_routing_reason_custom_rule_match(openai_transport: httpx.MockTransport)
     assert metric.routing_applied is True
     assert metric.model == "o1-mini"
     assert metric.routing_reason == "math_tasks"
+    assert metric.routing_precedence == "rule"
 
 
 def test_routing_reason_complexity_fallback(
@@ -168,7 +168,6 @@ def test_routing_reason_complexity_fallback(
     )
 
     client.chat.completions.create(
-        model="gpt-4o",
         messages=[{"role": "user", "content": "What is the weather?"}],
     )
 
@@ -176,6 +175,68 @@ def test_routing_reason_complexity_fallback(
     assert metric.routing_applied is True
     assert metric.model == "gpt-4o-mini"
     assert metric.routing_reason == "complexity-based (low)"
+    assert metric.routing_precedence == "complexity"
+
+
+def test_routing_reason_preserved_no_rule_match(
+    openai_transport: httpx.MockTransport,
+) -> None:
+    """Custom rules that don't match preserve the caller's model and say so."""
+    client = OpenAI(
+        config=TokenOptConfig(
+            routing_rules=[
+                RoutingRule(
+                    name="math_tasks",
+                    condition=lambda q, m: "equation" in q.lower(),
+                    model="o1-mini",
+                    priority=40,
+                )
+            ],
+        ),
+        api_key="test-key",
+        http_client=httpx.Client(transport=openai_transport),
+    )
+
+    client.chat.completions.create(
+        messages=[{"role": "user", "content": "What is the weather?"}],
+    )
+
+    metric = _last(client)
+    assert metric.routing_applied is False
+    assert metric.model == "gpt-4o-mini"
+    assert metric.routing_reason == "preserved (no rule matched)"
+    assert metric.routing_precedence == "preserve"
+
+
+def test_explicit_model_never_overridden_by_rules(
+    openai_transport: httpx.MockTransport,
+) -> None:
+    """An explicitly passed model wins over every routing decision."""
+    client = OpenAI(
+        config=TokenOptConfig(
+            routing_rules=[
+                RoutingRule(
+                    name="catch_all",
+                    condition=lambda q, m: True,
+                    model="o1-mini",
+                    priority=99,
+                )
+            ],
+        ),
+        api_key="test-key",
+        http_client=httpx.Client(transport=openai_transport),
+    )
+
+    client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": "Solve the equation x^2 = 49 for x."}],
+    )
+
+    metric = _last(client)
+    assert metric.routing_applied is False
+    assert metric.model == "gpt-4o"
+    assert metric.routing_reason == ""
+    assert metric.routing_precedence == "explicit"
 
 
 def test_routing_disabled_reports_empty_reason(

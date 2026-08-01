@@ -97,11 +97,38 @@ def test_custom_claude_routing_rule_applied(
     )
 
     client.messages.create(
-        model="claude-3-5-sonnet",
         messages=[{"role": "user", "content": "hello there"}],
     )
 
     assert anthropic_requests[0]["model"] == "claude-3-5-haiku"
+
+
+def test_custom_rule_no_match_preserves_explicit_model(
+    anthropic_transport: httpx.MockTransport, anthropic_requests: list
+) -> None:
+    """A no-match must preserve the caller's model, never rewrite to gpt-*."""
+    config = TokenOptConfig(
+        routing_rules=[
+            RoutingRule(
+                name="claude_haiku",
+                condition=lambda q, m: "hello" in q.lower(),
+                model="claude-3-5-haiku",
+                priority=10,
+            )
+        ]
+    )
+    client = Anthropic(
+        config=config,
+        api_key="test-key",
+        http_client=httpx.Client(transport=anthropic_transport),
+    )
+
+    client.messages.create(
+        model="claude-3-5-sonnet",
+        messages=[{"role": "user", "content": "What is the weather?"}],
+    )
+
+    assert anthropic_requests[0]["model"] == "claude-3-5-sonnet"
 
 
 def test_identical_second_call_hits_cache(

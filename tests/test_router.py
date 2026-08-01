@@ -5,40 +5,45 @@ from tokenopt.pipeline.base import OptimizationContext
 from tokenopt.pipeline.router import RouterStage
 
 
-def _ctx(query, config, messages=None):
+def _ctx(query, config, messages=None, model="gpt-4o-mini", model_explicit=False):
     if messages is None:
         messages = [{"role": "user", "content": query}]
-    return OptimizationContext(messages=messages, model="gpt-4o-mini", config=config)
+    return OptimizationContext(
+        messages=messages,
+        model=model,
+        config=config,
+        model_explicit=model_explicit,
+    )
 
 
-def _route(query, config):
-    return RouterStage(config).process(_ctx(query, config))
+def _route(query, config, **ctx_kwargs):
+    return RouterStage(config).process(_ctx(query, config, **ctx_kwargs))
 
 
 def test_name():
     assert RouterStage().name == "router"
 
 
-def test_empty_messages_use_default_model():
+def test_empty_messages_preserve_resolved_model():
     config = TokenOptConfig(default_model="custom-model")
     ctx = _ctx("", config, messages=[{"role": "system", "content": "be brief"}])
     result = RouterStage(config).process(ctx)
-    assert result.model == "custom-model"
-    assert result.metrics == {}
+    assert result.model == "gpt-4o-mini"
+    assert result.metrics["routing_precedence"] == "provider_default"
 
 
-def test_empty_query_uses_default_model():
+def test_empty_query_preserves_resolved_model():
     config = TokenOptConfig(default_model="custom-model")
     result = _route("", config)
-    assert result.model == "custom-model"
-    assert result.metrics == {}
+    assert result.model == "gpt-4o-mini"
+    assert result.metrics["routing_precedence"] == "provider_default"
 
 
-def test_non_string_user_content_uses_default_model():
+def test_non_string_user_content_preserves_resolved_model():
     config = TokenOptConfig(default_model="custom-model")
     ctx = _ctx("", config, messages=[{"role": "user", "content": [{"type": "text", "text": "hi"}]}])
     result = RouterStage(config).process(ctx)
-    assert result.model == "custom-model"
+    assert result.model == "gpt-4o-mini"
 
 
 def test_last_user_message_is_used_for_routing():
@@ -131,7 +136,7 @@ def test_rule_exception_is_skipped_fail_open():
     assert result.metrics["routing_rule"] == "fallback_rule"
 
 
-def test_all_rules_failing_falls_back_to_complexity():
+def test_all_rules_failing_preserves_caller_model():
     def boom(query, messages):
         raise RuntimeError("broken rule")
 
@@ -139,8 +144,75 @@ def test_all_rules_failing_falls_back_to_complexity():
         routing_rules=[RoutingRule(name="broken", condition=boom, model="gpt-4o", priority=50)]
     )
     result = _route("analyze this", config)
+    assert result.model == "gpt-4o-mini"
+    assert result.metrics["routing_precedence"] == "preserve"
+    assert "routing_complexity" not in result.metrics
+
+
+def test_explicit_model_wins_over_matching_rule():
+    config = TokenOptConfig(
+        routing_rules=[
+            RoutingRule(name="catch_all", condition=lambda q, m: True, model="gpt-4o", priority=50)
+        ]
+    )
+    result = _route("anything", config, model="gpt-4o-mini", model_explicit=True)
+    assert result.model == "gpt-4o-mini"
+    assert result.metrics["routing_precedence"] == "explicit"
+    assert "routing_rule" not in result.metrics
+
+
+def test_explicit_model_wins_over_complexity():
+    result = _route("analyze this", TokenOptConfig(), model="gpt-4o", model_explicit=True)
+    assert result.model == "gpt-4o"
+    assert result.metrics["routing_precedence"] == "explicit"
+
+
+def test_explicit_model_wins_without_query():
+    config = TokenOptConfig(default_model="custom-model")
+    result = _route("", config, model="gpt-4o-mini", model_explicit=True)
+    assert result.model == "gpt-4o-mini"
+    assert result.metrics["routing_precedence"] == "explicit"
+
+
+def test_custom_rules_no_match_preserves_caller_model():
+    config = TokenOptConfig(
+        routing_rules=[
+            RoutingRule(
+                name="math_tasks",
+                condition=lambda q, m: "equation" in q.lower(),
+                model="o1-mini",
+                priority=40,
+            )
+        ]
+    )
+    result = _route("what is the weather", config)
+    assert result.model == "gpt-4o-mini"
+    assert result.metrics["routing_precedence"] == "preserve"
+
+
+def test_builtin_rules_no_match_uses_complexity_fallback():
+    """Default-config rules alone still fall back to complexity routing."""
+    config = get_default_config()
+    result = _route("analyze and compare the architecture", config)
     assert result.model == "gpt-4o"
     assert result.metrics["routing_complexity"] == "high"
+    assert result.metrics["routing_precedence"] == "complexity"
+
+
+def test_mixed_custom_and_builtin_rules_no_match_preserves():
+    """A custom rule anywhere in the config moves unmatched requests to preserve."""
+    config = get_default_config()
+    config.routing_rules = config.routing_rules + [
+        RoutingRule(
+            name="derivatives",
+            condition=lambda q, m: "derivative" in q.lower(),
+            model="o1-mini",
+            priority=40,
+        )
+    ]
+    result = _route("analyze and compare the architecture", config)
+    assert result.model == "gpt-4o-mini"
+    assert result.metrics["routing_precedence"] == "preserve"
 
 
 def test_complexity_fallback_high_keywords():

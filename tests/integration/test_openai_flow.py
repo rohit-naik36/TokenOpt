@@ -31,7 +31,6 @@ def test_drop_in_chat_completion_full_flow(
     openai_client: OpenAI, openai_requests: list
 ) -> None:
     response = openai_client.chat.completions.create(
-        model="gpt-4o",
         messages=[{"role": "user", "content": "What is the weather in Paris?"}],
     )
 
