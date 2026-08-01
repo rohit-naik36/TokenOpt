@@ -153,13 +153,23 @@ class BaseOptimizedClient(ABC):
             else {"prompt_tokens": 0, "completion_tokens": 0}
         )
 
+        optimized_tokens = ctx.metrics.get("final_token_count", ctx.original_token_count)
+        tokens_saved = ctx.original_token_count - optimized_tokens
+
         metrics = RequestMetrics(
             model=model,
             original_tokens=ctx.original_token_count,
-            optimized_tokens=ctx.metrics.get("final_token_count", ctx.original_token_count),
+            optimized_tokens=optimized_tokens,
             output_tokens=usage.get("completion_tokens", 0),
             cache_hit=cache_hit,
             compression_applied=ctx.metrics.get("compression_applied", False),
+            compression_attempted=ctx.metrics.get("compression_applied", False),
+            compression_effective=tokens_saved > 0,
+            tokens_saved=tokens_saved,
+            reduction_percentage=(
+                tokens_saved / ctx.original_token_count * 100
+                if ctx.original_token_count > 0 else 0.0
+            ),
             summarization_applied=ctx.metrics.get("summarization_applied", False),
             routing_applied=(
                 ctx.metrics.get("routing_applied", False) or "routed_model" in ctx.metrics
@@ -168,6 +178,7 @@ class BaseOptimizedClient(ABC):
             fewshot_applied=ctx.metrics.get("fewshot_applied", False),
             latency_ms=total_latency,
             pipeline_latency_ms=pipeline_latency,
+            model_latency_ms=max(0.0, total_latency - pipeline_latency),
             estimated_cost=estimate_cost(
                 model, ctx.original_token_count, usage.get("completion_tokens", 0)
             ),

@@ -11,7 +11,13 @@ from typing import Any
 
 @dataclass
 class RequestMetrics:
-    """Metrics for a single request."""
+    """Metrics for a single request.
+
+    ``compression_applied`` reports whether the compressor *stage ran*
+    (attempted); whether any token reduction actually occurred is reported
+    separately by ``compression_effective`` and ``tokens_saved``, because a
+    short prompt may go through compression unchanged.
+    """
     timestamp: float = field(default_factory=time.time)
     model: str = ""
     original_tokens: int = 0
@@ -19,12 +25,17 @@ class RequestMetrics:
     output_tokens: int = 0
     cache_hit: bool = False
     compression_applied: bool = False
+    compression_attempted: bool = False  # compressor stage executed
+    compression_effective: bool = False  # tokens were actually reduced
+    tokens_saved: int = 0                # original - optimized (may be < 0)
+    reduction_percentage: float = 0.0    # tokens_saved / original * 100
     summarization_applied: bool = False
     routing_applied: bool = False
     rag_optimization_applied: bool = False
     fewshot_applied: bool = False
     latency_ms: float = 0.0
-    pipeline_latency_ms: float = 0.0
+    pipeline_latency_ms: float = 0.0     # TokenOpt middleware overhead
+    model_latency_ms: float = 0.0        # inference time (total - overhead)
     estimated_cost: float = 0.0
     error: str | None = None
 
