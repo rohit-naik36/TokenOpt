@@ -75,3 +75,54 @@ def print_summary(summary: dict[str, Any]) -> None:
         f"summarization {summary['optimization_usage']['summarization']} | "
         f"routing {summary['optimization_usage']['routing']}"
     )
+
+
+def explain(metrics: RequestMetrics) -> None:
+    """Explain what happened, derived only from the recorded metrics.
+
+    Every line follows from a real metric value, so the explanation can
+    never drift from what the pipeline actually did.
+    """
+    lines: list[str] = []
+    if metrics.cache_hit:
+        lines.append("Cache hit: the same prompt was seen before, so the model "
+                     "call was skipped entirely (near-zero latency).")
+    if metrics.compression_effective:
+        lines.append(
+            f"Compression removed {metrics.tokens_saved} tokens "
+            f"({metrics.reduction_percentage:.1f}%): "
+            f"{metrics.original_tokens} -> {metrics.optimized_tokens}."
+        )
+    elif metrics.compression_attempted:
+        lines.append("Compression ran but found nothing to remove - the prompt "
+                     "was already concise.")
+    if metrics.summarization_applied:
+        lines.append("Summarization condensed the conversation history because "
+                     "it exceeded the configured token threshold.")
+    if metrics.routing_applied and metrics.routing_reason:
+        lines.append(f"Routing picked {metrics.model} ({metrics.routing_reason}).")
+    if not metrics.cache_hit and metrics.model_latency_ms > 0:
+        share = metrics.pipeline_latency_ms / metrics.latency_ms * 100
+        lines.append(
+            f"TokenOpt overhead was {_fmt_ms(metrics.pipeline_latency_ms)} "
+            f"({share:.1f}% of total) vs {_fmt_ms(metrics.model_latency_ms)} "
+            f"of model inference."
+        )
+    if not lines:
+        lines.append("Passthrough: no optimization was triggered for this request.")
+    print("Why:")
+    for line in lines:
+        print(f"  - {line}")
+
+
+def print_comparison(title: str, before: RequestMetrics, after: RequestMetrics) -> None:
+    """Print a before/after comparison of two requests' metrics."""
+    def row(label: str, m: RequestMetrics) -> str:
+        return (
+            f"{label}: model={m.model}, {m.original_tokens} -> "
+            f"{m.optimized_tokens} tokens ({m.reduction_percentage:.1f}% saved), "
+            f"cache={m.cache_hit}"
+        )
+    print(f"{title}")
+    print(f"  {row('Off ', before)}")
+    print(f"  {row('On  ', after)}")
