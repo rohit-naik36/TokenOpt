@@ -1,5 +1,49 @@
 # Session Log
 
+## 2026-08-01 — Session 17: Pre-M13 Routing Precedence Decision
+
+### Work performed
+- **Reviewed RouterStage** (`.ai/ROUTING_PRECEDENCE_REVIEW.md`): findings
+  F1 (rule provenance), F2 (explicit-model detection), F3 (provider
+  clients), F4 (empty-query path), F5 (fail-open), F6 (routing_reason).
+- **Implemented Decision 24 — five-level precedence (least surprise)**:
+  1. explicit caller model never overridden
+  2. matching rule wins by priority
+  3. custom rules exist but none match → **preserve caller's model**
+  4. no custom routing configuration → built-in complexity routing
+  5. provider default (resolved model stands)
+- **Code**: `RoutingRule.builtin` (default rules marked; only user rules
+  count as "custom"); `OptimizationContext.model_explicit` +
+  `OptimizationPipeline.run(model_explicit=...)` +
+  `chat_completion(model_explicit=...)` (additive, backward compatible);
+  RouterStage records `routing_precedence` on every path and no longer
+  overwrites on empty query; `_record_metrics` maps
+  `routing_reason` + `routing_precedence`; `RequestMetrics` gains
+  `routing_precedence` (additive); `LocalClient.chat_completion`
+  pass-through. **Fixed**: custom rules no-match on Anthropic/local no
+  longer rewrites to `gpt-*` (invalid model → would break the call).
+- **Tests**: test_router.py (empty-query tests → preserve contract;
+  all-rules-failing → preserve; +5 new: explicit-over-rule,
+  explicit-over-complexity, explicit-without-query, custom no-match
+  preserve, builtin-only complexity, mixed preserve); metrics_clarity
+  (rule-match + complexity tests use implicit model; +2 new: preserved
+  reason, explicit never overridden); anthropic_flow (custom-rule test
+  implicit; +1 new: no-match preserves explicit claude model); openai_flow
+  (full-flow test implicit so the routing counter is exercised). Suite
+  **167 passed** (was 158).
+- **Examples**: pipeline_config.py reworked — math→o1-mini (rule),
+  code→gpt-4o (rule), simple/complex→preserved gpt-4o-mini, plus a
+  no-custom-rules config showing complexity (high)→gpt-4o, plus OFF vs ON;
+  `_format.py explain()` prints "Routing kept X (preserved (no rule
+  matched))" for non-applied routing. **Validated against the stub server:
+  all 6 examples exit 0 and output matches docstrings** (M8.2 truthfulness
+  rule).
+- **Docs**: ARCHITECTURE.md routing precedence section; README precedence
+  list; CHANGELOG entry (Added routing_precedence + Changed precedence).
+- **Commits**: (see checkpoint — feat: precedence contract, test:
+  router contract, test: integration, docs: review/decision, docs:
+  examples, chore: memory).
+
 ## 2026-08-01 — Session 16: M12 — Repository Curation
 
 ### Work performed

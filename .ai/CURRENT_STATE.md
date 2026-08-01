@@ -370,6 +370,37 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
     commits, rename detected); suite 158 green; ruff/mypy clean;
     SDK/tests/examples untouched; root tree contains only intentional
     entries
+- **Pre-M13 — Routing Precedence Decision (2026-08-01)** (session 17;
+  Decision 24; SDK change)
+  - **Contract (5 levels, least surprise)**: 1) explicit caller model
+    never overridden; 2) matching rule (custom + built-in) wins by
+    priority; 3) custom rules exist but none match → preserve the
+    caller's model; 4) no custom rules → built-in complexity routing;
+    5) provider default (resolved model stands)
+  - **Implementation**: `RoutingRule.builtin` flag (default rules marked,
+    only user rules count as "custom" — default-config behavior
+    unchanged); `OptimizationContext.model_explicit` + pipeline.run +
+    `chat_completion(model_explicit=...)` plumbing; RouterStage records
+    `routing_precedence` on every path; `RequestMetrics.routing_precedence`
+    (additive); `routing_reason` gains "preserved (no rule matched)"
+  - **Fix**: no more `gpt-*` rewrite on no-match for custom rules —
+    eliminates invalid-model calls on Anthropic/local backends (fail-open)
+  - **Tests**: test_router.py +8 net (explicit wins, custom no-match
+    preserve, builtin-only complexity, mixed); metrics_clarity +2
+    (preserved reason, explicit never overridden) +2 updated;
+    anthropic_flow +1 (no-match preserves explicit model) +1 updated;
+    openai_flow updated (implicit model for routing demo) — suite
+    **167 passed**
+  - **Examples**: pipeline_config.py reworked to demonstrate the
+    precedence contract (math→o1-mini rule, code→gpt-4o rule,
+    preserved no-match ×2, complexity-only config, OFF vs ON);
+    _format.py explain() reports "Routing kept X (preserved ...)" —
+    validated against stub server 6/6 exit 0, output truthful
+  - **Docs**: `.ai/ROUTING_PRECEDENCE_REVIEW.md` (findings F1–F6,
+    compatibility, recommendation), ARCHITECTURE.md contract section,
+    README precedence list, CHANGELOG entry
+  - **Verification**: 167 passed, ruff clean, mypy green, examples
+    truthful, CI green
 
 ## Open item
 
@@ -388,10 +419,6 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 - Local client live verification against a real Ollama server
 - Merge Dependabot action-upgrade PRs (checkout/setup-python/upload-artifact
   → v7) when convenient — advisory, not blockers
-- Known follow-up (needs decision): `RouterStage` complexity fallback still
-  rewrites models when custom rules exist but none match — shared by
-  LocalClient/Anthropic custom-rule paths; deferred to avoid changing OpenAI
-  routing behavior without approval
 
 ## Verification
 

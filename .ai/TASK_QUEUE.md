@@ -32,12 +32,13 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 | **M10** — AI Engineering Governance Expansion (Decision 21) | Review findings I1–I8 fixed; WORKFLOWS 5 → **14** (9 new: refactoring, architecture-review, documentation-update, dependency-upgrade, security-response, performance-investigation, uat-execution, regression-verification, repository-audit; unified template + standardized gates); ROLES 4 → **11** (7 new: product-strategist, product-manager, qa-engineer, security-reviewer, release-manager, devops-engineer, repository-auditor; authority/inputs/success criteria); `.ai/GOVERNANCE_INDEX.md` registry + `.ai/GOVERNANCE_REVIEW.md`; AGENTS.md + roadmaps updated (M9 marked covered-by-M0.1); link check 64/64 resolve; SDK untouched; commits `72ddef0`→`104d366`; suite **158 passed** |
 | **M11** — AI Prompt Library (Decision 22) | `.ai/PROMPTS/` grouped by purpose: design (architecture-review), implementation (feature, bug-fix, refactoring, unit-testing), verification (integration-testing, regression-verification), operations (documentation-update, release-preparation, repository-audit) — **10 prompts**; fixed template (objective, inputs, deterministic steps with exact commands/paths, outputs, verification criteria, determinism rules); `.ai/PROMPTS/README.md` design guidelines (layer model, add/maintain rules); GOVERNANCE_INDEX Prompts table; cross-refs 10/10 resolve; link check 75/75; SDK untouched; suite **158 passed** |
 | **M12** — Repository Curation (Decision 23) | Deleted: 7 empty artifact dirs (`C?ProjectsNew/`, `Idea_Factory/`, `Projecttests/`, `Projecttokenopt*`) + generated artifacts (`dist/`, `tokenopt.egg-info/`, `.coverage`, `.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`, 8× `__pycache__/`). Archived: `SESSION_BACKUP.md` → `.ai/ARCHIVE/` (git mv, history intact; audit finding 9 closed). Created: `.ai/REPOSITORY_RETENTION_POLICY.md` (permanent/archived/regenerated/disposable/user-owned) + `.ai/REPOSITORY_INVENTORY.md` (classification + ledger). Added: GitHub PR/issue templates + CODEOWNERS (single-maintainer). Updated: REPOSITORY_AUDIT §7 dated closure (findings 6+9, plan item 8), GOVERNANCE_INDEX Policies section, repository-audit workflow (curation step). Link check 79/79; suite **158 passed**; SDK untouched |
+| **Pre-M13** — Routing Precedence (Decision 24) | Five-level contract (least surprise): explicit caller model wins → matching rule → custom no-match **preserves caller's model** → no custom rules = complexity routing → provider default. `RoutingRule.builtin` provenance (default rules marked; default-config behavior unchanged); `model_explicit` plumbing (OptimizationContext + pipeline.run + chat_completion, additive); RouterStage records `routing_precedence` (explicit/rule/preserve/complexity/provider_default); `routing_reason` += "preserved (no rule matched)"; `RequestMetrics.routing_precedence` (additive). **Fixes**: no `gpt-*` rewrite on no-match (Anthropic/local invalid-model break). Review: `.ai/ROUTING_PRECEDENCE_REVIEW.md`. Tests +9 (167 total); examples revalidated 6/6 exit 0 against stub; docs: ARCHITECTURE/README/CHANGELOG |
 
 ## IN PROGRESS
 
 | Task | Notes |
 |------|-------|
-| (none) | M13 (refactor) next — RouterStage fallback decision first |
+| (none) | M13 (refactor) next — blocker cleared (Decision 24) |
 
 ## BLOCKED
 
@@ -49,16 +50,18 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 
 | # | Task | Depends on |
 |---|------|------------|
-| M13 | Refactor: response helpers, data-driven MODEL_COSTS | RouterStage fallback decision |
+| M13 | Refactor: response helpers, data-driven MODEL_COSTS | — (Decision 24 cleared) |
 | M14 | Arch docs: Mermaid, normalization spec, extension guide | M13 |
 | M15 | Release v0.1.0: tag, notes, optional PyPI (⚠ publish) | M6–M14 |
 
 ## Blocked-by-approval backlog
 
-- M12 (deleting 7 artifact dirs + archiving SESSION_BACKUP.md)
 - M15 (PyPI publish — optional)
 - Merge Dependabot action-upgrade PRs (checkout/setup-python/upload-artifact
   → v7) — opened 2026-08-01, not blockers
-- RouterStage complexity-fallback hole (custom rules + no match → gpt-*
-  rewrite; shared with LocalClient/Anthropic custom-rule paths) — needs a
-  routing-behavior decision before refactor work
+
+## Resolved
+
+- M12 deletions/archival — approved + executed 2026-08-01 (Decision 23)
+- RouterStage complexity-fallback hole — **resolved 2026-08-01 by the
+  routing precedence contract (Decision 24)**
