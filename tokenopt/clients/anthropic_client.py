@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from anthropic import Anthropic as AnthropicClient
 
+from tokenopt.clients._compat import _CompatShim
 from tokenopt.clients.base import BaseOptimizedClient
-from tokenopt.pipeline import OptimizationPipeline, RouterStage
+from tokenopt.config import RoutingRule
+from tokenopt.pipeline import OptimizationPipeline
 
 
 class Anthropic(BaseOptimizedClient):
@@ -20,18 +23,20 @@ class Anthropic(BaseOptimizedClient):
             **self.extra_kwargs
         )
 
-    def _build_pipeline(self) -> OptimizationPipeline:
+    def _build_pipeline(
+        self,
+        routing_rule_filter: Callable[[RoutingRule], bool] | None = None,
+    ) -> OptimizationPipeline:
         # The default router targets OpenAI models (gpt-*); routing an
         # Anthropic request to a gpt model would break the API call, so only
-        # keep custom rules that target Anthropic models.
-        stages = [s for s in super()._build_pipeline().stages if s.name != "router"]
-        claude_rules = [r for r in self.config.routing_rules if "claude" in r.model.lower()]
-        if claude_rules:
-            from dataclasses import replace
+        # keep custom rules that target Anthropic models (AND any
+        # caller-supplied filter).
+        def claude_compatible(rule: RoutingRule) -> bool:
+            return "claude" in rule.model.lower() and (
+                routing_rule_filter is None or routing_rule_filter(rule)
+            )
 
-            router_config = replace(self.config, routing_rules=claude_rules)
-            stages.insert(0, RouterStage(router_config))
-        return OptimizationPipeline(stages, self.config)
+        return super()._build_pipeline(routing_rule_filter=claude_compatible)
 
     def _call_api(self, messages: list[dict], model: str, **kwargs: Any) -> Any:
         # Convert messages format for Anthropic
@@ -72,19 +77,7 @@ class Anthropic(BaseOptimizedClient):
     # Compatibility: expose messages interface
     @property
     def messages(self) -> Any:
-        class Messages:
-            def __init__(self, outer: Any):
-                self._outer = outer
-
-            def create(
-                self,
-                messages: list[dict[str, Any]],
-                model: str | None = None,
-                **kwargs: Any
-            ) -> Any:
-                return self._outer.chat_completion(messages, model, **kwargs)
-
-        return Messages(self)
+        return _CompatShim(self)
 
 
 __all__ = ["Anthropic"]

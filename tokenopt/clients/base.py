@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable
+from dataclasses import replace
 from typing import Any
 
-from tokenopt.config import TokenOptConfig, get_default_config
+from tokenopt.config import RoutingRule, TokenOptConfig, get_default_config
 from tokenopt.observability import MetricsCollector, RequestMetrics, estimate_cost, get_logger
 from tokenopt.pipeline import (
     CacheStage,
@@ -17,6 +19,23 @@ from tokenopt.pipeline import (
     RAGOptimizerStage,
     RouterStage,
 )
+
+
+def _extract_openai_shape_usage(response: Any) -> dict[str, int]:
+    """Map an OpenAI-shaped usage object to the TokenOpt vocabulary.
+
+    Shared by the OpenAI and local (OpenAI-compatible) clients, whose
+    responses both expose ``prompt_tokens``/``completion_tokens``/
+    ``total_tokens``. Anthropic responses use a different shape and map
+    their own usage.
+    """
+    if response.usage:
+        return {
+            "prompt_tokens": response.usage.prompt_tokens,
+            "completion_tokens": response.usage.completion_tokens,
+            "total_tokens": response.usage.total_tokens,
+        }
+    return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
 
 class BaseOptimizedClient(ABC):
@@ -51,8 +70,20 @@ class BaseOptimizedClient(ABC):
         """Create the underlying LLM client."""
         pass
 
-    def _build_pipeline(self) -> OptimizationPipeline:
-        """Build the optimization pipeline with all stages."""
+    def _build_pipeline(
+        self,
+        routing_rule_filter: Callable[[RoutingRule], bool] | None = None,
+    ) -> OptimizationPipeline:
+        """Build the optimization pipeline with all stages.
+
+        ``routing_rule_filter`` (default: keep all rules) narrows which
+        routing rules the router stage receives. Providers whose endpoints
+        cannot serve models matched by generic rules (Anthropic, local
+        servers) pass a model-compatibility filter, so a rule can never
+        route a request to a model the provider cannot serve. With no
+        surviving rules the router stage is omitted entirely, mirroring
+        the no-router behavior of those providers.
+        """
         stages = [
             RouterStage(self.config),
             CompressorStage(self.config),
@@ -61,6 +92,11 @@ class BaseOptimizedClient(ABC):
             RAGOptimizerStage(self.config),
             FewShotSelectorStage(self.config),
         ]
+        if routing_rule_filter is not None:
+            stages = [s for s in stages if s.name != "router"]
+            rules = [r for r in self.config.routing_rules if routing_rule_filter(r)]
+            if rules:
+                stages.insert(0, RouterStage(replace(self.config, routing_rules=rules)))
         return OptimizationPipeline(stages, self.config)
 
     @abstractmethod

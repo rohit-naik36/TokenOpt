@@ -23,6 +23,7 @@ from __future__ import annotations
 
 from tokenopt.config import TokenOptConfig
 from tokenopt.pipeline.base import OptimizationContext, PipelineStage
+from tokenopt.utils.messages import get_user_query
 from tokenopt.utils.token_counter import count_message_tokens
 
 
@@ -49,7 +50,7 @@ class RouterStage(PipelineStage):
 
         # Precedence 5: without a query there is nothing to route on; the
         # resolved (caller or default) model stands.
-        user_query = self._get_user_query(ctx.messages)
+        user_query = get_user_query(ctx.messages)
         if not user_query:
             ctx.metrics["routing_precedence"] = "provider_default"
             return ctx
@@ -85,15 +86,6 @@ class RouterStage(PipelineStage):
     def _has_custom_rules(self) -> bool:
         """True when any user-supplied (non-builtin) rule is configured."""
         return any(not rule.builtin for rule in self.config.routing_rules)
-
-    def _get_user_query(self, messages: list[dict]) -> str:
-        """Extract last user message as query."""
-        for msg in reversed(messages):
-            if msg.get("role") == "user":
-                content = msg.get("content", "")
-                if isinstance(content, str):
-                    return content
-        return ""
 
     def _estimate_complexity(self, query: str) -> str:
         """Estimate query complexity from keywords."""

@@ -4,7 +4,7 @@ import random
 
 from tokenopt.config import TokenOptConfig
 from tokenopt.pipeline.base import OptimizationContext
-from tokenopt.pipeline.rag_optimizer import FewShotSelectorStage
+from tokenopt.pipeline.fewshot import FewShotSelectorStage
 
 EXAMPLES = [
     {"input": "input one", "output": "output one"},

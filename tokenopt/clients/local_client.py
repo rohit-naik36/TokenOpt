@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any
 
-from tokenopt.clients.base import BaseOptimizedClient
-from tokenopt.config import TokenOptConfig
-from tokenopt.pipeline import OptimizationPipeline, RouterStage
+from tokenopt.clients._compat import _CompatShim
+from tokenopt.clients.base import BaseOptimizedClient, _extract_openai_shape_usage
+from tokenopt.config import RoutingRule, TokenOptConfig
+from tokenopt.pipeline import OptimizationPipeline
 
 
 class LocalClient(BaseOptimizedClient):
@@ -69,17 +71,19 @@ class LocalClient(BaseOptimizedClient):
             **self.extra_kwargs
         )
 
-    def _build_pipeline(self) -> OptimizationPipeline:
+    def _build_pipeline(
+        self,
+        routing_rule_filter: Callable[[RoutingRule], bool] | None = None,
+    ) -> OptimizationPipeline:
         # The default router targets cloud models, so skip it for local servers.
-        # Only keep custom routing rules that target local models.
-        stages = [s for s in super()._build_pipeline().stages if s.name != "router"]
-        local_rules = [r for r in self.config.routing_rules if not self._is_cloud_model(r.model)]
-        if local_rules:
-            from dataclasses import replace
+        # Only keep custom routing rules that target local models (AND any
+        # caller-supplied filter).
+        def local_compatible(rule: RoutingRule) -> bool:
+            return not self._is_cloud_model(rule.model) and (
+                routing_rule_filter is None or routing_rule_filter(rule)
+            )
 
-            router_config = replace(self.config, routing_rules=local_rules)
-            stages.insert(0, RouterStage(router_config))
-        return OptimizationPipeline(stages, self.config)
+        return super()._build_pipeline(routing_rule_filter=local_compatible)
 
     @staticmethod
     def _is_cloud_model(model: str) -> bool:
@@ -136,13 +140,7 @@ class LocalClient(BaseOptimizedClient):
         return response.choices[0].message.content or ""
 
     def _extract_usage(self, response: Any) -> dict[str, int]:
-        if response.usage:
-            return {
-                "prompt_tokens": response.usage.prompt_tokens,
-                "completion_tokens": response.usage.completion_tokens,
-                "total_tokens": response.usage.total_tokens,
-            }
-        return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+        return _extract_openai_shape_usage(response)
 
     def chat_completion(
         self,
@@ -163,19 +161,10 @@ class LocalClient(BaseOptimizedClient):
     # Compatibility: expose chat.completions interface
     @property
     def chat(self) -> Any:
-        outer = self
-
-        class Completions:
-            def create(
-                self,
-                messages: list[dict[str, Any]],
-                model: str | None = None,
-                **kwargs: Any
-            ) -> Any:
-                return outer.chat_completion(messages, model, **kwargs)
+        shim = _CompatShim(self)
 
         class Chat:
-            completions = Completions()
+            completions = shim
 
         return Chat()
 

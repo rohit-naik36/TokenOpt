@@ -6,7 +6,8 @@ from typing import Any
 
 from openai import OpenAI as OpenAIClient
 
-from tokenopt.clients.base import BaseOptimizedClient
+from tokenopt.clients._compat import _CompatShim
+from tokenopt.clients.base import BaseOptimizedClient, _extract_openai_shape_usage
 
 
 class OpenAI(BaseOptimizedClient):
@@ -30,30 +31,15 @@ class OpenAI(BaseOptimizedClient):
         return response.choices[0].message.content or ""
 
     def _extract_usage(self, response: Any) -> dict[str, int]:
-        if response.usage:
-            return {
-                "prompt_tokens": response.usage.prompt_tokens,
-                "completion_tokens": response.usage.completion_tokens,
-                "total_tokens": response.usage.total_tokens,
-            }
-        return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+        return _extract_openai_shape_usage(response)
 
     # Compatibility: expose chat.completions interface
     @property
     def chat(self) -> Any:
-        outer = self
-
-        class Completions:
-            def create(
-                self,
-                messages: list[dict[str, Any]],
-                model: str | None = None,
-                **kwargs: Any
-            ) -> Any:
-                return outer.chat_completion(messages, model, **kwargs)
+        shim = _CompatShim(self)
 
         class Chat:
-            completions = Completions()
+            completions = shim
 
         return Chat()
 
