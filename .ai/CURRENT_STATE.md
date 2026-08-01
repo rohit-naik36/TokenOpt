@@ -1,6 +1,6 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1–M8 + UAT + M8.2 + M10 + M11 + M12 complete; next is M13)_
+_Last updated: 2026-08-01 (M1–M8 + UAT + M8.2 + M10 + M11 + M12 + M13 complete; next is M14)_
 
 ## Status: Phase 0 + Phase 1 + M1–M8 + Post-M8 UAT refinements + M8.2 + M10 + M11 + M12 complete
 
@@ -401,6 +401,33 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
     README precedence list, CHANGELOG entry
   - **Verification**: 167 passed, ruff clean, mypy green, examples
     truthful, CI green
+- **M13 — Structural Refactoring & Architecture Stabilization (2026-08-01)**
+  (session 18; Decision 25; internal-only, behavioral freeze)
+  - **Hotspots (H1–H11)**: triplicated `get_user_query`; untyped
+    `config: Any` in 5 stages; duplicated OpenAI-shaped `_extract_usage`;
+    three identical compat shims; duplicated pipeline-rebuild in
+    Anthropic/LocalClient; FewShotSelectorStage co-located in
+    rag_optimizer.py; diversity re-embedding (H7, deferred);
+    `compression_attempted` alias (H8, frozen); stringly-coupled stage
+    gating (H9, deferred); hard-coded MODEL_COSTS (H10, deferred);
+    unkeyed metrics dicts (H11, deferred)
+  - **Refactors R1–R6**: `utils/messages.py::get_user_query` (3 copies
+    removed); `config: TokenOptConfig | None` + default in all stages;
+    `_extract_openai_shape_usage` shared by OpenAI/LocalClient;
+    `clients/_compat.py::_CompatShim` (3 forwarders removed);
+    `_build_pipeline(routing_rule_filter)` consolidation (Anthropic +
+    LocalClient pass model-compatibility filters); `FewShotSelectorStage`
+    split to `pipeline/fewshot.py` (exports unchanged)
+  - **Deliverable**: `.ai/M13_ARCHITECTURE_REVIEW.md` — hotspot report,
+    refactoring summary, internal architecture assessment, technical debt
+    report (4-way), self-review (Immediate Recs + ADB-01..10),
+    validation summary
+  - **Verification**: 167 passed (94% — baseline unchanged), ruff clean,
+    mypy green, build + `twine check` PASSED, 6/6 examples vs stub server,
+    link check 83 files clean
+  - **Docs**: DECISIONS.md Decision 25 (future completion-report format),
+    IMPLEMENTATION_ROADMAP M13 completion + deviation notes, README
+    untouched (no user-facing change)
 
 ## Open item
 
@@ -409,9 +436,10 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- **M13** — maintainability refactor: response helpers, data-driven MODEL_COSTS
-- **M14** — architecture docs polish, **M15** — release v0.1.0
-  (⚠ PyPI optional)
+- **M14** — architecture docs polish (Mermaid diagrams, normalization spec,
+  extension guide), **M15** — release v0.1.0 (⚠ PyPI optional)
+- Immediate Recs from M13 self-review (ADB-01..10 backlog; CI hardening,
+  pip-audit/Dependabot/secret-scanning at M15, extension guide)
 - Prompt-library live-usage tracking: prompts become "live" after real
   task use or user acceptance (per `.ai/PROMPTS/README.md` maintenance
   rule)
@@ -422,10 +450,9 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## Verification
 
-- `pytest tests/` → 158 passed (coverage gate enforced, 94%)
+- `pytest tests/` → 167 passed (coverage gate enforced, 94%)
 - `ruff check tokenopt examples tests` → clean
 - `mypy tokenopt` → **green (exit 0)**
 - `python -m build` → sdist + wheel OK; **`twine check` PASSED**
-- Fresh-venv wheel install + import + metadata check → OK (v0.1.0, MIT)
-- 6 examples validated in clean venv against stub server (exit 0, truthful)
+- 6 examples validated against stub server (exit 0, truthful)
 - **GitHub Actions CI** → full matrix green (verified via GitHub API)

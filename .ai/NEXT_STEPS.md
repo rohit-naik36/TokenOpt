@@ -1,22 +1,26 @@
 # Next Steps
 
-_Last updated: 2026-08-01 (routing precedence decision done — Decision 24; M13 next)_
+_Last updated: 2026-08-01 (M13 complete — structural refactoring under
+behavioral freeze; M14 next)_
 
-## Pre-M13 decision done — M13 next
+## M13 done — M14 next
 
-The RouterStage precedence contract is decided (Decision 24, principle of
-least surprise): explicit caller model wins; matching rule wins by
-priority; custom rules with no match preserve the caller's model (never
-rewritten — no more `gpt-*` rewrites on Anthropic/local); no custom rules
-→ built-in complexity routing; provider default last. Implemented,
-tested (167 green), examples validated against the stub server, review in
-`.ai/ROUTING_PRECEDENCE_REVIEW.md`.
+M13 (Structural Refactoring & Architecture Stabilization) is complete and
+verified: shared query/usage/shim helpers, typed stage configs, consolidated
+pipeline composition (`_build_pipeline(routing_rule_filter)`), and the
+few-shot module split — all behavior-preserving (167 tests, 94% coverage,
+ruff/mypy/build/twine/examples green). Full report:
+`.ai/M13_ARCHITECTURE_REVIEW.md` (hotspots H1–H11, assessment, debt report,
+Immediate Recommendations, ADB-01..10).
 
-1. **M13** — Maintainability refactor (behavior-preserving): response
-   helpers, data-driven MODEL_COSTS — the routing block is now cleared
-2. **M14** — Architecture docs polish: Mermaid diagrams, normalization
+1. **M14** — Architecture docs polish: Mermaid diagrams, normalization
    spec, extension guide
-3. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish)
+2. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish);
+   run the M13 validation suite verbatim as the pre-release baseline; close
+   audit P0.5 (pip-audit, Dependabot, secret scanning)
+3. **Immediate Recs (from M13 §5.1)** — CI hardening (3.10–3.12 matrix,
+   coverage gate, build+twine in CI), extension guide, keep metrics
+   semantics frozen through v0.1.0
 
 ## Notes
 

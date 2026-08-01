@@ -646,3 +646,50 @@
   added numpy dependency; installed missing deps; updated SESSION_BACKUP.md
 - Session 1 (original build): Phase 1 core modules (config, utils, pipeline
   stages, observability, OpenAI/Anthropic clients)
+
+## 2026-08-01 — Session 18: M13 — Structural Refactoring & Architecture Stabilization
+
+### Work performed
+- Full read of every `tokenopt/` module (~1,300 LOC, 12 modules); line
+  inventory; hotspots identified (H1–H11) and reported in
+  `.ai/M13_ARCHITECTURE_REVIEW.md` §1.
+- **R1** — shared `get_user_query` in new `utils/messages.py`; removed three
+  identical copies (router, rag, fewshot); `_reconstruct_messages` takes the
+  precomputed query.
+- **R2** — typed `config: TokenOptConfig | None = None` + `TokenOptConfig()`
+  default in all five stage constructors (compressor, summarizer, cache,
+  rag, fewshot) matching RouterStage; dropped dead `self.config and` guard
+  in `CacheStage._get_redis`.
+- **R3** — `clients/base.py::_extract_openai_shape_usage` shared by OpenAI +
+  LocalClient (`_extract_usage` methods kept, delegate to it).
+- **R4** — `clients/_compat.py::_CompatShim`; chat/messages shims in all
+  three clients now instantiate it (three identical forwarders removed).
+- **R5** — `BaseOptimizedClient._build_pipeline(routing_rule_filter=None)`
+  owns "default pipeline minus router, plus scoped router";
+  Anthropic/LocalClient pass model-compatibility filters (AND-ed with any
+  caller filter); duplicated `dataclasses.replace` dance removed.
+- **R6** — `FewShotSelectorStage` split to `pipeline/fewshot.py`
+  (rag_optimizer.py 278 → 145 lines); `tokenopt.pipeline` exports
+  unchanged; test imports updated (test_fewshot, test_pipeline_config).
+- Deliberately NOT refactored (documented with rationale): diversity
+  re-embedding (H7), `compression_attempted` alias (H8), stage gating (H9),
+  MODEL_COSTS table (H10), unkeyed metrics dicts (H11) — all tracked in ADB.
+- `.ai/M13_ARCHITECTURE_REVIEW.md` — hotspot report (§1), refactoring
+  summary (§2), internal architecture assessment (§3), technical debt
+  report (§4, 4-way classification), self-review with Immediate
+  Recommendations + ADB-01..10 (§5), validation summary (§6).
+- Verification: pytest 167 passed (coverage 94% — baseline unchanged),
+  ruff clean, mypy green (23 files), `python -m build` sdist+wheel OK,
+  `twine check dist/*` PASSED (twine installed), 6/6 examples exit 0 vs
+  stub server (127.0.0.1:8787, restarted then stopped PID 20168), link
+  check over 83 `.ai/` md files clean.
+- Decision 25 — future operating model: every milestone completion report
+  uses the six-section format (Milestone Summary / Verification Results /
+  Architectural Improvements / Immediate Recommendations / ADB /
+  Recommendation for Approval).
+- Roadmap deviation notes (documented in IMPLEMENTATION_ROADMAP M13):
+  MODEL_COSTS not relocated (ADB-05, churn without value under the brief's
+  high-value-only mandate); router complexity keywords left as a class
+  attribute (already a single named constant).
+- Commits: see git log — 5 logical commits (refactor ×3, docs, chore memory).
+- Suite **167 passed, coverage 94%**; pushed; CI green (polled badge).

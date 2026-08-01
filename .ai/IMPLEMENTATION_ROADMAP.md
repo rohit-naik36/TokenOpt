@@ -288,17 +288,27 @@ tracked in SESSION_LOG.)
 
 ---
 
-### M13 — Maintainability refactor (no behavior change)
+### M13 — Maintainability refactor (no behavior change) — ✅ DONE 2026-08-01
 
-**Work**
-- Extract shared response/usage helpers (dedupe `_extract_usage`/
-  `_extract_response_content` across the three client wrappers).
-- Move `MODEL_COSTS` to a data module with a documented update policy.
-- Extract router complexity-keyword constants.
+**Work performed** (deliverable: `.ai/M13_ARCHITECTURE_REVIEW.md`)
+- Shared response/usage helpers: `_extract_openai_shape_usage` (OpenAI +
+  LocalClient) + `_CompatShim` for the chat/messages drop-in shims;
+  `get_user_query` in `utils/messages.py` (three copies removed).
+- Typed `config: TokenOptConfig | None` with consistent defaults in all
+  five stage constructors; `_build_pipeline(routing_rule_filter)`
+  consolidation (Anthropic + LocalClient model-compatibility filters).
+- `FewShotSelectorStage` split out of `rag_optimizer.py` →
+  `pipeline/fewshot.py` (cohesion).
+- Deferred to ADB (documented, not implemented): MODEL_COSTS data module
+  (ADB-05 — relocation alone is churn; cost-source abstraction needs a
+  v0.2 feature decision); router complexity-keyword constants (already a
+  single named class attribute — no value in moving).
 
 **Acceptance check**
-- Full suite green after refactor with **identical** test assertions
-  (behavior-preserving); coverage unchanged or better.
+- ✅ Full suite green with **identical** test assertions (167 passed,
+  coverage 94% — unchanged); ruff/mypy clean; build + `twine check`
+  PASSED; 6/6 examples vs stub server; CI green; public API, routing,
+  metrics semantics untouched (behavioral freeze).
 
 ---
 
