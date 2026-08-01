@@ -80,8 +80,9 @@ never blocks the underlying request.
    compression outcome, latency split, and estimated cost. If you see a
    `Request metrics:` block and a response, TokenOpt is working.
 
-   See `examples/` for OpenAI, Anthropic, Local, routing, and observability
-   demos — and `docs/UAT.md` for the full acceptance checklist.
+   See `examples/` for runnable value demonstrations — compression OFF vs ON,
+   cache miss → hit, conversation summarization, model routing with reasons,
+   and observability — plus `docs/UAT.md` for the full acceptance checklist.
 
 ## Installation
 
@@ -158,8 +159,9 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
-Full script: `examples/openai_basic.py` (includes a second identical call
-that hits the cache).
+Full script: `examples/openai_basic.py` — sends the same long prompt through
+a plain client vs a compressed client (~50% fewer tokens), then repeats the
+call to show the cache miss → hit behavior.
 
 ### Anthropic
 
@@ -176,7 +178,9 @@ response = client.messages.create(
 print("".join(block.text for block in response.content))
 ```
 
-Full script: `examples/anthropic_basic.py`.
+Full script: `examples/anthropic_basic.py` — a 5-turn conversation that
+exceeds the summarization threshold; older turns are condensed into a
+summary instead of being sent verbatim.
 
 ### Local models (Ollama, vLLM, llama.cpp, LM Studio)
 
@@ -195,7 +199,10 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
-Full script: `examples/local_basic.py`.
+Full script: `examples/local_basic.py` — a multi-paragraph code-review prompt
+compressed before the local model sees it, then a repeat request served from
+the cache (no inference call). Cloud routing rules are auto-skipped for
+local backends.
 
 ### One client, any provider (factory)
 
@@ -243,8 +250,11 @@ config = TokenOptConfig(
 client = OpenAI(config=config)
 ```
 
-Run it: `examples/pipeline_config.py` (routing + RAG + few-shot) and
-`examples/metrics_observability.py` (callback + cost estimation).
+Run it: `examples/pipeline_config.py` — four prompts, four routing decisions
+(custom rule → `o1-mini`, complexity fallback → `gpt-4o`/`gpt-4o-mini`), each
+with its `routing_reason`, plus routing OFF vs ON; and
+`examples/metrics_observability.py` — every metric annotated, the latency
+split explained, and the callback hook for your own monitoring.
 
 ## Supported providers & features
 

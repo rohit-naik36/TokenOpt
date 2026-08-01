@@ -7,7 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `RequestMetrics.routing_reason` records WHY a request was routed to its
+  model: the matched rule name (e.g. `math_tasks`) or
+  `complexity-based (low|medium|high)` for the fallback heuristic.
+  Additive only — no existing fields changed.
+
 ### Changed
+
+- `examples/` are now value demonstrations: each script leads with a
+  "Demonstrates / Expected outcome" header, sends realistic long prompts,
+  shows compression OFF vs ON and cache miss → hit comparisons, and prints
+  `explain()` lines derived only from the recorded metrics — the printed
+  claims can never drift from what the pipeline actually did.
+- README example sections describe the demonstrated value per script.
 
 - Per-request metrics now distinguish compression **attempted** (stage ran)
   from **effective** (tokens actually reduced) via `compression_attempted`,
