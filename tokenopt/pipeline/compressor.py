@@ -6,6 +6,7 @@ import re
 from collections.abc import Callable
 from typing import Any
 
+from tokenopt.config import TokenOptConfig
 from tokenopt.pipeline.base import OptimizationContext, PipelineStage
 from tokenopt.utils.token_counter import count_message_tokens, count_tokens, truncate_to_tokens
 
@@ -15,8 +16,8 @@ class CompressorStage(PipelineStage):
 
     name = "compressor"
 
-    def __init__(self, config: Any = None):
-        self.config = config
+    def __init__(self, config: TokenOptConfig | None = None):
+        self.config = config or TokenOptConfig()
         self._llmlingua: Any = None
 
     def _get_llmlingua(self) -> Any:
@@ -111,10 +112,10 @@ class ContextSummarizerStage(PipelineStage):
 
     def __init__(
         self,
-        config: Any = None,
+        config: TokenOptConfig | None = None,
         summarizer_fn: Callable[[list[dict], str], str] | None = None,
     ):
-        self.config = config
+        self.config = config or TokenOptConfig()
         self.summarizer_fn = summarizer_fn
 
     def process(self, ctx: OptimizationContext) -> OptimizationContext:

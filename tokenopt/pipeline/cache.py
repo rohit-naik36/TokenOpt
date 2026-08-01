@@ -8,6 +8,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Any
 
+from tokenopt.config import TokenOptConfig
 from tokenopt.pipeline.base import OptimizationContext, PipelineStage
 from tokenopt.utils.embeddings import get_embedding_provider, hash_text
 from tokenopt.utils.token_counter import count_message_tokens
@@ -31,15 +32,15 @@ class CacheStage(PipelineStage):
 
     name = "cache"
 
-    def __init__(self, config: Any = None):
-        self.config = config
+    def __init__(self, config: TokenOptConfig | None = None):
+        self.config = config or TokenOptConfig()
         self._cache: OrderedDict[str, CacheEntry] = OrderedDict()
         self._embedding_provider = get_embedding_provider(fallback=True)
         self._redis = None
 
     def _get_redis(self) -> Any:
         """Lazy-load Redis if configured."""
-        if self._redis is None and self.config and self.config.redis_url:
+        if self._redis is None and self.config.redis_url:
             try:
                 import redis
                 self._redis = redis.from_url(self.config.redis_url, decode_responses=True)
