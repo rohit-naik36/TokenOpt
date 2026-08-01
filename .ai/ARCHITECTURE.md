@@ -53,7 +53,22 @@ tokenopt/
   no API call.
 - **Routing** — Router runs first and mutates `ctx.model`; compression targets
   based on that model's tokenizer. `LocalClient` drops the router unless custom
-  rules target local models (Decision 8).
+  rules target local models (Decision 8). Routing precedence (Decision 24):
+  1. **Explicit caller model** — a `model=` passed to the client is never
+     overridden (`ctx.model_explicit`).
+  2. **Matching rule** — rules (custom and built-in) in priority order;
+     first match wins.
+  3. **Custom rules exist but none match** — the caller's requested model is
+     preserved (never rewritten; fail-open).
+  4. **No custom routing configuration** — built-in complexity routing
+     (keyword + token-count heuristic).
+  5. **Provider default** — nothing routes; the resolved model stands.
+  Built-in rules (`RoutingRule.builtin=True`) ship with
+  `get_default_config()`; only user-supplied rules count as "custom" for
+  precedence 3 vs 4, so default-config behavior is unchanged. Every
+  decision is recorded (`routing_precedence`, `routing_rule`,
+  `routing_complexity`) and surfaced via `RequestMetrics.routing_reason`
+  + `routing_precedence`. Full review: `.ai/ROUTING_PRECEDENCE_REVIEW.md`.
 - **Local normalization** — Ollama responses are converted to OpenAI chat
   completion shape so downstream code (cache, metrics, cost estimation) is
   backend-agnostic (Decision 7).
