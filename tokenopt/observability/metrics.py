@@ -31,6 +31,7 @@ class RequestMetrics:
     reduction_percentage: float = 0.0    # tokens_saved / original * 100
     summarization_applied: bool = False
     routing_applied: bool = False
+    routing_reason: str = ""  # rule name or complexity fallback explanation
     rag_optimization_applied: bool = False
     fewshot_applied: bool = False
     latency_ms: float = 0.0

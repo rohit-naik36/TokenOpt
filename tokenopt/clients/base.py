@@ -156,6 +156,10 @@ class BaseOptimizedClient(ABC):
         optimized_tokens = ctx.metrics.get("final_token_count", ctx.original_token_count)
         tokens_saved = ctx.original_token_count - optimized_tokens
 
+        routing_reason = ctx.metrics.get("routing_rule", "")
+        if not routing_reason and "routing_complexity" in ctx.metrics:
+            routing_reason = f"complexity-based ({ctx.metrics['routing_complexity']})"
+
         metrics = RequestMetrics(
             model=model,
             original_tokens=ctx.original_token_count,
@@ -174,6 +178,7 @@ class BaseOptimizedClient(ABC):
             routing_applied=(
                 ctx.metrics.get("routing_applied", False) or "routed_model" in ctx.metrics
             ),
+            routing_reason=routing_reason,
             rag_optimization_applied=ctx.metrics.get("rag_optimization_applied", False),
             fewshot_applied=ctx.metrics.get("fewshot_applied", False),
             latency_ms=total_latency,

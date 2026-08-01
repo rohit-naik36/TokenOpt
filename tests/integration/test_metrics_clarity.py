@@ -10,6 +10,7 @@ executed" with "tokens actually reduced". The new fields
 import httpx
 
 from tokenopt import OpenAI, TokenOptConfig
+from tokenopt.config import RoutingRule
 from tokenopt.observability import RequestMetrics
 
 
@@ -122,3 +123,76 @@ def test_disabled_compression_reports_not_attempted(
     assert metric.compression_attempted is False
     assert metric.compression_effective is False
     assert metric.tokens_saved == 0
+
+
+def test_routing_reason_custom_rule_match(openai_transport: httpx.MockTransport) -> None:
+    """A matching custom rule names the rule in routing_reason."""
+    client = OpenAI(
+        config=TokenOptConfig(
+            routing_rules=[
+                RoutingRule(
+                    name="math_tasks",
+                    condition=lambda q, m: "equation" in q.lower(),
+                    model="o1-mini",
+                    priority=40,
+                )
+            ],
+        ),
+        api_key="test-key",
+        http_client=httpx.Client(transport=openai_transport),
+    )
+
+    client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "Solve the equation x^2 = 49 for x."}],
+    )
+
+    metric = _last(client)
+    assert metric.routing_applied is True
+    assert metric.model == "o1-mini"
+    assert metric.routing_reason == "math_tasks"
+
+
+def test_routing_reason_complexity_fallback(
+    openai_transport: httpx.MockTransport,
+) -> None:
+    """Without a rule match, routing_reason explains the complexity fallback."""
+    client = OpenAI(
+        config=TokenOptConfig(
+            enable_routing=True,
+            routing_rules=[],
+            default_model="gpt-4o",
+        ),
+        api_key="test-key",
+        http_client=httpx.Client(transport=openai_transport),
+    )
+
+    client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": "What is the weather?"}],
+    )
+
+    metric = _last(client)
+    assert metric.routing_applied is True
+    assert metric.model == "gpt-4o-mini"
+    assert metric.routing_reason == "complexity-based (low)"
+
+
+def test_routing_disabled_reports_empty_reason(
+    openai_transport: httpx.MockTransport,
+) -> None:
+    """When routing is disabled, routing_reason stays empty."""
+    client = OpenAI(
+        config=TokenOptConfig(enable_routing=False),
+        api_key="test-key",
+        http_client=httpx.Client(transport=openai_transport),
+    )
+
+    client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": "Solve the equation x^2 = 49 for x."}],
+    )
+
+    metric = _last(client)
+    assert metric.routing_applied is False
+    assert metric.routing_reason == ""
