@@ -9,9 +9,12 @@ The call surface matches the official SDK (`client.messages.create`),
 including `max_tokens`, `temperature`, and other request options.
 """
 
+from _format import print_request, print_summary, quiet
+
 from tokenopt import Anthropic
 
 client = Anthropic()
+quiet()
 
 response = client.messages.create(
     model="claude-3-5-haiku",
@@ -21,6 +24,9 @@ response = client.messages.create(
     ],
 )
 
-print("Response:", "".join(block.text for block in response.content))
+print_request(
+    client.metrics_collector.get_recent(1)[0],
+    response="".join(block.text for block in response.content),
+)
 print()
-print("Metrics:", client.get_metrics_summary())
+print_summary(client.get_metrics_summary())

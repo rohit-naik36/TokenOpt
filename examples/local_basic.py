@@ -14,16 +14,35 @@ Override the endpoint for validation or custom setups:
 
 import os
 
+from _format import print_request, print_summary, quiet
+
 from tokenopt import LocalClient
 
 base_url = os.environ.get("TOKENOPT_EXAMPLE_BASE_URL", "http://localhost:11434")
 
 client = LocalClient(model="llama3.1", base_url=base_url)
+quiet()
 
-response = client.chat.completions.create(
-    messages=[{"role": "user", "content": "Hello! Who are you?"}],
+messages = [{"role": "user", "content": "Hello! Who are you?"}]
+
+# Request 1: first time this prompt is seen -> cache miss, API call made
+first = client.chat.completions.create(messages=messages)
+print_request(
+    client.metrics_collector.get_recent(1)[0],
+    response=first.choices[0].message.content,
 )
-
-print("Response:", response.choices[0].message.content)
 print()
-print("Metrics:", client.get_metrics_summary())
+
+# Request 2: identical prompt, same client -> cache hit, no API call
+second = client.chat.completions.create(messages=messages)
+print_request(
+    client.metrics_collector.get_recent(1)[0],
+    response=second.choices[0].message.content,
+)
+print()
+
+print("Note: the in-memory cache lives on the client instance.")
+print("It does NOT persist across separate program executions.")
+print()
+
+print_summary(client.get_metrics_summary())

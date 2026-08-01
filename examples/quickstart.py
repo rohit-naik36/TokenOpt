@@ -12,9 +12,12 @@ Optionally point at any OpenAI-compatible endpoint:
 The rest of the code is identical to using `openai.OpenAI` directly.
 """
 
+from _format import print_request, print_summary, quiet
+
 from tokenopt import OpenAI
 
 client = OpenAI()
+quiet()  # keep the console clean; structured JSON stays available for production
 
 response = client.chat.completions.create(
     model="gpt-4o",
@@ -24,6 +27,10 @@ response = client.chat.completions.create(
     ],
 )
 
-print("Response:", response.choices[0].message.content)
+# Latest request's metrics, rendered readably
+print_request(
+    client.metrics_collector.get_recent(1)[0],
+    response=response.choices[0].message.content,
+)
 print()
-print("Metrics:", client.get_metrics_summary())
+print_summary(client.get_metrics_summary())

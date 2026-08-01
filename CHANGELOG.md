@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Per-request metrics now distinguish compression **attempted** (stage ran)
+  from **effective** (tokens actually reduced) via `compression_attempted`,
+  `compression_effective`, `tokens_saved`, and `reduction_percentage`;
+  latency is split into `model_latency_ms` (inference) and
+  `pipeline_latency_ms` (TokenOpt overhead). Existing fields unchanged.
+- Example scripts print concise, human-readable metrics (model, cache hit,
+  compression outcome, tokens, latency split, estimated cost) instead of
+  raw structured JSON; JSON logging is unchanged for production use.
+- README gained a 5-Minute Quick Start and `docs/UAT.md` became the
+  permanent manual acceptance checklist.
+
 ## [0.1.0] - 2026-08-01
 
 ### Added

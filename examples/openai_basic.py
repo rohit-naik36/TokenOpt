@@ -3,13 +3,15 @@
 Demonstrates:
 - custom `TokenOptConfig` (compression, caching, routing)
 - the same call twice to show the in-memory cache hit on the second request
-- reading the aggregated metrics summary
+- readable per-request metrics (attempted vs effective compression)
 
 Run with an OpenAI API key:
 
     export OPENAI_API_KEY=sk-...          # macOS/Linux
     $env:OPENAI_API_KEY = "sk-..."        # PowerShell
 """
+
+from _format import print_request, print_summary, quiet
 
 from tokenopt import OpenAI, TokenOptConfig
 
@@ -23,6 +25,7 @@ config = TokenOptConfig(
 )
 
 client = OpenAI(config=config)
+quiet()
 
 messages = [
     {"role": "system", "content": "You are a helpful assistant."},
@@ -36,15 +39,20 @@ messages = [
     },
 ]
 
+# Request 1: fresh call (cache miss)
 first = client.chat.completions.create(model="gpt-4o", messages=messages)
-print("First call:", first.choices[0].message.content)
+print_request(
+    client.metrics_collector.get_recent(1)[0],
+    response=first.choices[0].message.content,
+)
 print()
 
+# Request 2: identical call -> served from the in-memory cache (cache hit)
 second = client.chat.completions.create(model="gpt-4o", messages=messages)
-print("Second call (cache hit expected):", second.choices[0].message.content)
+print_request(
+    client.metrics_collector.get_recent(1)[0],
+    response=second.choices[0].message.content,
+)
 print()
 
-summary = client.get_metrics_summary()
-print("Requests:", summary["total_requests"])
-print("Cache hit rate:", summary["cache_hit_rate"])
-print("Avg tokens reduced per request:", summary["avg_token_reduction"])
+print_summary(client.get_metrics_summary())

@@ -11,19 +11,24 @@ Run with an OpenAI API key:
     $env:OPENAI_API_KEY = "sk-..."        # PowerShell
 """
 
+from _format import print_request, print_summary, quiet
+
 from tokenopt import OpenAI, RequestMetrics, TokenOptConfig, count_message_tokens, estimate_cost
 
 
 def on_request(metrics: RequestMetrics) -> None:
+    """Example callback: called once per request with its metrics."""
     print(
         f"  [callback] model={metrics.model} "
         f"tokens={metrics.original_tokens}->{metrics.optimized_tokens} "
+        f"(saved {metrics.tokens_saved:+d}) "
         f"routed={metrics.routing_applied} cache_hit={metrics.cache_hit}"
     )
 
 
 config = TokenOptConfig(metrics_callback=on_request)
 client = OpenAI(config=config)
+quiet()
 
 response = client.chat.completions.create(
     model="gpt-4o",
@@ -31,11 +36,13 @@ response = client.chat.completions.create(
         {"role": "user", "content": "What are the benefits of semantic caching?"},
     ],
 )
-print("Response:", response.choices[0].message.content)
 print()
-
-summary = client.get_metrics_summary()
-print("Summary:", summary)
+print_request(
+    client.metrics_collector.get_recent(1)[0],
+    response=response.choices[0].message.content,
+)
+print()
+print_summary(client.get_metrics_summary())
 print()
 
 # Standalone utilities

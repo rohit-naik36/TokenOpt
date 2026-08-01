@@ -14,6 +14,75 @@ automatically reduces token usage and cost.
 All optimization is **best-effort and fails open**: an optimization error
 never blocks the underlying request.
 
+## 5-Minute Quick Start
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/rohit-naik36/TokenOpt.git
+   cd TokenOpt
+   ```
+
+2. **Create a virtual environment** (Python ≥ 3.10)
+
+   ```bash
+   python -m venv .venv
+   ```
+
+   Then activate it — macOS/Linux: `source .venv/bin/activate` ·
+   Windows: `.venv\Scripts\activate`
+
+3. **Install the package**
+
+   ```bash
+   pip install -e .
+   ```
+
+4. **Install optional extras if needed** — e.g. native Ollama support:
+
+   ```bash
+   pip install -e ".[local]"
+   ```
+
+5. **Set your API key** (OpenAI for this quick start)
+
+   ```bash
+   export OPENAI_API_KEY=sk-...           # macOS/Linux
+   # PowerShell:  $env:OPENAI_API_KEY = "sk-..."
+   ```
+
+6. **Run the example**
+
+   ```bash
+   python examples/quickstart.py
+   ```
+
+7. **Expected output** — a readable metrics block (not raw JSON):
+
+   ```
+   Request metrics:
+     Model:           gpt-4o-mini
+     Cache hit:       No
+     Compression:     attempted / no reduction (0 tokens, 0.0%)
+     Tokens:          27 -> 27 (+7 output)
+     Latency:         total 566.4 ms | model 393.8 ms | TokenOpt overhead 172.6 ms
+     Estimated cost:  $0.000008
+     Response:        TokenOpt is a drop-in SDK that optimizes LLM prompts...
+   Aggregated metrics:
+     Requests:            1
+     Cache hit rate:      0.0%
+     ...
+   ```
+
+   **What a successful run looks like:** the script prints the response plus
+   a per-request metrics block showing the model actually used (note the
+   router may pick `gpt-4o-mini` for simple queries), cache status,
+   compression outcome, latency split, and estimated cost. If you see a
+   `Request metrics:` block and a response, TokenOpt is working.
+
+   See `examples/` for OpenAI, Anthropic, Local, routing, and observability
+   demos — and `docs/UAT.md` for the full acceptance checklist.
+
 ## Installation
 
 > ⚠️ TokenOpt is **not on PyPI yet** (v0.1.0 is pre-release). Install from

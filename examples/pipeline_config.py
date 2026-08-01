@@ -11,10 +11,13 @@ Run with an OpenAI API key:
     $env:OPENAI_API_KEY = "sk-..."        # PowerShell
 """
 
+from _format import print_request, print_summary, quiet
+
 from tokenopt import RoutingRule, TokenOptConfig, create_client_from_model
 
 
 def is_math_query(query: str, messages: list[dict]) -> bool:
+    """Routing rule condition: true for math-related questions."""
     return any(token in query.lower() for token in ("math", "equation", "integral", "derivative"))
 
 
@@ -35,14 +38,18 @@ config = TokenOptConfig(
 )
 
 client = create_client_from_model("gpt-4o", api_key=None, config=config)
+quiet()
 
+# First prompt matches no rule -> complexity-based fallback routing
+# Second prompt matches the math_tasks rule -> routed to o1-mini
 for prompt in ["Explain quantum entanglement simply.", "Solve the equation x^2 = 49."]:
     response = client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
     )
-    print(f"Prompt: {prompt}")
-    print(f"Model used: {response.model}")
-    print(f"Answer: {response.choices[0].message.content}")
+    print_request(
+        client.metrics_collector.get_recent(1)[0],
+        response=response.choices[0].message.content,
+    )
     print()
 
-print("Optimization usage:", client.get_metrics_summary()["optimization_usage"])
+print_summary(client.get_metrics_summary())
