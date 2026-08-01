@@ -1,5 +1,46 @@
 # Session Log
 
+## 2026-08-01 — Session 13: M8.2 Value Demonstration & Showcase
+
+### Work performed
+- **`RequestMetrics.routing_reason`** (additive field): populated in
+  `base._record_metrics` from `ctx.metrics` — matched rule name, else
+  `complexity-based (low|medium|high)`; RouterStage (`routing_rule` /
+  `routing_complexity` keys) remains the single source of truth.
+- **examples/_format.py**: `explain(metrics)` prints "Why:" lines derived
+  only from recorded metrics; `print_comparison(title, before, after)`
+  prints OFF vs ON side-by-side.
+- **6 examples rewritten as value demonstrations** — header docstrings
+  ("Demonstrates / Expected outcome"), realistic long prompts:
+  - quickstart: drop-in + compression + routing reason (default rules)
+  - openai_basic: compression OFF (331→331) vs ON (331→184, ~44%), then
+    cache miss→hit on a separate cached client
+  - anthropic_basic: 5-turn conversation with threshold 150 →
+    summarization applied (167→140)
+  - local_basic: multi-paragraph code-review prompt (164→89, ~46%) +
+    miss→hit; cloud routing rules auto-skipped for local backends
+  - pipeline_config: 4 prompts → 4 routing decisions (simple→gpt-4o-mini
+    low, code→gpt-4o medium, math→o1-mini math_tasks rule, complex→gpt-4o
+    high) + routing OFF vs ON comparison
+  - metrics_observability: field-by-field annotation, latency-split story
+    (miss 157.8 ms overhead vs hit 0.3 ms), callback, utilities
+- **README/CHANGELOG**: example sections describe demonstrated value;
+  `[Unreleased]` gains Added (routing_reason) + Changed (examples/README).
+- **Regression tests** (+3 in test_metrics_clarity.py): routing_reason =
+  rule name on match / complexity fallback string / empty when routing off.
+- **Validation (clean env)**: fresh venv (m82-env) + stub server at
+  127.0.0.1:8787 — all 6 examples exit 0; every printed "Why:" line
+  cross-checked against the actual metrics — truthful.
+- **Truthfulness fixes en route**: quickstart prompt removed "I think"
+  (default `reasoning_tasks` rule matches substring "think" → o1-mini;
+  demo now shows complexity fallback instead); openai_basic header claim
+  corrected to measured ~44%; em-dashes in console output → ASCII "-"
+  (Windows console rendered them as �).
+- **Commits**: `203b3d4` feat: routing_reason; `ec4f638` docs: examples;
+  `2a6093f` docs: README + CHANGELOG; pushed to main.
+- **Gates**: 158 passed (94%), ruff clean (incl. examples), mypy exit 0,
+  build + twine PASSED.
+
 ## 2026-08-01 — Session 12: Post-M8 UAT Refinements
 
 ### Work performed

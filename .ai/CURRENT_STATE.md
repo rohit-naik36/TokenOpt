@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1–M8 + UAT refinements complete; next is M10)_
+_Last updated: 2026-08-01 (M1–M8 + UAT refinements + M8.2 complete; next is M10)_
 
-## Status: Phase 0 + Phase 1 + M1–M8 + Post-M8 UAT refinements complete
+## Status: Phase 0 + Phase 1 + M1–M8 + Post-M8 UAT refinements + M8.2 complete
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -255,6 +255,47 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
   - **CHANGELOG [Unreleased]**: Changed entries
   - Suite: **155 passed**; coverage **94%**; ruff clean; mypy exit 0;
     build + twine PASSED; CI badge passing
+- **M8.2 — Value Demonstration & Showcase (2026-08-01)** (session 13)
+  - **`RequestMetrics.routing_reason`** (additive field, Decisions 19–20):
+    populated in `base._record_metrics` from `ctx.metrics` — matched rule
+    name (e.g. `math_tasks`) else `complexity-based (low|medium|high)`;
+    RouterStage remains the single source of truth (`routing_rule` /
+    `routing_complexity` keys)
+  - **examples/_format.py**: `explain(metrics)` — why-lines derived ONLY
+    from recorded metrics (cache hit, compression effective/attempted,
+    summarization, routing_reason, overhead vs model latency split);
+    `print_comparison(title, before, after)` — OFF vs ON side-by-side
+  - **6 examples rewritten as value demonstrations**: header docstrings
+    ("Demonstrates / Expected outcome"), realistic long prompts:
+    - quickstart — drop-in + compression + routing reason + summary
+    - openai_basic — compression OFF (331→331, 0%) vs ON (331→184,
+      ~44%), then cache miss→hit on a separate client
+    - anthropic_basic — 5-turn conversation, threshold 150 → summarization
+      applied (167→140), claude model untouched
+    - local_basic — multi-paragraph code-review prompt (164→89, ~46%),
+      miss→hit; cloud routing rules auto-skipped for local backends
+    - pipeline_config — 4 prompts, 4 routing decisions (simple→gpt-4o-mini
+      complexity-based (low), code→gpt-4o (medium), math→o1-mini
+      math_tasks rule, complex→gpt-4o (high)) + routing OFF vs ON
+    - metrics_observability — every metric annotated field-by-field,
+      latency-split story (miss 157.8 ms overhead vs hit 0.3 ms), callback
+  - **README**: example sections now describe demonstrated value
+    (compression OFF vs ON, cache miss→hit, summarization, routing reasons,
+    observability); **CHANGELOG [Unreleased]**: Added routing_reason +
+    Changed examples/README entries
+  - **Regression tests**: +3 (`routing_reason` rule match / complexity
+    fallback / disabled) in `tests/integration/test_metrics_clarity.py`
+  - **Clean-environment validation** (fresh venv + stub server at
+    127.0.0.1:8787): all 6 examples exit 0; printed explanations
+    cross-checked against recorded metrics — all truthful; routing_reason
+    verified live (`math_tasks`, `complexity-based (low|medium|high)`)
+  - Commits `203b3d4` (feat), `ec4f638` (examples), `2a6093f` (README/
+    CHANGELOG); suite **158 passed**; coverage **94%**; ruff clean
+    (incl. examples); mypy exit 0; build + twine PASSED; pushed to main
+  - Truthfulness notes: quickstart prompt was edited to remove "I think"
+    (the default `reasoning_tasks` rule matches the substring "think",
+    routing the demo to o1-mini); header claims match measured values
+    (44.4% vs "~44%")
 
 ## Open item
 
@@ -277,9 +318,10 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## Verification
 
-- `pytest tests/` → 150 passed (coverage gate enforced, 94%)
-- `ruff check tokenopt tests` → clean
+- `pytest tests/` → 158 passed (coverage gate enforced, 94%)
+- `ruff check tokenopt examples tests` → clean
 - `mypy tokenopt` → **green (exit 0)**
 - `python -m build` → sdist + wheel OK; **`twine check` PASSED**
 - Fresh-venv wheel install + import + metadata check → OK (v0.1.0, MIT)
+- 6 examples validated in clean venv against stub server (exit 0, truthful)
 - **GitHub Actions CI** → full matrix green (verified via GitHub API)

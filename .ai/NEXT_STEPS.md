@@ -1,16 +1,16 @@
 # Next Steps
 
-_Last updated: 2026-08-01 (Post-M8 UAT refinements complete; M10 next)_
+_Last updated: 2026-08-01 (M8.2 value demonstrations complete; M10 next)_
 
-## UAT refinements done — M10 is next (governance docs; no gate)
+## M8.2 done — M10 is next (governance docs; no gate)
 
-Post-M8 UAT refinements complete: per-request metrics now separate
-compression attempted/effective + tokens saved + reduction % + model
-latency split (additive fields, no API break); all examples print concise
-readable output (JSON preserved for production); `local_basic.py`
-demonstrates cache miss→hit; README has a 5-Minute Quick Start;
-**docs/UAT.md** is the permanent release acceptance checklist; 5 regression
-tests added (155 total). All gates green.
+M8.2 complete: `RequestMetrics.routing_reason` (additive — rule name or
+`complexity-based (low|medium|high)`) with 3 regression tests (158 total);
+all 6 examples are now value demonstrations (header docstrings, realistic
+long prompts, compression OFF vs ON + cache miss→hit comparisons,
+`explain()` lines derived only from recorded metrics, routing decisions
+with reasons); README example sections + CHANGELOG updated; validated in a
+clean env with truthful output. All gates green.
 
 1. **M10** — Extend `.ai/WORKFLOWS/` + `.ai/ROLES/` to full sets (audit §5)
 2. **M11** — `.ai/PROMPTS/` (9 prompts; optional)
