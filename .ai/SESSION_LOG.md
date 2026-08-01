@@ -1,5 +1,36 @@
 # Session Log
 
+## 2026-08-01 — Session 15: M11 — AI Prompt Library
+
+### Work performed
+- **`.ai/PROMPTS/` created, grouped by purpose** (4 groups, 10 prompts):
+  - `design/` — architecture-review
+  - `implementation/` — feature, bug-fix, refactoring, unit-testing
+  - `verification/` — integration-testing, regression-verification
+  - `operations/` — documentation-update, release-preparation,
+    repository-audit
+- **Every prompt follows the fixed template**: objective, required
+  inputs, deterministic numbered instructions (exact commands like
+  `pytest tests/ -q` and full relative paths), expected outputs,
+  verification criteria (executable checkboxes), determinism rules
+  (never/always constraints, e.g. "reproduction test before fix",
+  "evidence over memory", "fail-open preserved").
+- **`.ai/PROMPTS/README.md`** — prompt design guidelines: grouping table,
+  template spec, determinism rules, the four-layer model (prompt =
+  execution / workflow = runbook / role = ownership / standard =
+  normative rule), add + maintenance rules (append-only; a prompt is
+  "live" only after real-task use or user acceptance).
+- **Cross-references**: GOVERNANCE_INDEX gains a Prompts table (10 rows:
+  prompt → group → owner role → governing workflow); each prompt links
+  its workflow + owner role + standards; IMPLEMENTATION_ROADMAP M11
+  marked DONE with executed scope; ROADMAP M11 line added; DECISIONS +22.
+- **Verification**: link check over 75 md files (all relative links
+  resolve); prompt→workflow/role cross-refs 10/10 resolve; gates green
+  (158 passed, ruff clean, mypy exit 0); SDK/tests/examples untouched
+  (docs-only milestone).
+- **Commits**: (see checkpoint — logical commits: prompts by group,
+  guidelines, cross-refs, memory).
+
 ## 2026-08-01 — Session 14: M10 — AI Engineering Governance Expansion
 
 ### Work performed

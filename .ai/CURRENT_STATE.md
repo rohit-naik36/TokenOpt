@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1–M8 + UAT refinements + M8.2 + M10 complete; next is M11)_
+_Last updated: 2026-08-01 (M1–M8 + UAT + M8.2 + M10 + M11 complete; next is M12)_
 
-## Status: Phase 0 + Phase 1 + M1–M8 + Post-M8 UAT refinements + M8.2 + M10 complete
+## Status: Phase 0 + Phase 1 + M1–M8 + Post-M8 UAT refinements + M8.2 + M10 + M11 complete
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -327,6 +327,30 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
     SDK/tests/examples/README untouched
   - Commits: `72ddef0`, `76a83b4`, `588d182`, `e49d6c1`, `2cf461f`,
     `104d366` (memory commit follows); pushed to main; CI green
+- **M11 — AI Prompt Library (2026-08-01)** (session 15; Decision 22;
+  no SDK changes)
+  - **`.ai/PROMPTS/` grouped by purpose**: `design/` (architecture-review),
+    `implementation/` (feature, bug-fix, refactoring, unit-testing),
+    `verification/` (integration-testing, regression-verification),
+    `operations/` (documentation-update, release-preparation,
+    repository-audit) — **10 prompts**
+  - **Template (per prompt)**: objective, required inputs, deterministic
+    numbered instructions (exact commands/paths), expected outputs,
+    verification criteria (executable checkboxes), determinism rules
+    (never/always constraints)
+  - **`.ai/PROMPTS/README.md`** — prompt design guidelines: grouping table,
+    template spec, determinism rules (evidence over memory, exact
+    commands, one judgment-call limit, composable handoffs), layer model
+    (prompt = execution / workflow = runbook / role = ownership /
+    standard = normative rule), add + maintenance rules (append-only,
+    live-after-use)
+  - **Cross-references**: GOVERNANCE_INDEX gains a Prompts table (prompt →
+    group → owner → governing workflow); every prompt links its workflow
+    + role + standards; IMPLEMENTATION_ROADMAP M11 marked done;
+    ROADMAP +21? no — DECISIONS +22
+  - **Verification**: link check over 75 md files (all resolve); prompt →
+    workflow/role cross-refs 10/10 resolve; suite 158 green; ruff/mypy
+    clean; SDK/tests/examples untouched
 
 ## Open item
 
@@ -335,9 +359,11 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- **M11** — `.ai/PROMPTS/` (optional; depends on M10)
-- M12 cleanup (⚠), M13 refactor, M14 arch docs,
+- **M12** — cleanup (⚠), M13 refactor, M14 arch docs,
   M15 release v0.1.0 (⚠ PyPI optional)
+- Prompt-library live-usage tracking: prompts become "live" after real
+  task use or user acceptance (per `.ai/PROMPTS/README.md` maintenance
+  rule)
 - Full config reference docs pending
 - Local client live verification against a real Ollama server
 - Merge Dependabot action-upgrade PRs (checkout/setup-python/upload-artifact
