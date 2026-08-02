@@ -785,3 +785,7 @@
   - **Appendix A** — stdlib-only offline stub server (no API keys needed)
   - **Appendix B** — GitHub issue bug-report template + sign-off table
 - Docs-only; no code/tests changed; suite remains 167 green.
+- **Session 20.2 (same day)** — per user request, merged the UAT checklist
+  into the guide as **Appendix C** (verbatim from `docs/UAT.md`, marked as
+  canonical-copy; `docs/UAT.md` stays the source of truth) — the guide is
+  now a single self-contained document; intro + footer updated.
