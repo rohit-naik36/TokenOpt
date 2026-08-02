@@ -738,3 +738,26 @@
   CHECKPOINT_20260801_M14.md.
 - Commits: `docs:` ×2 (knowledge base + memory/checkpoint); pushed;
   CI green (polled badge).
+
+## Session 20 — M15: Release v0.1.0 to PyPI (2026-08-02)
+
+- **Context**: User confirmed Trusted Publisher configured on PyPI (project
+  `tokenopt` / owner `rohit-naik36` / workflow `publish.yml`) — status
+  showed "pending" because no OIDC publish had happened yet.
+- **Diagnosis**: `publish.yml` triggers only on `v*` tags and no tag
+  existed; PyPI (and TestPyPI) JSON APIs returned 404 for `tokenopt`;
+  `pip index versions tokenopt` found nothing. Trusted Publisher "pending"
+  = registered but never used; flips to `active` after first successful
+  upload.
+- **Executed**: verified `git remote -v` (Decision 11) — created + pushed
+  annotated tag `v0.1.0` — GitHub Actions publish workflow ran (build
+  sdist+wheel, `twine check`, OIDC upload via `pypa/gh-action-pypi-publish`
+  with `id-token: write`; no secrets).
+- **Verified**: `https://pypi.org/pypi/tokenopt/json` — 200, version 0.1.0
+  (was 404 pre-publish). `pip install tokenopt` now works.
+- **Memory updated**: CURRENT_STATE (M15 entry, in-progress trimmed),
+  NEXT_STEPS (M15 done → ADB backlog), SESSION_STATE, TASK_QUEUE (M15
+  DONE, resolved gates), ROADMAP (M15 checkbox), SESSION_LOG.
+- **Checkpoint**: CHECKPOINT_20260802_M15.md (created below).
+- Note: untracked `TEST.txt` ("hello") left in repo root — pending user
+  decision (not committed).

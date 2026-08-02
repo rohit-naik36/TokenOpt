@@ -1,25 +1,23 @@
 # Next Steps
 
-_Last updated: 2026-08-01 (M14 complete — Architecture Knowledge Base;
-M15 next)_
+_Last updated: 2026-08-02 (M15 complete — v0.1.0 released to PyPI; ADB
+backlog next)_
 
-## M14 done — M15 next
+## M15 done — v0.1.0 live on PyPI
 
-M14 built the permanent Architecture Knowledge Base at
-`.ai/KNOWLEDGE_BASE/` (10 files: system overview, request lifecycle with
-Mermaid, pipeline, provider layer + normalization spec, configuration,
-metrics, normative architectural contracts C1–C8, extension guide, internal
-assessment + ADB-11..13). Docs-only — no runtime code changed; Decision 24
-paths, metrics vocabulary, and config cross-checked against code.
+M15 released v0.1.0: Trusted Publisher (OIDC, Decision 26) configured on
+PyPI for `tokenopt` / `rohit-naik36` / `publish.yml`, tag `v0.1.0` pushed,
+workflow built sdist+wheel, `twine check` passed, uploaded via
+`pypa/gh-action-pypi-publish` — verified live at
+`https://pypi.org/pypi/tokenopt/json`. No API tokens stored. Dependabot
+action PRs merged. README already documents `pip install tokenopt`.
 
-1. **M15** — Release v0.1.0: tag, release notes, optional PyPI (⚠ publish
-   gate at start). Run the M13 validation suite verbatim as the
-   pre-release regression baseline; close audit P0.5 (pip-audit, Dependabot
-   merges, secret scanning); CI hardening per M13 Immediate Recs
-   (3.10–3.12 matrix, hard coverage gate, build+twine in CI).
-2. **ADB backlog (post-v0.1.0)** — consume ADB items: High — ADB-03 plugin
+1. **ADB backlog (post-v0.1.0)** — consume ADB items: High — ADB-03 plugin
    architecture, ADB-11 internal architecture contracts; Medium — ADB-01,
    ADB-02, ADB-05, ADB-12, ADB-13.
+2. Post-v0.1.0 roadmap items per ROADMAP Phase 2 (router cost/latency
+   tracking, cache file persistence, pluggable summarizer, real LLMLingua,
+   local streaming, Prometheus exporter).
 
 ## Notes
 
@@ -40,8 +38,7 @@ paths, metrics vocabulary, and config cross-checked against code.
 
 ## Known follow-ups (need approval/decision)
 
-- **M15 (PyPI) publish gate** — whether v0.1.0 ships to PyPI or stays
-  install-from-git. Decide at M15 start.
+- None blocking — v0.1.0 released to PyPI (Decision 26, user-approved).
 
 ## Short term (Phase 2, after M7 per roadmap)
 

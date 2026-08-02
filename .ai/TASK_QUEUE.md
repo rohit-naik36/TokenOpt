@@ -1,6 +1,6 @@
 # Task Queue
 
-_Updated: 2026-08-01 (M14 DONE — Architecture Knowledge Base complete)_
+_Updated: 2026-08-02 (M15 DONE — v0.1.0 released to PyPI; all roadmap milestones complete)_
 
 Statuses: `READY` · `IN PROGRESS` · `BLOCKED` · `DONE`
 Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
@@ -35,12 +35,13 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 | **Pre-M13** — Routing Precedence (Decision 24) | Five-level contract (least surprise): explicit caller model wins → matching rule → custom no-match **preserves caller's model** → no custom rules = complexity routing → provider default. `RoutingRule.builtin` provenance (default rules marked; default-config behavior unchanged); `model_explicit` plumbing (OptimizationContext + pipeline.run + chat_completion, additive); RouterStage records `routing_precedence` (explicit/rule/preserve/complexity/provider_default); `routing_reason` += "preserved (no rule matched)"; `RequestMetrics.routing_precedence` (additive). **Fixes**: no `gpt-*` rewrite on no-match (Anthropic/local invalid-model break). Review: `.ai/ROUTING_PRECEDENCE_REVIEW.md`. Tests +9 (167 total); examples revalidated 6/6 exit 0 against stub; docs: ARCHITECTURE/README/CHANGELOG |
 | **M13** — Structural Refactoring & Architecture Stabilization (Decision 25) | Internal-only, behavioral freeze (no public API / routing / metrics / governance changes). **R1** `utils/messages.py::get_user_query` (3 copies removed; `_reconstruct_messages` precomputes query); **R2** `config: TokenOptConfig|None` + default in all 5 stage constructors; **R3** `_extract_openai_shape_usage` shared by OpenAI/LocalClient; **R4** `clients/_compat.py::_CompatShim` (3 identical shim forwarders removed); **R5** `_build_pipeline(routing_rule_filter)` — Anthropic/LocalClient pass model-compatibility filters (duplicated rebuild pattern + `replace` dance removed); **R6** `FewShotSelectorStage` → `pipeline/fewshot.py` (exports unchanged; test imports updated). **Deferred with rationale** (ADB): diversity re-embedding (H7), `compression_attempted` alias (H8), stage gating (H9), MODEL_COSTS (H10), unkeyed metrics dicts (H11). **Deliverable**: `.ai/M13_ARCHITECTURE_REVIEW.md` (hotspots, refactoring summary, architecture assessment, 4-way debt report, Immediate Recs + ADB-01..10, validation). **Verification**: 167 passed / 94% (baseline unchanged), ruff clean, mypy green, build + twine check PASSED, 6/6 examples vs stub, link check 83 files; CI green |
 | **M14** — Architecture Knowledge Base | Docs-only (behavioral freeze: no runtime code changed). **Deliverable**: `.ai/KNOWLEDGE_BASE/` (10 files) — index; 01 System Overview (goals, fail-open/optimization/routing philosophy); 02 Request Lifecycle (full flow + Mermaid sequence diagram, cache hit/miss/error); 03 Pipeline (order, responsibilities, interactions, fail-open, context lifecycle, gating); 04 Provider Layer (abstraction, 3 providers, **response-normalization contract spec**); 05 Configuration (hierarchy, defaults, overrides, validation, extension strategy); 06 Metrics (ownership, propagation, routing_reason, routing_precedence, latency, cost); 07 **Architectural Contracts C1–C8** (normative guarantees + why + enforcement); 08 Extension Guide (provider/stage/metrics/config recipes, principles, approval rules); 09 Internal Assessment (Software Factory view + **ADB-11** internal architecture contracts, ADB-12 machine-readable manifest, ADB-13 normalization enforcement). ARCHITECTURE.md pointer + GOVERNANCE_INDEX KB registry + README pointer. **Validation**: Decision 24 paths, routing_reason fallback, metrics vocabulary, config groups cross-checked vs code; 29 md links + 31 inline paths resolve; examples untouched; suite 167 unchanged; CI green |
+| **M15** — Release v0.1.0 to PyPI (Decision 26) | **Trusted Publishing (OIDC)**: `.github/workflows/publish.yml` (tag trigger `v*`, `permissions: id-token: write`, build + `twine check`, `pypa/gh-action-pypi-publish` — no API tokens). PyPI Trusted Publisher configured by user (project `tokenopt` / owner `rohit-naik36` / workflow `publish.yml`); status `pending` → **`active`** after first upload. Tag `v0.1.0` pushed → workflow ran → **verified live**: `pypi.org/pypi/tokenopt/json` 200, version 0.1.0. Dependabot action PRs (checkout/setup-python/upload-artifact → v7) merged (`c914e1b`). Release notes + README PyPI install finalized (`bc4ccbd`). Final gates: 167 passed / 94%, ruff clean, mypy green, twine check PASSED; pushed to main |
 
 ## IN PROGRESS
 
 | Task | Notes |
 |------|-------|
-| (none) | M15 (release v0.1.0) next |
+| (none) | ADB backlog next |
 
 ## BLOCKED
 
@@ -52,16 +53,18 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 
 | # | Task | Depends on |
 |---|------|------------|
-| M15 | Release v0.1.0: tag, notes, optional PyPI (⚠ publish) | M6–M14 |
+| (none) | All roadmap milestones complete | — |
 
 ## Blocked-by-approval backlog
 
-- M15 (PyPI publish — optional)
-- Merge Dependabot action-upgrade PRs (checkout/setup-python/upload-artifact
-  → v7) — opened 2026-08-01, not blockers
+- ADB backlog items (post-v0.1.0): High — ADB-03 plugin architecture,
+  ADB-11 internal architecture contracts; Medium — ADB-01/02/05/12/13
 
 ## Resolved
 
 - M12 deletions/archival — approved + executed 2026-08-01 (Decision 23)
 - RouterStage complexity-fallback hole — **resolved 2026-08-01 by the
   routing precedence contract (Decision 24)**
+- M15 PyPI publish gate — **resolved 2026-08-02: v0.1.0 published**
+  (Decision 26, user-approved)
+- Dependabot action-upgrade PRs — merged 2026-08-02 (commit `c914e1b`)

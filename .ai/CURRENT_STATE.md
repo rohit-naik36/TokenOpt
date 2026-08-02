@@ -1,8 +1,8 @@
 # TokenOpt SDK — Current State
 
-_Last updated: 2026-08-01 (M1–M8 + UAT + M8.2 + M10 + M11 + M12 + M13 + M14 complete; next is M15)_
+_Last updated: 2026-08-02 (M1–M8 + UAT + M8.2 + M10–M14 + M15 complete — v0.1.0 released to PyPI)_
 
-## Status: Phase 0 + Phase 1 + M1–M8 + Post-M8 UAT refinements + M8.2 + M10 + M11 + M12 complete
+## Status: Phase 0 + Phase 1 + M1–M8 + Post-M8 UAT refinements + M8.2 + M10–M14 + M15 complete
 
 A Python SDK for token/prompt optimization wrapping OpenAI/Anthropic clients as
 drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
@@ -450,6 +450,26 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
     suite 167 unchanged; no runtime code changed
   - **Docs**: IMPLEMENTATION_ROADMAP M14 ✅, TASK_QUEUE, NEXT_STEPS,
     SESSION_STATE, ROADMAP checkbox; README pointer updated
+- **M15 — Release v0.1.0 to PyPI (2026-08-02)** (session 20; Decision 26)
+  - **Trusted Publishing (OIDC)** — `.github/workflows/publish.yml`
+    triggered on `v*` tags: build sdist+wheel, `twine check`, upload via
+    `pypa/gh-action-pypi-publish` with `permissions: id-token: write`;
+    **no API tokens stored anywhere**
+  - **PyPI Trusted Publisher configured** (user, on pypi.org) for project
+    `tokenopt` / owner `rohit-naik36` / workflow `publish.yml` — status was
+    "pending" until the first successful upload, then `active`
+  - **Tag `v0.1.0` pushed** → workflow ran → **`tokenopt 0.1.0` live on
+    PyPI** (verified via `https://pypi.org/pypi/tokenopt/json`:
+    version 0.1.0; also `pip index versions tokenopt` and TestPyPI 404
+    before, PyPI 200 after)
+  - **README install-from-git instructions** already updated to PyPI
+    install at M14 close (commit `bc4ccbd`); CHANGELOG `[0.1.0]` finalized
+  - Dependabot action upgrades (checkout/setup-python/upload-artifact →
+    v7) merged (`c914e1b`); M13 Immediate Recs CI hardening already in
+    place (matrix, coverage gate, twine gate)
+  - **Final release gates**: suite 167 green, coverage 94%, ruff clean,
+    mypy exit 0, build + twine check PASSED, CI green, push verified
+  - **⚠ PyPI publish gate resolved** — approved by user; v0.1.0 shipped
 
 ## Open item
 
@@ -458,16 +478,12 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 
 ## In progress / not started
 
-- **M15** — release v0.1.0 (⚠ PyPI publish gate at start; audit P0.5:
-  pip-audit, Dependabot merges, secret scanning; CI hardening)
 - Post-v0.1.0 ADB backlog: High — ADB-03, ADB-11; Medium — ADB-01/02/05/12/13
 - Prompt-library live-usage tracking: prompts become "live" after real
   task use or user acceptance (per `.ai/PROMPTS/README.md` maintenance
   rule)
 - Full config reference docs pending
 - Local client live verification against a real Ollama server
-- Merge Dependabot action-upgrade PRs (checkout/setup-python/upload-artifact
-  → v7) when convenient — advisory, not blockers
 
 ## Verification
 

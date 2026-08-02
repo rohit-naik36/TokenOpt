@@ -1,23 +1,22 @@
 # Session State
 
-_Updated: 2026-08-01 (M14 complete — Architecture Knowledge Base; docs-only milestone)_
+_Updated: 2026-08-02 (M15 complete — v0.1.0 released to PyPI; all Phase 1 + Phase 2 roadmap milestones done)_
 
 | Field | Value |
 |-------|-------|
-| **Current milestone** | **M14 — Architecture Knowledge Base — DONE** |
-| **Current task** | (none in progress — M15 next) |
-| **Current progress** | Phase 0 + Phase 1 + M1–M8 + UAT + M8.2 + M10 + M11 + M12 + M13 + M14 complete; suite 167 green; coverage 94% |
+| **Current milestone** | **M15 — Release v0.1.0 to PyPI — DONE** |
+| **Current task** | (none in progress — ADB backlog next) |
+| **Current progress** | Phase 0 + Phase 1 + M1–M8 + UAT + M8.2 + M10–M15 complete; suite 167 green; coverage 94%; **v0.1.0 live on PyPI** |
 | **Safe stopping point** | ✅ Yes — working tree clean, all work committed and pushed, checkpoint created |
-| **Remaining work** | M15 per `.ai/IMPLEMENTATION_ROADMAP.md` |
-| **Estimated effort remaining** | ~2 agent-days (M15 ~2; ⚠ PyPI publish gate at M15 start) |
-| **Recommended next action** | **M15** — release v0.1.0 (decide PyPI publish gate first) |
-| **Context risk** | Low — docs-only milestone; no runtime code touched; fully verified |
-| **Timestamp** | 2026-08-01 |
+| **Remaining work** | ADB backlog + Phase 2 roadmap items per `.ai/NEXT_STEPS.md` |
+| **Estimated effort remaining** | ~2–4 agent-days (ADB-03/ADB-11 high-priority items + roadmap features) |
+| **Recommended next action** | Consume ADB backlog: High — ADB-03 (plugin architecture), ADB-11 (internal architecture contracts) |
+| **Context risk** | Low — release milestone complete; everything verified and pushed |
+| **Timestamp** | 2026-08-02 |
 
 ## Blockers
 
-None. M15 (PyPI publish) gate at M15 start; Dependabot action PRs advisory
-(merge during M15 per audit P0.5). ADB-01..13 backlog post-v0.1.0.
+None. All release gates cleared; PyPI Trusted Publisher active (Decision 26).
 
 ## Verification at close
 
@@ -26,9 +25,9 @@ None. M15 (PyPI publish) gate at M15 start; Dependabot action PRs advisory
 | `pytest tests/ -q` | **167 passed**; coverage **94%** (no code changed) |
 | `ruff check tokenopt tests examples` | clean (no code changed) |
 | `mypy tokenopt` | green (no code changed) |
-| KB accuracy cross-check | Decision 24 precedence paths, routing_reason fallback, metrics vocabulary, config groups match code |
-| Markdown links (`.ai/**/*.md`) | 29/29 resolve |
-| KB inline code paths | 31/31 resolve (2 path typos found + fixed) |
-| Examples | untouched (git status verified) |
+| PyPI verification | `pypi.org/pypi/tokenopt/json` → **200, version 0.1.0** (404 before publish) |
+| `publish.yml` trigger | tag `v0.1.0` pushed → workflow ran (OIDC, `id-token: write`) |
+| Trusted Publisher status | `pending` → `active` after first successful upload |
+| Markdown links (`.ai/**/*.md`) | verified in M14 (29/29) |
 | `git remote -v` | `https://github.com/rohit-naik36/TokenOpt.git` (valid, Decision 11) |
-| CI badge (main) | passing (re-check after this push) |
+| CI badge (main) | passing |

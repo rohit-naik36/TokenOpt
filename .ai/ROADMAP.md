@@ -30,7 +30,7 @@ _Last updated: 2026-08-01_
 - [x] M10 governance expansion (14 workflows, 11 roles, index + review)
 - [x] M11 prompt library (10 prompts, grouped by purpose)
 - [x] M12 cleanup (⚠ deletions), M13 refactor, M14 arch docs (KB: `.ai/KNOWLEDGE_BASE/`)
-- [ ] M15 release v0.1.0 (⚠ optional PyPI publish)
+- [x] M15 release v0.1.0 (✅ **v0.1.0 live on PyPI** — Trusted Publishing, Decision 26)
 - [ ] Pipeline stage unit tests
 - [ ] Integration tests (mock servers)
 - [ ] README + docs
