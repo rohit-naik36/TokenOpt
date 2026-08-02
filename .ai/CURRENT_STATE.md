@@ -470,6 +470,12 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
   - **Final release gates**: suite 167 green, coverage 94%, ruff clean,
     mypy exit 0, build + twine check PASSED, CI green, push verified
   - **⚠ PyPI publish gate resolved** — approved by user; v0.1.0 shipped
+- **Team testing guide (2026-08-02, docs-only)** — `docs/TEAM_TESTING_GUIDE.md`:
+  shareable testing document for the team (setup incl. PyPI install,
+  12-scenario matrix, PASS criteria per example, drop-in/fail-open/security
+  contract checks, routing-precedence + config-gate deep tests, known
+  limitations, stdlib-only offline stub server appendix, bug-report
+  template + sign-off table)
 
 ## Open item
 

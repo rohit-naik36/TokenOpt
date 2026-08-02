@@ -761,3 +761,27 @@
 - **Checkpoint**: CHECKPOINT_20260802_M15.md (created below).
 - Note: untracked `TEST.txt` ("hello") left in repo root — pending user
   decision (not committed).
+
+## Session 20.1 — Team testing guide (2026-08-02)
+
+- **Created `docs/TEAM_TESTING_GUIDE.md`** (user request: shareable
+  document for the team to test TokenOpt v0.1.0):
+  - Scope/what-is-being-tested, prerequisites, setup (PyPI install +
+    editable, extras, API keys)
+  - Test matrix at a glance (12 scenarios, offline/live marked)
+  - **Part A** — offline automated suite (import/version, `pytest tests/`
+    167 passed/94%, fresh-venv PyPI install)
+  - **Part B** — all 6 examples (quickstart, openai_basic, anthropic_basic,
+    local_basic, pipeline_config, metrics_observability) with explicit
+    PASS criteria per script, cross-checked against the actual example
+    code (metrics fields, routing reasons, cache miss→hit, summarization
+    threshold)
+  - **Part C** — contract checks (drop-in swap, fail-open/error handling,
+    no-secrets-leak)
+  - **Part D** — deep features (routing precedence Decision 24, config
+    gates)
+  - **Part E** — known v0.1.0 limitations (streaming, per-instance cache,
+    semantic fallback, Python 3.10–3.12)
+  - **Appendix A** — stdlib-only offline stub server (no API keys needed)
+  - **Appendix B** — GitHub issue bug-report template + sign-off table
+- Docs-only; no code/tests changed; suite remains 167 green.
