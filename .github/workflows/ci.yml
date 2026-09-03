@@ -55,9 +55,8 @@ jobs:
       - name: Pytest with coverage gate (>=80%)
         run: |
           pytest tests/ -q
-          cd tokenopt-proxy
-          pip install -r requirements.txt
-          pytest tests/ -q
+          pip install -r tokenopt-proxy/requirements.txt
+          python -m pytest tokenopt-proxy/tests/ -o addopts="" -q
 
   # DoD gates 4-5: build the distributions and smoke-test the wheel in a fresh venv.
   package:
