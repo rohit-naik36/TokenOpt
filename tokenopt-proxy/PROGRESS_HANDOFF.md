@@ -4,6 +4,19 @@
 
 ---
 
+## STATUS: Session #3 (2026-09-04) — Monorepo consolidation COMPLETE
+
+Consolidated all three TokenOpt products into a single monorepo on the `master` branch of `rohit-naik36/TokenOpt`, without touching `origin/main` or the `v0.1.0` tag.
+
+- **Structure:** `tokenopt-sdk/` (published SDK snapshot @ v0.1.0, 158 files), `tokenopt-optimizer/` (optimizer engine, subtree-added with preserved history), `tokenopt-proxy/` (v2 FastAPI service).
+- **Commits on `master`:** `3bd6444` (moved proxy into `tokenopt-proxy/`), `c2d6ead` (`git subtree add` of optimizer from `sdk/main`), `fa36874` (added `tokenopt-sdk/` from v0.1.0 via worktree copy), `6b44ee1` (monorepo root README + relative-install fixes).
+- **SDK snapshot integrity verified:** `tokenopt-sdk/` blob-for-blob identical (0 mismatches) to the `v0.1.0` tag.
+- **Paths fixed:** `tokenopt-proxy/requirements.txt` → `-e ../tokenopt-optimizer` (removed machine-specific absolute path); `tokenopt-proxy/Dockerfile` multi-context build path updated to `../tokenopt-optimizer`.
+- **All green:** 68 optimizer tests, 82 proxy tests, 167 SDK tests pass. `ruff` clean on optimizer & sdk; proxy has the known 126 pre-existing findings. `bandit`: 0 HIGH across the repo.
+- **Pushed:** `origin/master` = `6b44ee1`. `origin/main` (`82f6811`) and `v0.1.0` tag (`bc4ccbd`) untouched.
+
+---
+
 ## STATUS: Session #2 (2026-09-04) — QA, commit & first push COMPLETE
 
 ### What was done in THIS session
@@ -45,7 +58,7 @@ The OpenRouter API key `sk-or-v1-0c12e6e5...` was committed to local git history
   - Success measured by **cost + token savings** with a **raw quality guard** (fidelity / rollback rate).
   - LICENSE: **MIT**.
   - `REQUIRE_REAL_FIDELITY` defaults `False` (preserves fails-open dev/demo); AAVA production sets `True`.
-- **Platform installs SDK via editable dependency:** `-e C:/Users/rohit/Documents/Projects/tokenopt-optimizer` in `requirements.txt`.
+- **Platform installs SDK via editable dependency:** `-e ../tokenopt-optimizer` in `tokenopt-proxy/requirements.txt` (monorepo sibling, relative).
 - **Environment notes:** Windows + PowerShell — `&&` is invalid; use `;`. `tiktoken` 0.13.0 installed. SDK `_MemoryCache` uses `time.monotonic()`.
 
 ---
@@ -117,7 +130,7 @@ The OpenRouter API key `sk-or-v1-0c12e6e5...` was committed to local git history
 
 - **PL-4 / PL-6**: persistence-layer items — locate exact definitions in review doc; not yet addressed.
 - **PC-1 / PC-3**: performance/consistency items — locate exact definitions in review doc; not yet addressed.
-- **Pre-existing** `requirements.txt` hardcoded path `-e C:/Users/rohit/...` (platform installed via editable dependency). Consider making this non-machine-specific.
+- **DONE (Session #3)**: `requirements.txt` is now `-e ../tokenopt-optimizer` (relative, monorepo sibling) — the old machine-specific hardcoded `C:/Users/rohit/...` path is removed.
 - **Platform lint debt**: `tokenopt_proxy_v2.py` / `fidelity_validator_v2.py` are still not fully ruff-clean (legacy `_v2` style). Optional cleanup, not required for function. (See Session #2 scan: 126 findings, 94 auto-fixable.)
 - **Owned-by-owner pending**: rotate the compromised OpenRouter API key (see Session #2 section above).
 
@@ -126,9 +139,10 @@ The OpenRouter API key `sk-or-v1-0c12e6e5...` was committed to local git history
 ---
 
 ## How to verify after resuming
-1. **SDK:** `cd C:\Users\rohit\Documents\Projects\tokenopt-optimizer; python -m pytest -q; python -m ruff check .`
-2. **Platform:** `cd "C:\Users\rohit\Documents\Projects\New folder"; python -m pytest tests/ -q`
-3. Compile check: `python -m py_compile tokenopt_proxy_v2.py fidelity_validator_v2.py`
+1. **SDK:** `cd <repo>/tokenopt-sdk; python -m pytest -q; python -m ruff check .`
+2. **Optimizer:** `cd <repo>/tokenopt-optimizer; python -m pytest -q; python -m ruff check .`
+3. **Proxy:** `cd <repo>/tokenopt-proxy; python -m pytest tests/ -q`
+4. Compile check: `python -m py_compile tokenopt_proxy_v2.py fidelity_validator_v2.py`
 4. Import check:
    `python -c "import tokenopt_proxy_v2; from fidelity_validator_v2 import EmbeddingFidelityValidator; from tokenopt_proxy_v2 import build_optimizer; print(build_optimizer('gpt-4-turbo').config.tokenizer is not None)"`
 
