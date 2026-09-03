@@ -1,4 +1,4 @@
-﻿"""
+"""
 TokenOpt v2.0 - Production API Proxy
 Integrates: real embeddings, circuit breaker providers, PostgreSQL audit, Redis cache, Kafka events.
 """
@@ -108,6 +108,8 @@ class AppConfig:
     AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY", "")
     AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT", "")
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+    # Google Gemini — free tier, no credit card needed (aistudio.google.com)
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
     # Security
     JWT_SECRET = os.getenv("JWT_SECRET", "")
@@ -142,6 +144,10 @@ class AppConfig:
         "claude-3-opus": 0.000015,
         "claude-3-sonnet": 0.000003,
         "claude-3-haiku": 0.00000025,
+        # Gemini (free tier — cost is effectively $0 for demo)
+        "gemini-1.5-flash": 0.0000000,
+        "gemini-1.5-pro": 0.0000035,
+        "gemini-2.0-flash": 0.0000000,
     }
     DEFAULT_TOKEN_PRICE = 0.00003
 
@@ -428,6 +434,17 @@ class ServiceManager:
                 api_key=self.config.ANTHROPIC_API_KEY,
                 models=["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
                 priority=3
+            ))
+
+        if self.config.GEMINI_API_KEY:
+            # Gemini exposes an OpenAI-compatible endpoint — no SDK change needed.
+            # Free tier: 15 req/min, 1M tokens/day — ideal for demos.
+            self.provider_router.add_provider(ProviderConfig(
+                name="gemini",
+                base_url="https://generativelanguage.googleapis.com/v1beta/openai",
+                api_key=self.config.GEMINI_API_KEY,
+                models=["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"],
+                priority=4
             ))
 
         await self.provider_router.start_health_checks(interval=30.0)
