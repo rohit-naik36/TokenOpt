@@ -362,20 +362,23 @@ class AuditDatabase:
 
         async with self._pool.acquire() as conn:
             where_clause = "was_rolled_back = TRUE"
-            params = []
+            params: list = []
 
             if tenant_id:
                 where_clause += " AND tenant_id = $1"
                 params.append(tenant_id)
 
+            limit_param = f"${len(params) + 1}"
+            params.append(limit)
+
             rows = await conn.fetch(f"""
-                SELECT 
+                SELECT
                     timestamp, request_id, model, fidelity_score,
                     rollback_reason, original_tokens, optimized_tokens
                 FROM audit_logs
                 WHERE {where_clause}
                 ORDER BY timestamp DESC
-                LIMIT {limit}
+                LIMIT {limit_param}
             """, *params)
 
             return [dict(row) for row in rows]
