@@ -131,6 +131,7 @@ The OpenRouter API key `sk-or-v1-0c12e6e5...` was committed to local git history
 - **PL-4 / PL-6**: persistence-layer items — locate exact definitions in review doc; not yet addressed.
 - **PC-1 / PC-3**: performance/consistency items — locate exact definitions in review doc; not yet addressed.
 - **DONE (Session #3)**: `requirements.txt` is now `-e ../tokenopt-optimizer` (relative, monorepo sibling) — the old machine-specific hardcoded `C:/Users/rohit/...` path is removed.
+- **DONE (Session #3 post-review)**: `test_live.py` module-level `sys.exit(1)` when `OPENAI_API_KEY` was absent crashed any `pytest .` collection (`SystemExit` INTERNALERROR). Now uses `pytest.skip(..., allow_module_level=True)` when imported by pytest; direct `python test_live.py` behavior unchanged. Verified: `pytest .` → `82 passed, 1 skipped`; `python test_live.py` still exits 1 with a clear message when no key.
 - **Platform lint debt**: `tokenopt_proxy_v2.py` / `fidelity_validator_v2.py` are still not fully ruff-clean (legacy `_v2` style). Optional cleanup, not required for function. (See Session #2 scan: 126 findings, 94 auto-fixable.)
 - **Owned-by-owner pending**: rotate the compromised OpenRouter API key (see Session #2 section above).
 

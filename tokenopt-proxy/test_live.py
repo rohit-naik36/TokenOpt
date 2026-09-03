@@ -29,6 +29,10 @@ import tokenopt_proxy_v2 as proxy
 
 KEY = os.getenv("OPENAI_API_KEY", "").strip()
 if not KEY:
+    if __name__ != "__main__":
+        import pytest
+
+        pytest.skip("OPENAI_API_KEY not set; skipping live smoke test", allow_module_level=True)
     print("ERROR: OPENAI_API_KEY environment variable is not set.")
     print("Set it first, e.g.:")
     print('    $env:OPENAI_API_KEY = "your-fresh-key"')
