@@ -90,6 +90,12 @@ cd tokenopt-sdk && python -m pytest tests/ -v
 
 ---
 
-## License
+## Licensing
 
-[MIT](LICENSE)
+This repository follows an **Open-Core Dual-Licensing** model:
+
+- **TokenOpt Enterprise Platform (`tokenopt-proxy/`)**: Licensed under the **TokenOpt Enterprise Commercial License** ([tokenopt-proxy/LICENSE](tokenopt-proxy/LICENSE)). Commercial / paid software; production use requires an enterprise license agreement or authorized production pilot agreement.
+- **Client SDK (`tokenopt-sdk/`)**: Licensed under the **MIT License** ([tokenopt-sdk/LICENSE](tokenopt-sdk/LICENSE)). Free for embedding into client applications.
+- **Optimizer Engine (`tokenopt-optimizer/`)**: Licensed under the **MIT License** ([tokenopt-optimizer/LICENSE](tokenopt-optimizer/LICENSE)). Standalone embeddable core.
+
+See [LICENSE](LICENSE) for the full monorepo licensing summary.

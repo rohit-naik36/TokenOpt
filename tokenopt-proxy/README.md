@@ -189,6 +189,16 @@ resources:
 
 ---
 
+## 📄 Licensing
+
+TokenOpt Enterprise is proprietary commercial software licensed under the **TokenOpt Enterprise Commercial Software License Agreement**.
+
+Use of this service in production or in an enterprise deployment requires a valid, executed commercial license agreement, active subscription, or authorized production pilot agreement from TokenOpt.
+
+See [LICENSE](LICENSE) for the full commercial terms. For licensing inquiries or enterprise agreements, contact `licensing@tokenopt.yourcompany.com`.
+
+---
+
 **Document Owner:** Platform Engineering Team  
 **Review Cycle:** Monthly  
 **Last Updated:** July 2026

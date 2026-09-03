@@ -1,0 +1,59 @@
+TOKENOPT ENTERPRISE COMMERCIAL SOFTWARE LICENSE AGREEMENT
+
+Copyright (c) 2024-2026 Rohit Naik / TokenOpt. All Rights Reserved.
+
+IMPORTANT: PLEASE READ THIS LICENSE AGREEMENT CAREFULLY BEFORE ACCESSING,
+DOWNLOADING, INSTALLING, OR USING TOKENOPT ENTERPRISE ("SOFTWARE").
+
+1. COMMERCIAL LICENSE GRANT
+This Software is licensed, not sold. Subject to the terms and conditions of a
+valid, fully executed Commercial License Agreement, Production Pilot Agreement,
+or active paid subscription with TokenOpt ("Licensor"), Licensor grants to the
+authorized licensee ("Licensee") a non-exclusive, non-transferable,
+non-sublicensable, limited right to install, deploy, and execute the Software
+solely for Licensee's internal business operations in accordance with the
+contracted usage limits, tier plans, and token quotas.
+
+2. RESTRICTIONS
+Except as expressly authorized under a written agreement with Licensor, Licensee
+and any user shall NOT:
+  (a) Use, deploy, or run the Software in production without a valid paid
+      commercial license or authorized production pilot agreement;
+  (b) Distribute, lease, rent, loan, sell, resell, sublicense, or otherwise
+      transfer the Software to any third party;
+  (c) Provide the Software as a hosted service, managed service, multi-tenant
+      service bureau, or application service provider (ASP) to third parties
+      without an express OEM or MSP partner agreement;
+  (d) Reverse engineer, decompile, disassemble, or derive the source code of any
+      compiled or protected components of the Software;
+  (e) Circumvent or disable any license keys, authentication controls, JWT
+      verification mechanisms, or usage metering features;
+  (f) Remove, alter, or obscure any proprietary notices, copyright notices,
+      or trademarks on or within the Software and associated documentation.
+
+3. EVALUATION AND PILOT USE
+If the Software is provided on an evaluation, trial, proof-of-concept (POC), or
+pilot basis (such as an authorized Architecture Review Board production pilot),
+the Software may be used strictly for evaluation purposes for the authorized
+pilot duration and traffic volume specified in the pilot agreement. All commercial
+restrictions apply.
+
+4. INTELLECTUAL PROPERTY OWNERSHIP
+Licensor retains all right, title, and interest in and to the Software, including
+all intellectual property rights, enhancements, modifications, and derivative
+works. No ownership rights are transferred to Licensee.
+
+5. OPEN CORE & THIRD-PARTY COMPONENTS
+The client SDK (tokenopt-sdk) and standalone optimization engine library
+(tokenopt-optimizer) are licensed under separate open-source terms (MIT License)
+as indicated in their respective directories. Third-party open-source libraries
+included or referenced by the Software are subject to their respective licenses.
+
+6. DISCLAIMER OF WARRANTIES & LIMITATION OF LIABILITY
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, THIS SOFTWARE IS PROVIDED "AS IS",
+WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+NON-INFRINGEMENT. IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES,
+OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.

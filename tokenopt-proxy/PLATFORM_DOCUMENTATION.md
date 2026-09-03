@@ -454,6 +454,18 @@ All chat completion responses include `tokenopt` metadata:
 
 ---
 
+## 9. Licensing & Commercial Governance
+
+TokenOpt Enterprise is commercial, proprietary software.
+
+- **Enterprise Proxy & Gateway (`tokenopt-proxy`)**: Licensed under the [TokenOpt Enterprise Commercial License](LICENSE). Production deployment requires an active commercial enterprise subscription, pilot agreement, or commercial license key.
+- **Client SDK (`tokenopt-sdk`)**: Open source (MIT License) for drop-in embedding in client services (`pip install tokenopt`).
+- **Optimizer Engine (`tokenopt-optimizer`)**: Open source (MIT License) core algorithms.
+
+For commercial licensing agreements, custom SLA terms, or pilot approvals, contact `licensing@tokenopt.yourcompany.com`.
+
+---
+
 **Document Owner:** Platform Engineering  
 **Review Cycle:** Monthly  
 **Last Reviewed:** July 2026
