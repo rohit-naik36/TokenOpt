@@ -9,7 +9,10 @@ from dataclasses import dataclass
 import hashlib
 import json
 import asyncio
+import logging
 from datetime import datetime
+
+logger = logging.getLogger("tokenopt.fidelity")
 
 # Try to import sentence-transformers, fallback to OpenAI embeddings
 try:
@@ -75,7 +78,7 @@ class EmbeddingFidelityValidator:
         if use_openai_embeddings and OPENAI_AVAILABLE:
             self._openai_client = openai.OpenAI(api_key=openai_api_key)
         elif SENTENCE_TRANSFORMERS_AVAILABLE and not use_openai_embeddings:
-            print(f"Loading embedding model: {embedding_model}")
+            logger.info(f"Loading embedding model: {embedding_model}")
             self._embedding_model = SentenceTransformer(embedding_model)
         else:
             raise RuntimeError(
@@ -230,7 +233,7 @@ Respond with ONLY a number between 0.0 and 1.0."""
                 return float(match.group(1))
             return None
         except Exception as e:
-            print(f"LLM judge failed: {e}")
+            logger.warning(f"LLM judge failed: {e}")
             return None
 
     async def validate(
@@ -251,7 +254,7 @@ Respond with ONLY a number between 0.0 and 1.0."""
             opt_embedding = self._get_embedding(optimized_prompt)
             semantic_sim = self._cosine_similarity(orig_embedding, opt_embedding)
         except Exception as e:
-            print(f"Embedding computation failed: {e}")
+            logger.warning(f"Embedding computation failed: {e}")
             semantic_sim = 0.0
 
         # 2. Structural similarity

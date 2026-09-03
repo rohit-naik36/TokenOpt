@@ -662,7 +662,7 @@ async def chat_completions(
                                             delta = parsed["choices"][0].get("delta", {})
                                             if "content" in delta:
                                                 full_response += delta["content"]
-                                    except:
+                                    except Exception:
                                         pass
                     except Exception as e:
                         yield f"data: {{\"error\": \"{str(e)}\"}}\n\n"

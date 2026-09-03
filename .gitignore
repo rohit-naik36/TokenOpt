@@ -8,3 +8,6 @@ build/
 .env
 .venv
 venv/
+
+# PyPI recovery codes (sensitive - never commit)
+PyPI-Recovery-Codes-*.txt

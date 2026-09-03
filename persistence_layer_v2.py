@@ -243,10 +243,10 @@ class AuditDatabase:
                         FROM pg_inherits
                         WHERE inhparent = 'audit_logs'::regclass
                     LOOP
-                        IF partition_name ~ 'audit_logs_(\d{4})_(\d{2})' THEN
+                        IF partition_name ~ 'audit_logs_(\\d{4})_(\\d{2})' THEN
                             -- Extract date from partition name
                             IF to_date(
-                                substring(partition_name from 'audit_logs_(\d{4})_(\d{2})'),
+                                substring(partition_name from 'audit_logs_(\\d{4})_(\\d{2})'),
                                 'YYYY_MM'
                             ) < cutoff_date THEN
                                 EXECUTE format('DROP TABLE %I', partition_name);
