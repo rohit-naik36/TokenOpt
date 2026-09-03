@@ -3,13 +3,16 @@ TokenOpt v2.0 - Production Fidelity Validator
 Uses sentence-transformers embeddings + LLM-as-judge for output comparison.
 """
 
-import numpy as np
-from typing import Optional, Dict, Any
-from dataclasses import dataclass
-import hashlib
 import asyncio
+import hashlib
 import logging
-from datetime import datetime
+import re
+from datetime import datetime, timezone
+from typing import Any
+
+import numpy as np
+
+from tokenopt_optimizer import FidelityScore
 
 logger = logging.getLogger("tokenopt.fidelity")
 
@@ -27,17 +30,6 @@ except ImportError:
     OPENAI_AVAILABLE = False
 
 
-@dataclass
-class FidelityScore:
-    """Comprehensive fidelity assessment."""
-    overall: float  # 0-1 composite score
-    semantic_similarity: float  # Embedding cosine similarity
-    structural_similarity: float  # Format/structure match
-    llm_judge_score: Optional[float]  # LLM-as-judge evaluation
-    passed: bool
-    details: Dict[str, Any]
-
-
 class EmbeddingFidelityValidator:
     """
     Production-grade fidelity validator using real embeddings.
@@ -53,7 +45,7 @@ class EmbeddingFidelityValidator:
         self,
         embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2",
         use_openai_embeddings: bool = False,
-        openai_api_key: Optional[str] = None,
+        openai_api_key: str | None = None,
         llm_judge_model: str = "gpt-4",
         semantic_weight: float = 0.5,
         structural_weight: float = 0.2,
@@ -67,7 +59,9 @@ class EmbeddingFidelityValidator:
         self.structural_weight = structural_weight
         self.llm_judge_weight = llm_judge_weight
         self.enable_llm_judge = enable_llm_judge
+        self.llm_judge_model = llm_judge_model
         self.cache_embeddings = cache_embeddings
+        self._openai_api_key = openai_api_key
 
         # Embedding model initialization
         self._embedding_model = None
@@ -86,7 +80,7 @@ class EmbeddingFidelityValidator:
             )
 
         # Embedding cache (in-memory LRU, replace with Redis in production)
-        self._embedding_cache: Dict[str, np.ndarray] = {}
+        self._embedding_cache: dict[str, np.ndarray] = {}
         self._cache_hits = 0
         self._cache_misses = 0
 
@@ -180,7 +174,7 @@ class EmbeddingFidelityValidator:
         optimized_prompt: str,
         baseline_response: str,
         optimized_response: str
-    ) -> Optional[float]:
+    ) -> float | None:
         """
         Use an LLM to judge semantic equivalence of responses.
         This is the gold standard but expensive — use sparingly.
@@ -218,7 +212,7 @@ Rate the semantic equivalence from 0.0 to 1.0, where:
 Respond with ONLY a number between 0.0 and 1.0."""
 
         try:
-            client = openai.AsyncOpenAI()
+            client = openai.AsyncOpenAI(api_key=self._openai_api_key)
             response = await client.chat.completions.create(
                 model=self.llm_judge_model,
                 messages=[{"role": "user", "content": judge_prompt}],
@@ -227,7 +221,6 @@ Respond with ONLY a number between 0.0 and 1.0."""
             )
             score_text = response.choices[0].message.content.strip()
             # Extract number
-            import re
             match = re.search(r'(\d+\.?\d*)', score_text)
             if match:
                 return float(match.group(1))
@@ -240,8 +233,8 @@ Respond with ONLY a number between 0.0 and 1.0."""
         self,
         original_prompt: str,
         optimized_prompt: str,
-        baseline_response: Optional[str] = None,
-        optimized_response: Optional[str] = None
+        baseline_response: str | None = None,
+        optimized_response: str | None = None
     ) -> FidelityScore:
         """
         Comprehensive fidelity validation.
@@ -303,7 +296,7 @@ Respond with ONLY a number between 0.0 and 1.0."""
                     "structural": self.structural_weight,
                     "llm_judge": self.llm_judge_weight if llm_score else 0
                 },
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
         )
 
@@ -313,10 +306,9 @@ Respond with ONLY a number between 0.0 and 1.0."""
         optimized_prompt: str
     ) -> FidelityScore:
         """Synchronous validation (for non-async contexts)."""
-        import asyncio
         return asyncio.run(self.validate(original_prompt, optimized_prompt))
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         total = self._validation_count
         return {
             "total_validations": total,

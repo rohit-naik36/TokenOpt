@@ -9,5 +9,11 @@ build/
 .venv
 venv/
 
+# Test / tool caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
 # PyPI recovery codes (sensitive - never commit)
 PyPI-Recovery-Codes-*.txt

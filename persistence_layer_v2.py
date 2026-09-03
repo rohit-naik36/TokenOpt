@@ -6,9 +6,10 @@ PostgreSQL for audit logs, Redis Cluster for distributed cache, Kafka for events
 import json
 import hashlib
 import time
+import zlib
 from typing import Optional, Dict, Any, List, Tuple
 from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 
 logger = logging.getLogger("tokenopt.persistence")
@@ -179,7 +180,7 @@ class AuditDatabase:
             """)
 
             # Create partitions for current and next month
-            today = datetime.utcnow()
+            today = datetime.now(timezone.utc)
             for i in range(3):
                 month = today + timedelta(days=30*i)
                 partition_name = f"audit_logs_{month.strftime('%Y_%m')}"
@@ -235,7 +236,7 @@ class AuditDatabase:
                     partition_name TEXT;
                     cutoff_date DATE;
                 BEGIN
-                    cutoff_date := CURRENT_DATE - INTERVAL '%s days';
+                    cutoff_date := CURRENT_DATE - INTERVAL '$1 days';
 
                     FOR partition_name IN
                         SELECT inhrelid::regclass::text
@@ -254,7 +255,7 @@ class AuditDatabase:
                     END LOOP;
                 END;
                 $$ LANGUAGE plpgsql;
-            """ % self.retention_days)
+            """, self.retention_days)
 
         self._initialized = True
         logger.info("Audit database initialized")
@@ -308,8 +309,8 @@ class AuditDatabase:
         if not ASYNCPG_AVAILABLE or not self._pool:
             return {"error": "Database not available"}
 
-        start_time = start_time or datetime.utcnow() - timedelta(hours=24)
-        end_time = end_time or datetime.utcnow()
+        start_time = start_time or datetime.now(timezone.utc) - timedelta(hours=24)
+        end_time = end_time or datetime.now(timezone.utc)
 
         async with self._pool.acquire() as conn:
             where_clause = "timestamp BETWEEN $1 AND $2"
@@ -352,6 +353,12 @@ class AuditDatabase:
         """Get recent rollbacks for investigation."""
         if not ASYNCPG_AVAILABLE or not self._pool:
             return []
+
+        # Coerce to a safe, bounded integer before interpolating into SQL.
+        try:
+            limit = max(1, min(int(limit), 1000))
+        except (TypeError, ValueError):
+            limit = 100
 
         async with self._pool.acquire() as conn:
             where_clause = "was_rolled_back = TRUE"
@@ -473,7 +480,6 @@ class DistributedCache:
         json_str = json.dumps(value, default=str)
         if self.compression and len(json_str) > 1024:
             try:
-                import zlib
                 compressed = zlib.compress(json_str.encode())
                 return f"COMPRESSED:{compressed.hex()}"
             except Exception:
@@ -484,7 +490,6 @@ class DistributedCache:
         """Deserialize value from string."""
         if value.startswith("COMPRESSED:"):
             try:
-                import zlib
                 compressed = bytes.fromhex(value[11:])
                 json_str = zlib.decompress(compressed).decode()
                 return json.loads(json_str)
@@ -538,8 +543,13 @@ class DistributedCache:
         ttl: Optional[int] = None
     ):
         """Set value in cache."""
+        effective_ttl = ttl if ttl is not None else self.ttl
+        # A zero TTL means "do not cache" -> treat as an immediate miss.
+        if effective_ttl <= 0:
+            return
+
         if not self._redis:
-            self._memory_set(prefix, key_data, value, ttl)
+            self._memory_set(prefix, key_data, value, effective_ttl)
             return
 
         try:
@@ -548,7 +558,7 @@ class DistributedCache:
 
             await self._redis.setex(
                 key,
-                ttl or self.ttl,
+                effective_ttl,
                 serialized
             )
 
@@ -556,7 +566,7 @@ class DistributedCache:
             logger.warning(f"Cache set error: {e}")
             self._errors += 1
 
-    def _memory_set(self, prefix: str, key_data: str, value: Any, ttl: Optional[int] = None):
+    def _memory_set(self, prefix: str, key_data: str, value: Any, ttl: int):
         """Write to the in-memory fallback store (bounded, lazily expiring)."""
         if self._memory_max_entries and len(self._memory) >= self._memory_max_entries:
             # Simple bounded eviction: drop the oldest entries past their TTL.
@@ -570,7 +580,7 @@ class DistributedCache:
                     self._memory.pop(k, None)
 
         key = self._make_key(prefix, key_data)
-        self._memory[key] = (time.time() + (ttl or self.ttl), value)
+        self._memory[key] = (time.time() + ttl, value)
 
     async def delete(self, prefix: str, key_data: str):
         """Delete value from cache."""
@@ -677,7 +687,7 @@ class EventStreamer:
         """Emit an event to Kafka."""
         event = {
             "type": event_type,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "payload": payload
         }
 

@@ -1,0 +1,34 @@
+# TokenOpt v2.0 - Core runtime dependencies
+fastapi>=0.110.0,<1.0.0
+uvicorn[standard]>=0.24.0,<1.0.0
+pydantic>=2.0.0,<3.0.0
+httpx>=0.24.0,<1.0.0
+PyJWT>=2.8.0,<3.0.0
+numpy>=1.24.0,<3.0.0
+openai>=1.30.0,<2.0.0
+
+# TokenOpt optimizer SDK (separate repo/pip package). The proxy imports
+# tokenopt_optimizer from here. Install this SDK into the environment before
+# running the app; the path below points at the local checkout.
+#   Requires: separate repo at C:\Users\rohit\Documents\Projects\tokenopt-optimizer
+-e C:/Users/rohit/Documents/Projects/tokenopt-optimizer
+
+# Optional: smart prompt compression (graceful degradation if absent)
+headroom-ai>=0.33.0
+
+# ------------------------------------------------------------------
+# Optional infrastructure drivers (code degrades gracefully when these
+# are not installed). Install only if you use the corresponding backend:
+# ------------------------------------------------------------------
+# PostgreSQL audit store:
+asyncpg>=0.28.0
+# Redis distributed cache:
+redis>=4.5.0
+# Kafka event streaming:
+aiokafka>=0.8.0
+
+# Optional: local embedding model (falls back to OpenAI embeddings if absent)
+sentence-transformers>=2.2.0
+
+# Test dependencies
+pytest>=7.0.0

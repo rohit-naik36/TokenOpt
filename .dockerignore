@@ -1,0 +1,12 @@
+.git
+.gitignore
+*.pyc
+__pycache__/
+.pytest_cache/
+tests/
+*.md
+.github/
+.terraform/
+terraform.tfstate*
+*.tfvars
+.deploy/

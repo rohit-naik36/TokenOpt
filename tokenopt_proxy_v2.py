@@ -1,4 +1,4 @@
-"""
+﻿"""
 TokenOpt v2.0 - Production API Proxy
 Integrates: real embeddings, circuit breaker providers, PostgreSQL audit, Redis cache, Kafka events.
 """
@@ -9,18 +9,45 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
+from contextlib import asynccontextmanager
 import asyncio
 import json
 import time
 import os
 import uuid
-from datetime import datetime, timedelta
+import jwt
+from datetime import datetime, timedelta, timezone
 import logging
 
 # Import v2 components
-from fidelity_validator_v2 import EmbeddingFidelityValidator, FidelityScore
+from fidelity_validator_v2 import EmbeddingFidelityValidator
 from provider_client_v2 import ProviderRouter, ProviderConfig, ProviderError
 from persistence_layer_v2 import AuditDatabase, DistributedCache, EventStreamer, AuditLogEntry
+
+# Import TokenOpt optimizer SDK (standalone, embeddable optimization engine)
+from tokenopt_optimizer import (
+    DegradedFidelityValidator as SDK_DegradedFidelityValidator,
+    OptimizerConfig,
+    PromptOptimizer,
+)
+
+# Optional dependencies (checked early so constants are available everywhere)
+try:
+    from sentence_transformers import SentenceTransformer
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+
+try:
+    import headroom
+    from headroom import compress as headroom_compress
+    from headroom import CompressConfig as HeadroomConfig
+    HEADROOM_AVAILABLE = True
+except ImportError:
+    headroom = None
+    headroom_compress = None
+    HeadroomConfig = None
+    HEADROOM_AVAILABLE = False
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("tokenopt.v2")
@@ -74,7 +101,7 @@ class AppConfig:
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
     # Security
-    JWT_SECRET = os.getenv("JWT_SECRET", "change-me-in-production")
+    JWT_SECRET = os.getenv("JWT_SECRET", "")
     ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY", "")
 
     # Optimization
@@ -87,6 +114,22 @@ class AppConfig:
     # Performance
     MAX_CONCURRENT_REQUESTS = max(_env_int("MAX_CONCURRENT_REQUESTS", 100), 1)
     REQUEST_TIMEOUT = _env_float("REQUEST_TIMEOUT", 60.0)
+
+    # Pricing (cost per token, used for savings estimates)
+    MODEL_PRICING = {
+        "gpt-4": 0.00003,
+        "gpt-4-turbo": 0.00001,
+        "gpt-3.5-turbo": 0.0000015,
+        "claude-3-opus": 0.000015,
+        "claude-3-sonnet": 0.000003,
+        "claude-3-haiku": 0.00000025,
+    }
+    DEFAULT_TOKEN_PRICE = 0.00003
+
+    @classmethod
+    def get_token_price(cls, model: str) -> float:
+        """Return per-token price for *model*, falling back to DEFAULT_TOKEN_PRICE."""
+        return cls.MODEL_PRICING.get(model, cls.DEFAULT_TOKEN_PRICE)
 
 # ============================================================
 # Pydantic Models
@@ -124,19 +167,38 @@ class EmbeddingRequest(BaseModel):
 # FastAPI Application
 # ============================================================
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage startup and shutdown lifecycle."""
+    await services.initialize()
+    yield
+    await services.shutdown()
+
 app = FastAPI(
     title="TokenOpt Enterprise v2.0",
     description="Production AI token optimization with real embeddings, circuit breakers, and audit trail",
-    version="2.0.0"
+    version="2.0.0",
+    lifespan=lifespan
 )
 
+_cors_default = ["http://localhost:3000", "http://localhost:5173", "http://localhost:8080"]
+_cors_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+if _cors_origins:
+    # Explicitly configured origins. No wildcard unless the env var is literally "*".
+    _cors_allowed = _cors_origins
+    _cors_credentials = not ("*" in _cors_origins)
+else:
+    # Default to local development origins; never wildcard-open CORS by default.
+    _cors_allowed = _cors_default
+    _cors_credentials = True
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_cors_allowed,
+    allow_credentials=_cors_credentials,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+logger.info(f"CORS configured: allow_origins={_cors_allowed}, allow_credentials={_cors_credentials}")
 
 security = HTTPBearer()
 
@@ -144,34 +206,29 @@ security = HTTPBearer()
 # Global Services (initialized on startup)
 # ============================================================
 
-class DegradedFidelityValidator:
-    """Fails-open fidelity validator used when no embedding backend is configured.
+# Fails-open fidelity validator now lives in the TokenOpt optimizer SDK.
+# Re-export it here so existing imports / tests against the proxy keep working.
+DegradedFidelityValidator = SDK_DegradedFidelityValidator
 
-    Always passes validation (score 1.0) so optimization never blocks the
-    request path. Swap in a real validator by configuring an embedding
-    backend (sentence-transformers or OPENAI_API_KEY).
+
+def build_optimizer():
+    """Construct an SDK ``PromptOptimizer`` wired to the live global services.
+
+    The SDK optimizer is fully dependency-injected; here we connect it to the
+    process-wide cache and fidelity validator so the proxy and the standalone
+    engine share the same backends.
     """
-
-    def __init__(self):
-        self._validation_count = 0
-
-    async def validate(self, **kwargs) -> FidelityScore:
-        self._validation_count += 1
-        return FidelityScore(
-            overall=1.0,
-            semantic_similarity=1.0,
-            structural_similarity=1.0,
-            llm_judge_score=None,
-            passed=True,
-            details={"engine": "degraded_passthrough"}
-        )
-
-    def get_stats(self) -> Dict[str, Any]:
-        return {
-            "engine": "degraded_passthrough",
-            "validations": self._validation_count,
-            "note": "No embedding backend configured; fidelity always passes (fails open)"
-        }
+    cfg = services.config
+    config = OptimizerConfig(
+        enable_headroom=cfg.ENABLE_HEADROOM,
+        headroom_target_ratio=cfg.HEADROOM_TARGET_RATIO,
+        headroom_min_tokens=cfg.HEADROOM_MIN_TOKENS,
+    )
+    return PromptOptimizer(
+        config=config,
+        cache=services.cache,
+        validator=services.fidelity_validator,
+    )
 
 
 class ServiceManager:
@@ -194,6 +251,13 @@ class ServiceManager:
 
         logger.info("Initializing TokenOpt v2.0 services...")
 
+        # Startup validation
+        if not self.config.JWT_SECRET:
+            logger.critical(
+                "JWT_SECRET is not set! Authentication will reject all requests. "
+                "Set the JWT_SECRET environment variable before running in production."
+            )
+
         # 1. Fidelity Validator
         try:
             self.fidelity_validator = EmbeddingFidelityValidator(
@@ -204,7 +268,7 @@ class ServiceManager:
                 enable_llm_judge=self.config.ENABLE_LLM_JUDGE,
                 llm_judge_model="gpt-4"
             )
-            logger.info("✅ Fidelity validator initialized")
+            logger.info("âœ… Fidelity validator initialized")
         except Exception as e:
             # Fail open: no embedding backend (no key, no local model) must
             # never block the proxy from serving requests.
@@ -242,7 +306,7 @@ class ServiceManager:
             ))
 
         await self.provider_router.start_health_checks(interval=30.0)
-        logger.info("✅ Provider router initialized")
+        logger.info("âœ… Provider router initialized")
 
         # 3. Audit Database
         self.audit_db = AuditDatabase(
@@ -250,7 +314,7 @@ class ServiceManager:
             retention_days=90
         )
         await self.audit_db.initialize()
-        logger.info("✅ Audit database initialized")
+        logger.info("âœ… Audit database initialized")
 
         # 4. Distributed Cache
         self.cache = DistributedCache(
@@ -259,17 +323,17 @@ class ServiceManager:
             ttl_seconds=3600
         )
         await self.cache.initialize()
-        logger.info("✅ Distributed cache initialized")
+        logger.info("âœ… Distributed cache initialized")
 
         # 5. Event Streamer
         self.event_stream = EventStreamer(
             bootstrap_servers=self.config.KAFKA_BROKERS
         )
         await self.event_stream.initialize()
-        logger.info("✅ Event streamer initialized")
+        logger.info("âœ… Event streamer initialized")
 
         self._initialized = True
-        logger.info("🚀 TokenOpt v2.0 fully initialized")
+        logger.info("ðŸš€ TokenOpt v2.0 fully initialized")
 
     async def shutdown(self):
         """Graceful shutdown."""
@@ -284,18 +348,10 @@ class ServiceManager:
         if self.event_stream:
             await self.event_stream.close()
 
-        logger.info("👋 TokenOpt v2.0 shutdown complete")
+        logger.info("ðŸ‘‹ TokenOpt v2.0 shutdown complete")
 
 # Global service manager
 services = ServiceManager()
-
-@app.on_event("startup")
-async def startup():
-    await services.initialize()
-
-@app.on_event("shutdown")
-async def shutdown():
-    await services.shutdown()
 
 # ============================================================
 # Authentication
@@ -303,8 +359,6 @@ async def shutdown():
 
 async def authenticate(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
     """JWT-based authentication."""
-    import jwt
-
     try:
         token = credentials.credentials
         # In production: verify against identity provider
@@ -323,221 +377,17 @@ async def authenticate(credentials: HTTPAuthorizationCredentials = Depends(secur
             "plan": payload.get("plan", "standard")
         }
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
+        raise HTTPException(status_code=401, detail="Token expired") from None
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token") from None
 
 # ============================================================
-# Core Optimization Logic
+# Optimization Engine (provided by the TokenOpt optimizer SDK)
 # ============================================================
 
-class PromptOptimizer:
-    """Production prompt optimization with real fidelity validation."""
+# PromptOptimizer / SemanticCompressorV2 are imported from the SDK at the top
+# of this module. See build_optimizer() for constructing a wired engine.
 
-    def __init__(self):
-        self.compressor = SemanticCompressorV2()
-
-    async def optimize(
-        self,
-        messages: List[ChatMessage],
-        config: AppConfig,
-        optimization_level: str = "standard"
-    ) -> Dict[str, Any]:
-        """Optimize prompt and validate fidelity."""
-        # Build full prompt
-        full_prompt = "\n".join([f"{m.role}: {m.content}" for m in messages])
-        original_tokens = self._estimate_tokens(full_prompt)
-
-        # Check cache first
-        cached = await services.cache.get("optimized_prompt", full_prompt)
-        if cached:
-            return {
-                "optimized_prompt": cached["prompt"],
-                "optimized_tokens": cached["tokens"],
-                "techniques": ["cache_hit"],
-                "cache_hit": True,
-                "original_tokens": cached.get("original_tokens", original_tokens),
-                "fidelity_score": cached.get("fidelity_score", 1.0),
-                "fidelity_passed": cached.get("fidelity_passed", True),
-                "fidelity_details": cached.get("fidelity_details", {"engine": "cache_hit"})
-            }
-
-        # Apply compression (headroom first, then regex fallback)
-        if config.ENABLE_HEADROOM:
-            hr_compressed, hr_techniques, hr_stats = self.compressor.compress_with_headroom(
-                full_prompt, optimization_level=optimization_level
-            )
-            if hr_techniques and hr_compressed != full_prompt:
-                compressed = hr_compressed
-                techniques = hr_techniques
-                # Headroom reports real token counts; use them for both sides
-                # so savings metrics stay consistent.
-                original_tokens = hr_stats.get("tokens_before") or original_tokens
-                optimized_tokens = hr_stats.get("tokens_after") or self._estimate_tokens(compressed)
-            else:
-                compressed, techniques = self.compressor.compress(full_prompt)
-                optimized_tokens = self._estimate_tokens(compressed)
-        else:
-            compressed, techniques = self.compressor.compress(full_prompt)
-            optimized_tokens = self._estimate_tokens(compressed)
-
-        # Validate fidelity with real embeddings
-        fidelity = await services.fidelity_validator.validate(
-            original_prompt=full_prompt,
-            optimized_prompt=compressed
-        )
-
-        # If fidelity too low, use less aggressive compression
-        if not fidelity.passed and techniques:
-            # Revert to safe compression
-            compressed = self.compressor.safe_compress(full_prompt)
-            optimized_tokens = self._estimate_tokens(compressed)
-            techniques = ["safe_compression"]
-
-            # Re-validate
-            fidelity = await services.fidelity_validator.validate(
-                original_prompt=full_prompt,
-                optimized_prompt=compressed
-            )
-
-        result = {
-            "optimized_prompt": compressed,
-            "optimized_tokens": optimized_tokens,
-            "techniques": techniques,
-            "cache_hit": False,
-            "original_tokens": original_tokens,
-            "fidelity_score": fidelity.overall,
-            "fidelity_passed": fidelity.passed,
-            "fidelity_details": fidelity.details
-        }
-
-        # Cache the optimization
-        await services.cache.set("optimized_prompt", full_prompt, {
-            "prompt": compressed,
-            "tokens": optimized_tokens,
-            "original_tokens": original_tokens,
-            "fidelity_score": fidelity.overall,
-            "fidelity_passed": fidelity.passed,
-            "fidelity_details": fidelity.details
-        })
-
-        return result
-
-    def _estimate_tokens(self, text: str) -> int:
-        return int(len(text.split()) / 0.75)
-
-
-class SemanticCompressorV2:
-    """Enhanced semantic compressor (same as v1 but with better patterns)."""
-
-    FILLER_WORDS = {
-        'basically', 'essentially', 'fundamentally', 'literally',
-        'actually', 'really', 'quite', 'rather', 'fairly', 'pretty',
-        'in order to', 'for the purpose of', 'due to the fact that',
-        'in spite of the fact that', 'at this point in time',
-        'in the event that', 'it is important to note that',
-        'it should be noted that', 'please note that', 'kindly note'
-    }
-
-    def compress(self, text: str) -> tuple:
-        import re
-        techniques = []
-        result = text
-
-        # Remove fillers
-        count = 0
-        for filler in self.FILLER_WORDS:
-            pattern = r'\b' + re.escape(filler) + r'\b'
-            matches = len(re.findall(pattern, result, re.IGNORECASE))
-            if matches > 0:
-                result = re.sub(pattern, '', result, flags=re.IGNORECASE)
-                count += matches
-        if count > 0:
-            techniques.append(f"filler_removal:{count}")
-
-        # Simplify connectors
-        replacements = {
-            r'\bin order to\b': 'to',
-            r'\bdue to the fact that\b': 'because',
-            r'\bin spite of the fact that\b': 'although',
-            r'\bin the event that\b': 'if',
-            r'\bat this point in time\b': 'now',
-            r'\bon a daily basis\b': 'daily',
-        }
-        for pattern, replacement in replacements.items():
-            result = re.sub(pattern, replacement, result, flags=re.IGNORECASE)
-
-        result = re.sub(r'\s+', ' ', result).strip()
-
-        if result != text:
-            techniques.append("semantic_compression")
-
-        return result, techniques
-
-    def safe_compress(self, text: str) -> str:
-        import re
-        result = re.sub(r' +', ' ', text)
-        result = re.sub(r'\n{3,}', '\n\n', result)
-        return result.strip()
-
-    def compress_with_headroom(self, text: str, optimization_level: str = "standard") -> tuple:
-        """Compress using headroom's SmartCrusher pipeline (fails open).
-
-        Returns (compressed_text, techniques, stats) where stats carries the
-        real token counts reported by headroom. On any failure returns the
-        original text unchanged so the caller's existing fallback chain
-        (fidelity -> safe_compress -> original prompt) takes over.
-
-        optimization_level tunes aggressiveness: "aggressive" keeps less,
-        "conservative" keeps more, "standard" uses the configured ratio.
-        """
-        if not HEADROOM_AVAILABLE:
-            return text, [], {}
-
-        try:
-            # Lower target_ratio = keep less = more aggressive compression.
-            ratio = services.config.HEADROOM_TARGET_RATIO
-            if optimization_level == "aggressive":
-                ratio = min(max(ratio * 0.5, 0.1), 0.95)
-            elif optimization_level == "conservative":
-                ratio = min(max(ratio * 1.5, 0.1), 0.95)
-
-            config = HeadroomConfig(
-                compress_user_messages=True,
-                compress_system_messages=False,
-                protect_recent=0,
-                min_tokens_to_compress=max(services.config.HEADROOM_MIN_TOKENS, 10),
-                target_ratio=ratio,
-                kompress_model="disabled",
-            )
-            result = headroom_compress(
-                [{"role": "user", "content": text}],
-                model="gpt-4o",
-                config=config,
-            )
-
-            if not result.messages:
-                return text, [], {}
-
-            compressed = result.messages[0].get("content", text)
-            if not isinstance(compressed, str) or compressed == text:
-                return text, [], {}
-
-            transforms = list(result.transforms_applied or [])
-            if result.tokens_saved <= 0:
-                return text, [], {}
-
-            techniques = [f"headroom:{t}" for t in transforms] or ["headroom:smart_crusher"]
-            stats = {
-                "tokens_before": result.tokens_before,
-                "tokens_after": result.tokens_after,
-                "tokens_saved": result.tokens_saved,
-                "compression_ratio": result.compression_ratio,
-            }
-            return compressed, techniques, stats
-        except Exception as e:
-            logger.warning(f"Headroom compression failed, falling back: {e}")
-            return text, [], {}
 
 # ============================================================
 # API Endpoints
@@ -549,7 +399,7 @@ async def health_check():
     health = {
         "status": "healthy",
         "version": "2.0.0",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "services": {}
     }
 
@@ -599,10 +449,9 @@ async def chat_completions(
                     "was_skipped": True
                 }
             else:
-                optimizer = PromptOptimizer()
+                optimizer = build_optimizer()
                 opt_result = await optimizer.optimize(
                     request.messages,
-                    services.config,
                     optimization_level=request.optimization_level or "standard"
                 )
 
@@ -661,14 +510,14 @@ async def chat_completions(
                                 if data != "[DONE]":
                                     try:
                                         parsed = json.loads(data)
-                                        if "choices" in parsed and parsed["choices"]:
+                                        if parsed.get("choices"):
                                             delta = parsed["choices"][0].get("delta", {})
                                             if "content" in delta:
                                                 full_response += delta["content"]
                                     except Exception:
-                                        pass
+                                        logger.debug("Skipping non-parseable SSE chunk", exc_info=True)
                     except Exception as e:
-                        yield f"data: {{\"error\": \"{str(e)}\"}}\n\n"
+                        yield f"data: {{\"error\": \"{e!s}\"}}\n\n"
                     finally:
                         # Audit log in background
                         pass
@@ -690,7 +539,7 @@ async def chat_completions(
             total_latency = time.time() - start_time
 
             # 5. Post-optimization fidelity check (if we have response)
-            if "choices" in result and result["choices"]:
+            if result.get("choices"):
                 response_content = result["choices"][0].get("message", {}).get("content", "")
 
                 # Only do expensive response validation for ~5% of requests (sampled)
@@ -732,8 +581,9 @@ async def chat_completions(
 
             # 6. Attach TokenOpt metadata
             usage = result.get("usage", {})
-            original_cost = opt_result["original_tokens"] * 0.00003  # GPT-4 rate
-            optimized_cost = opt_result["optimized_tokens"] * 0.00003
+            token_price = services.config.get_token_price(request.model)
+            original_cost = opt_result["original_tokens"] * token_price
+            optimized_cost = opt_result["optimized_tokens"] * token_price
 
             result["tokenopt"] = {
                 "version": "2.0.0",
@@ -799,10 +649,10 @@ async def chat_completions(
 
         except ProviderError as e:
             logger.error(f"Provider error: {e}")
-            raise HTTPException(status_code=502, detail=str(e))
+            raise HTTPException(status_code=502, detail=str(e)) from e
         except Exception as e:
             logger.error(f"Unexpected error: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail="Internal server error")
+            raise HTTPException(status_code=500, detail="Internal server error") from e
 
 @app.get("/v1/tokenopt/stats")
 async def get_stats(
@@ -810,7 +660,7 @@ async def get_stats(
     hours: int = 24
 ):
     """Get comprehensive platform statistics."""
-    start_time = datetime.utcnow() - timedelta(hours=hours)
+    start_time = datetime.now(timezone.utc) - timedelta(hours=hours)
 
     db_stats = await services.audit_db.get_stats(
         tenant_id=tenant["tenant_id"],
@@ -858,9 +708,9 @@ async def validate_prompt(
     tenant: Dict = Depends(authenticate)
 ):
     """Preview optimization without API call."""
-    optimizer = PromptOptimizer()
+    optimizer = build_optimizer()
     messages = [ChatMessage(role="user", content=prompt)]
-    result = await optimizer.optimize(messages, services.config)
+    result = await optimizer.optimize(messages)
 
     return {
         "original": prompt,
@@ -871,27 +721,8 @@ async def validate_prompt(
         "fidelity_score": result.get("fidelity_score"),
         "fidelity_passed": result.get("fidelity_passed"),
         "techniques": result["techniques"],
-        "estimated_cost_savings": f"${(result['original_tokens'] - result['optimized_tokens']) * 0.00003:.6f}"
+        "estimated_cost_savings": f"${(result['original_tokens'] - result['optimized_tokens']) * services.config.DEFAULT_TOKEN_PRICE:.6f}"
     }
-
-# Check sentence-transformers availability
-try:
-    from sentence_transformers import SentenceTransformer
-    SENTENCE_TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    SENTENCE_TRANSFORMERS_AVAILABLE = False
-
-# Optional headroom integration (pip install headroom-ai)
-try:
-    import headroom
-    from headroom import compress as headroom_compress
-    from headroom import CompressConfig as HeadroomConfig
-    HEADROOM_AVAILABLE = True
-except ImportError:
-    headroom = None
-    headroom_compress = None
-    HeadroomConfig = None
-    HEADROOM_AVAILABLE = False
 
 if __name__ == "__main__":
     import uvicorn

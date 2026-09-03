@@ -9,7 +9,7 @@ import time
 from typing import Optional, Dict, Any, AsyncGenerator, List
 from dataclasses import dataclass, field
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 logger = logging.getLogger("tokenopt.provider")
@@ -195,7 +195,7 @@ class LLMProviderClient:
             self._health_status = ProviderStatus.UNHEALTHY
             logger.warning(f"Health check failed for {self.config.name}: {e}")
 
-        self._last_health_check = datetime.utcnow()
+        self._last_health_check = datetime.now(timezone.utc)
         return self._health_status
 
     async def chat_completion(
@@ -292,17 +292,19 @@ class LLMProviderClient:
         url: str,
         headers: Dict[str, str],
         request_data: Dict[str, Any]
-    ) -> AsyncGenerator[str, None]:
-        """Handle streaming requests."""
+    ):
+        """Handle streaming requests. Returns an async iterator of chunks."""
         request_data["stream"] = True
+        circuit_breaker = self.circuit_breaker
 
-        async with client.stream("POST", url, json=request_data, headers=headers) as response:
-            response.raise_for_status()
+        async def _generate() -> AsyncGenerator[str, None]:
+            async with client.stream("POST", url, json=request_data, headers=headers) as response:
+                response.raise_for_status()
+                async for chunk in response.aiter_text():
+                    yield chunk
+            await circuit_breaker.record_success()
 
-            async for chunk in response.aiter_text():
-                yield chunk
-
-        await self.circuit_breaker.record_success()
+        return _generate()
 
     async def embeddings(
         self,
@@ -464,7 +466,7 @@ class ProviderRouter:
                 # Add provider metadata
                 if isinstance(result, dict):
                     result["_provider"] = provider.config.name
-                    result["_routed_at"] = datetime.utcnow().isoformat()
+                    result["_routed_at"] = datetime.now(timezone.utc).isoformat()
 
                 return result
             except Exception as e:
