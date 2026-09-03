@@ -12,12 +12,21 @@ from typing import Optional, List, Dict, Any
 from contextlib import asynccontextmanager
 import asyncio
 import json
+import secrets
 import time
 import os
 import uuid
 import jwt
 from datetime import datetime, timedelta, timezone
 import logging
+from functools import lru_cache
+
+# Optional real tokenizer (falls back to the SDK heuristic when unavailable)
+try:
+    import tiktoken
+    TIKTOKEN_AVAILABLE = True
+except ImportError:
+    TIKTOKEN_AVAILABLE = False
 
 # Import v2 components
 from fidelity_validator_v2 import EmbeddingFidelityValidator
@@ -111,6 +120,16 @@ class AppConfig:
     HEADROOM_MIN_TOKENS = _env_int("HEADROOM_MIN_TOKENS", 100)
     HEADROOM_TARGET_RATIO = _env_float("HEADROOM_TARGET_RATIO", 0.5)
 
+    # Token/quality controls for AAVA
+    USE_TIKTOKEN = _env_bool("USE_TIKTOKEN", True)
+    # Minimum token savings (percent) below which optimization is skipped so we
+    # never report meaningless single-digit savings or add pointless latency.
+    MIN_SAVINGS_PCT = _env_float("MIN_SAVINGS_PCT", 2.0)
+    # When true (AAVA production), refuse to serve with the fails-open degraded
+    # validator because fidelity numbers would be meaningless. Off by default so
+    # the existing fails-open dev/demo behavior is preserved.
+    REQUIRE_REAL_FIDELITY = _env_bool("REQUIRE_REAL_FIDELITY", False)
+
     # Performance
     MAX_CONCURRENT_REQUESTS = max(_env_int("MAX_CONCURRENT_REQUESTS", 100), 1)
     REQUEST_TIMEOUT = _env_float("REQUEST_TIMEOUT", 60.0)
@@ -130,6 +149,38 @@ class AppConfig:
     def get_token_price(cls, model: str) -> float:
         """Return per-token price for *model*, falling back to DEFAULT_TOKEN_PRICE."""
         return cls.MODEL_PRICING.get(model, cls.DEFAULT_TOKEN_PRICE)
+
+    @staticmethod
+    @lru_cache(maxsize=64)
+    def _encoding_for(model: str):
+        """Return the tiktoken encoding for *model*, best-effort."""
+        if not TIKTOKEN_AVAILABLE:
+            return None
+        try:
+            return tiktoken.encoding_for_model(model)
+        except KeyError:
+            try:
+                return tiktoken.get_encoding("cl100k_base")
+            except Exception:  # noqa: BLE001
+                return None
+
+    @classmethod
+    def make_token_counter(cls, model: str = "gpt-4"):
+        """Build an SDK-compatible ``Callable[[str], int]`` token counter.
+
+        Uses tiktoken (per-model) when available; otherwise falls back to
+        ``None`` so the SDK uses its internal word-count heuristic.
+        """
+        if not cls.USE_TIKTOKEN or not TIKTOKEN_AVAILABLE:
+            return None
+
+        def _count(text: str) -> int:
+            enc = cls._encoding_for(model)
+            if enc is None:
+                return int(len(text.split()) / 0.75)
+            return len(enc.encode(text))
+
+        return _count
 
 # ============================================================
 # Pydantic Models
@@ -211,24 +262,83 @@ security = HTTPBearer()
 DegradedFidelityValidator = SDK_DegradedFidelityValidator
 
 
-def build_optimizer():
-    """Construct an SDK ``PromptOptimizer`` wired to the live global services.
+def minimum_savings_rollback(
+    opt_result: Dict[str, Any],
+    min_savings_pct: float,
+    original_prompt: str,
+) -> bool:
+    """Decide whether an optimization result saves too little to be worthwhile.
+
+    When savings (percentage of tokens removed) fall below *min_savings_pct*,
+    the prompt is reverted to the original and ``opt_result`` is updated to
+    reflect the rollback. Returns ``True`` if a rollback was applied.
+    """
+    if opt_result.get("was_skipped") or opt_result.get("was_rolled_back"):
+        return False
+    orig_tokens = opt_result.get("original_tokens", 0)
+    if orig_tokens <= 0:
+        return False
+    savings_pct = (1 - opt_result["optimized_tokens"] / orig_tokens) * 100
+    if savings_pct >= min_savings_pct:
+        return False
+
+    opt_result["optimized_prompt"] = original_prompt
+    opt_result["optimized_tokens"] = orig_tokens
+    opt_result["was_rolled_back"] = True
+    opt_result["rollback_reason"] = (
+        f"Savings {savings_pct:.2f}% below minimum {min_savings_pct}%"
+    )
+    return True
+
+
+def _one_in(rate: int) -> bool:
+    """Return True with probability 1/rate, uniformly (cryptographically random).
+
+    Used for fair, unbiased sampling of expensive operations (e.g. deep response
+    validation). ``rate`` must be >= 1.
+    """
+    if rate <= 1:
+        return True
+    return secrets.randbelow(rate) == 0
+
+
+_OPTIMIZER_CACHE: dict[str, Any] = {}
+
+
+def build_optimizer(model: str = "gpt-4"):
+    """Return an SDK ``PromptOptimizer`` wired to the live global services.
 
     The SDK optimizer is fully dependency-injected; here we connect it to the
     process-wide cache and fidelity validator so the proxy and the standalone
-    engine share the same backends.
+    engine share the same backends. The tokenizer is built for ``model`` so
+    token counts match the actual model tokenization when available.
+
+    Optimizers are cached per model (they are stateless between calls) so a
+    request does not pay the construction cost every time. The cache is keyed
+    by ``(model, validator_id, cache_id)`` so re-initialized backends invalidate
+    stale optimizers automatically.
     """
+    validator_id = id(services.fidelity_validator)
+    cache_id = id(services.cache)
+    key = (model, validator_id, cache_id)
+    cached = _OPTIMIZER_CACHE.get(key)
+    if cached is not None:
+        return cached
+
     cfg = services.config
     config = OptimizerConfig(
         enable_headroom=cfg.ENABLE_HEADROOM,
         headroom_target_ratio=cfg.HEADROOM_TARGET_RATIO,
         headroom_min_tokens=cfg.HEADROOM_MIN_TOKENS,
+        tokenizer=cfg.make_token_counter(model),
     )
-    return PromptOptimizer(
+    optimizer = PromptOptimizer(
         config=config,
         cache=services.cache,
         validator=services.fidelity_validator,
     )
+    _OPTIMIZER_CACHE[key] = optimizer
+    return optimizer
 
 
 class ServiceManager:
@@ -257,6 +367,11 @@ class ServiceManager:
                 "JWT_SECRET is not set! Authentication will reject all requests. "
                 "Set the JWT_SECRET environment variable before running in production."
             )
+        elif len(self.config.JWT_SECRET.encode("utf-8")) < 32:
+            raise RuntimeError(
+                "JWT_SECRET must be at least 32 bytes long for secure HMAC "
+                "signing. Generate one with e.g. `openssl rand -base64 48`."
+            )
 
         # 1. Fidelity Validator
         try:
@@ -270,8 +385,18 @@ class ServiceManager:
             )
             logger.info("âœ… Fidelity validator initialized")
         except Exception as e:
-            # Fail open: no embedding backend (no key, no local model) must
-            # never block the proxy from serving requests.
+            # Fails open for dev/demo, but never for a production-like run:
+            # reporting fidelity from a pass-through validator would be a lie
+            # to paying AAVA clients. When REQUIRE_REAL_FIDELITY is on we refuse
+            # to start rather than serve misleading numbers.
+            if self.config.REQUIRE_REAL_FIDELITY:
+                raise RuntimeError(
+                    "REQUIRE_REAL_FIDELITY is enabled but no real embedding "
+                    "validator could be initialized. Configure an embedding "
+                    "backend (sentence-transformers or OPENAI_API_KEY), or set "
+                    "REQUIRE_REAL_FIDELITY=false to explicitly allow the "
+                    "fails-open degraded validator (dev/demo only)."
+                ) from e
             logger.warning(f"Fidelity validator unavailable ({e}); using degraded passthrough (fails open)")
             self.fidelity_validator = DegradedFidelityValidator()
 
@@ -449,7 +574,7 @@ async def chat_completions(
                     "was_skipped": True
                 }
             else:
-                optimizer = build_optimizer()
+                optimizer = build_optimizer(request.model)
                 opt_result = await optimizer.optimize(
                     request.messages,
                     optimization_level=request.optimization_level or "standard"
@@ -465,6 +590,16 @@ async def chat_completions(
                 opt_result["rollback_reason"] = (
                     f"Fidelity {opt_result['fidelity_score']:.3f} below threshold {custom_threshold}"
                 )
+
+            # 2b. Minimum savings floor: don't bother sending a compressed prompt
+            # that saves almost nothing — it adds latency and risks client trust
+            # with a meaningless savings report. Revert to original if savings
+            # are below MIN_SAVINGS_PCT.
+            minimum_savings_rollback(
+                opt_result,
+                services.config.MIN_SAVINGS_PCT,
+                "\n".join([f"{m.role}: {m.content}" for m in request.messages]),
+            )
 
             # 3. Build request for provider
             # The optimized prompt is the full conversation in compressed form,
@@ -493,7 +628,10 @@ async def chat_completions(
 
             if request.stream:
                 # Streaming response
+                stream_error = None
+
                 async def stream_generator():
+                    nonlocal stream_error
                     full_response = ""
                     try:
                         result = await services.provider_router.route_request(
@@ -517,10 +655,45 @@ async def chat_completions(
                                     except Exception:
                                         logger.debug("Skipping non-parseable SSE chunk", exc_info=True)
                     except Exception as e:
-                        yield f"data: {{\"error\": \"{e!s}\"}}\n\n"
+                        # Never leak internal details to the client (S-4)
+                        stream_error = e
+                        logger.exception("Streaming error")
+                        yield "data: {\"error\": \"upstream stream failed\"}\n\n"
                     finally:
-                        # Audit log in background
-                        pass
+                        try:
+                            stream_latency = time.time() - provider_start
+                            audit_entry = AuditLogEntry(
+                                tenant_id=tenant["tenant_id"],
+                                user_id=tenant["user_id"],
+                                request_id=request_id,
+                                provider=request.model,
+                                model=request.model,
+                                original_prompt="\n".join([f"{m.role}: {m.content}" for m in request.messages]),
+                                optimized_prompt=opt_result["optimized_prompt"],
+                                original_tokens=opt_result["original_tokens"],
+                                optimized_tokens=opt_result["optimized_tokens"],
+                                techniques=opt_result["techniques"],
+                                cache_hit=opt_result["cache_hit"],
+                                fidelity_score=opt_result.get("fidelity_score", 0.0),
+                                fidelity_passed=opt_result.get("fidelity_passed", False),
+                                was_optimized=opt_result["optimized_tokens"] < opt_result["original_tokens"],
+                                was_rolled_back=opt_result.get("was_rolled_back", False),
+                                rollback_reason=opt_result.get("rollback_reason"),
+                                optimization_latency_ms=(provider_start - start_time) * 1000,
+                                provider_latency_ms=stream_latency * 1000,
+                                total_latency_ms=(time.time() - start_time) * 1000,
+                                estimated_cost_original=0.0,
+                                estimated_cost_optimized=0.0,
+                                cost_savings=0.0,
+                                response_tokens=len(full_response.split()),
+                                finish_reason="stream" if not stream_error else "error",
+                                ip_address=http_request.client.host if http_request.client else None,
+                                user_agent=http_request.headers.get("user-agent")
+                            )
+                            background_tasks.add_task(services.audit_db.log_request, audit_entry)
+                            background_tasks.add_task(services.event_stream.emit_request, audit_entry)
+                        except Exception:
+                            logger.exception("Streaming audit failed")
 
                 return StreamingResponse(
                     stream_generator(),
@@ -542,8 +715,11 @@ async def chat_completions(
             if result.get("choices"):
                 response_content = result["choices"][0].get("message", {}).get("content", "")
 
-                # Only do expensive response validation for ~5% of requests (sampled)
-                if hash(request_id) % 20 == 0 and services.config.ENABLE_LLM_JUDGE:
+                # Only do expensive response validation for ~5% of requests (sampled).
+                # Use a uniform random sample (not hash(request_id) % N, whose
+                # distribution is not guaranteed uniform) so every request has an
+                # equal chance of being deep-validated.
+                if _one_in(20) and services.config.ENABLE_LLM_JUDGE:
                     # Build baseline request
                     baseline_request = request_data.copy()
                     baseline_request["messages"] = [{"role": m.role, "content": m.content} for m in request.messages]
@@ -726,4 +902,8 @@ async def validate_prompt(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+
+    # Match the Docker default (see Dockerfile ENV PORT=8000) so running the
+    # module directly and running in the container expose the same port.
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)
