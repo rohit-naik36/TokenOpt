@@ -29,6 +29,6 @@ jobs:
       # Publisher must be configured for project "tokenopt" / owner
       # "rohit-naik36" / workflow "publish.yml" / tag "v*" (Decision 26).
       - name: Upload to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.12.4
+        uses: pypa/gh-action-pypi-publish@v1.14.2
         with:
           packages-dir: dist/
