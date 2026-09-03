@@ -1,0 +1,10 @@
+# Gitleaks configuration file
+
+[allowlist]
+description = "Ignore historical deleted recovery codes file in early git history"
+paths = [
+    '''PyPI-Recovery-Codes-.*\.txt'''
+]
+regexes = [
+    '''PyPI-Recovery-Codes-.*'''
+]
