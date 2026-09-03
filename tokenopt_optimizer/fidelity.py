@@ -38,11 +38,9 @@ class FidelityValidator(Protocol):
         optimized_prompt: str,
         baseline_response: str | None = None,
         optimized_response: str | None = None,
-    ) -> FidelityScore:
-        ...
+    ) -> FidelityScore: ...
 
-    def get_stats(self) -> dict[str, Any]:
-        ...
+    def get_stats(self) -> dict[str, Any]: ...
 
 
 class DegradedFidelityValidator:

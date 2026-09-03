@@ -26,14 +26,24 @@ class SemanticCompressorV2:
     """Enhanced semantic compressor: fillers, connectors, whitespace, and headroom."""
 
     FILLER_WORDS: ClassVar[set[str]] = {
-        "basically", "essentially", "fundamentally", "literally",
-        "actually", "really", "quite", "rather", "fairly", "pretty",
+        "basically",
+        "essentially",
+        "fundamentally",
+        "literally",
+        "actually",
+        "really",
+        "quite",
+        "rather",
+        "fairly",
+        "pretty",
         "for the purpose of",
         "it is important to note that",
-        "it should be noted that", "please note that", "kindly note",
+        "it should be noted that",
+        "please note that",
+        "kindly note",
     }
 
-    def compress(self, text: str) -> tuple:
+    def compress(self, text: str) -> tuple[str, list[str]]:
         """Deterministically compress *text*; returns ``(compressed, techniques)``."""
         techniques = []
         result = text
@@ -67,9 +77,12 @@ class SemanticCompressorV2:
         return result, techniques
 
     def safe_compress(self, text: str) -> str:
-        """Very conservative compression: collapse whitespace / excess blank lines."""
+        """Conservative compression: collapse whitespace, normalize punctuation spacing."""
         result = re.sub(r" +", " ", text)
         result = re.sub(r"\n{3,}", "\n\n", result)
+        result = re.sub(r"\s+([,.:;!?])", r"\1", result)
+        result = re.sub(r" ,", ",", result)
+        result = re.sub(r" \.", ".", result)
         return result.strip()
 
     def compress_with_headroom(
@@ -79,7 +92,7 @@ class SemanticCompressorV2:
         target_ratio: float = 0.5,
         min_tokens_to_compress: int = 100,
         llm_model: str = "gpt-4o",
-    ) -> tuple:
+    ) -> tuple[str, list[str], dict[str, object]]:
         """Compress using the optional headroom SmartCrusher pipeline (fails open).
 
         Returns ``(compressed_text, techniques, stats)`` where stats carries the
@@ -134,5 +147,5 @@ class SemanticCompressorV2:
             }
             return compressed, techniques, stats
         except Exception as e:  # noqa: BLE001 - fallback must never raise
-            logger.warning(f"Headroom compression failed, falling back: {e}")
+            logger.warning("Headroom compression failed, falling back: %s", e)
             return text, [], {}
