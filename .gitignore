@@ -1,19 +1,34 @@
+# Python
 __pycache__/
-*.pyc
-*.pyo
-.Python
+*.py[cod]
+*$py.class
 *.egg-info/
-dist/
+.eggs/
 build/
-.env
-.venv
-venv/
-
-# Test / tool caches
+dist/
 .pytest_cache/
+.mypy_cache/
 .ruff_cache/
 .coverage
 htmlcov/
 
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
 # PyPI recovery codes (sensitive - never commit)
 PyPI-Recovery-Codes-*.txt
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Environment & local secrets
+.env
+*.env
