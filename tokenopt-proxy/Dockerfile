@@ -1,6 +1,7 @@
 # TokenOpt v2.0 - Production image
-# Uses a BuildKit multi-context build so the SDK stays in its own, separate repo:
-#   docker build --build-context tokenopt_sdk=../../tokenopt-optimizer -t tokenopt:latest .
+# Monorepo layout: the optimizer SDK lives at ../tokenopt-optimizer (sibling of
+# this tokenopt-proxy/ folder). Build from this folder with a multi-context build:
+#   docker build --build-context tokenopt_sdk=../tokenopt-optimizer -t tokenopt:latest .
 # The optional ML/infra dependencies (sentence-transformers, asyncpg, redis,
 # aiokafka, headroom) degrade gracefully when absent, so only the core runtime
 # packages are installed by default.
@@ -36,7 +37,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application source (flat layout)
 COPY tokenopt_proxy_v2.py provider_client_v2.py persistence_layer_v2.py fidelity_validator_v2.py ./
 
-# Copy the tokenopt_optimizer SDK from its own build context (separate repo)
+# Copy the tokenopt_optimizer SDK from its own build context (monorepo sibling)
 COPY --from=tokenopt_sdk tokenopt_optimizer/ ./tokenopt_optimizer/
 
 # Non-root runtime user
