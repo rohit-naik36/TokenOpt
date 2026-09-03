@@ -9,7 +9,6 @@ import time
 from typing import Optional, Dict, Any, List, Tuple
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
-import asyncio
 import logging
 
 logger = logging.getLogger("tokenopt.persistence")

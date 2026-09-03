@@ -4,18 +4,17 @@ Integrates: real embeddings, circuit breaker providers, PostgreSQL audit, Redis 
 """
 
 from fastapi import FastAPI, HTTPException, Request, Depends, BackgroundTasks
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any, AsyncGenerator
+from typing import Optional, List, Dict, Any
 import asyncio
 import json
 import time
 import os
 import uuid
 from datetime import datetime, timedelta
-import httpx
 import logging
 
 # Import v2 components
@@ -100,7 +99,9 @@ class ChatMessage(BaseModel):
 
 class ChatCompletionRequest(BaseModel):
     model: str = Field(..., min_length=1, description="Model name, e.g. gpt-4")
-    messages: List[ChatMessage] = Field(..., min_length=1, description="Chat messages (max 1 system + rest user/assistant)")
+    messages: List[ChatMessage] = Field(
+        ..., min_length=1, description="Chat messages (max 1 system + rest user/assistant)"
+    )
     temperature: Optional[float] = Field(0.7, ge=0.0, le=2.0)
     max_tokens: Optional[int] = Field(None, ge=1)
     top_p: Optional[float] = Field(1.0, ge=0.0, le=1.0)
@@ -612,7 +613,9 @@ async def chat_completions(
                 opt_result["optimized_prompt"] = "\n".join([f"{m.role}: {m.content}" for m in request.messages])
                 opt_result["optimized_tokens"] = opt_result["original_tokens"]
                 opt_result["was_rolled_back"] = True
-                opt_result["rollback_reason"] = f"Fidelity {opt_result['fidelity_score']:.3f} below threshold {custom_threshold}"
+                opt_result["rollback_reason"] = (
+                    f"Fidelity {opt_result['fidelity_score']:.3f} below threshold {custom_threshold}"
+                )
 
             # 3. Build request for provider
             # The optimized prompt is the full conversation in compressed form,
@@ -720,7 +723,9 @@ async def chat_completions(
                             # Rollback: return baseline result
                             result = baseline_result
                             opt_result["was_rolled_back"] = True
-                            opt_result["rollback_reason"] = f"Response fidelity {response_fidelity.overall:.3f} below threshold"
+                            opt_result["rollback_reason"] = (
+                                f"Response fidelity {response_fidelity.overall:.3f} below threshold"
+                            )
 
                     except Exception as e:
                         logger.warning(f"Response validation failed: {e}")
@@ -733,7 +738,9 @@ async def chat_completions(
             result["tokenopt"] = {
                 "version": "2.0.0",
                 "request_id": request_id,
-                "savings_pct": round((1 - opt_result["optimized_tokens"] / max(opt_result["original_tokens"], 1)) * 100, 2),
+                "savings_pct": round(
+                    (1 - opt_result["optimized_tokens"] / max(opt_result["original_tokens"], 1)) * 100, 2
+                ),
                 "token_savings": opt_result["original_tokens"] - opt_result["optimized_tokens"],
                 "original_tokens": opt_result["original_tokens"],
                 "optimized_tokens": opt_result["optimized_tokens"],

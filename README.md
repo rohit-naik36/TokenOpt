@@ -13,38 +13,39 @@
 | Document | Purpose | Audience | Pages |
 |----------|---------|----------|-------|
 | [USER_MANUAL.md](USER_MANUAL.md) | Non-technical install, run, test, and production guide | Everyone (end users first) | ~400 lines |
-| [PLATFORM_DOCUMENTATION.md](sandbox:///mnt/agents/output/v2/PLATFORM_DOCUMENTATION.md) | Architecture, config, security, operations | All teams | ~35 |
-| [DEPLOYMENT_GUIDE.md](sandbox:///mnt/agents/output/v2/DEPLOYMENT_GUIDE.md) | Step-by-step deployment from zero to production | DevOps, SRE, Platform Eng | ~120 |
-| [DEV_TEAM_QA.md](sandbox:///mnt/agents/output/v2/DEV_TEAM_QA.md) | 120+ Q&A covering all aspects | Software Engineers, QA, Product | ~80 |
-| [API_SPECIFICATION.md](sandbox:///mnt/agents/output/v2/API_SPECIFICATION.md) | Complete OpenAPI reference | API Consumers, Integrators | ~25 |
-| [SECURITY_COMPLIANCE.md](sandbox:///mnt/agents/output/v2/SECURITY_COMPLIANCE.md) | Security policies, compliance, incident response | Security, Compliance, Legal | ~45 |
-| [ARCHITECTURE_DECISION_RECORDS.md](sandbox:///mnt/agents/output/v2/ARCHITECTURE_DECISION_RECORDS.md) | Why key technical decisions were made | Architects, Tech Leads | ~15 |
-| [OPERATIONS_RUNBOOKS.md](sandbox:///mnt/agents/output/v2/OPERATIONS_RUNBOOKS.md) | Step-by-step operational procedures | SRE, On-Call Engineers | ~35 |
+| [PLATFORM_DOCUMENTATION.md](PLATFORM_DOCUMENTATION.md) | Architecture, config, security, operations | All teams | ~35 |
+| [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) | Step-by-step deployment from zero to production | DevOps, SRE, Platform Eng | ~120 |
+| [DEV_TEAM_QA.md](DEV_TEAM_QA.md) | 120+ Q&A covering all aspects | Software Engineers, QA, Product | ~80 |
+| [API_SPECIFICATION.md](API_SPECIFICATION.md) | Complete OpenAPI reference | API Consumers, Integrators | ~25 |
+| [SECURITY_COMPLIANCE.md](SECURITY_COMPLIANCE.md) | Security policies, compliance, incident response | Security, Compliance, Legal | ~45 |
+| [ARCHITECTURE_DECISION_RECORDS.md](ARCHITECTURE_DECISION_RECORDS.md) | Why key technical decisions were made | Architects, Tech Leads | ~15 |
+| [OPERATIONS_RUNBOOKS.md](OPERATIONS_RUNBOOKS.md) | Step-by-step operational procedures | SRE, On-Call Engineers | ~35 |
+| [ARCHITECTURAL_REVIEW_QA.md](ARCHITECTURAL_REVIEW_QA.md) | Architecture review board prep, Q&A | Architects, Tech Leads, Security | ~250 lines |
 
 ---
 
 ## 🚀 Quick Start
 
 ### For Platform Engineers
-1. Read [DEPLOYMENT_GUIDE.md](sandbox:///mnt/agents/output/v2/DEPLOYMENT_GUIDE.md) — Complete 12-phase deployment
-2. Reference [PLATFORM_DOCUMENTATION.md](sandbox:///mnt/agents/output/v2/PLATFORM_DOCUMENTATION.md) — Architecture and config
-3. Use [OPERATIONS_RUNBOOKS.md](sandbox:///mnt/agents/output/v2/OPERATIONS_RUNBOOKS.md) — Daily operations
+1. Read [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) — Complete 12-phase deployment
+2. Reference [PLATFORM_DOCUMENTATION.md](PLATFORM_DOCUMENTATION.md) — Architecture and config
+3. Use [OPERATIONS_RUNBOOKS.md](OPERATIONS_RUNBOOKS.md) — Daily operations
 
 ### For Software Engineers
-1. Read [API_SPECIFICATION.md](sandbox:///mnt/agents/output/v2/API_SPECIFICATION.md) — Integration guide
-2. Reference [DEV_TEAM_QA.md](sandbox:///mnt/agents/output/v2/DEV_TEAM_QA.md) — Technical deep-dives
-3. Review [ARCHITECTURE_DECISION_RECORDS.md](sandbox:///mnt/agents/output/v2/ARCHITECTURE_DECISION_RECORDS.md) — Design rationale
+1. Read [API_SPECIFICATION.md](API_SPECIFICATION.md) — Integration guide
+2. Reference [DEV_TEAM_QA.md](DEV_TEAM_QA.md) — Technical deep-dives
+3. Review [ARCHITECTURE_DECISION_RECORDS.md](ARCHITECTURE_DECISION_RECORDS.md) — Design rationale
 
 ### For Security & Compliance
-1. Read [SECURITY_COMPLIANCE.md](sandbox:///mnt/agents/output/v2/SECURITY_COMPLIANCE.md) — Complete security posture
-2. Reference [PLATFORM_DOCUMENTATION.md](sandbox:///mnt/agents/output/v2/PLATFORM_DOCUMENTATION.md) — Encryption and audit details
+1. Read [SECURITY_COMPLIANCE.md](SECURITY_COMPLIANCE.md) — Complete security posture
+2. Reference [PLATFORM_DOCUMENTATION.md](PLATFORM_DOCUMENTATION.md) — Encryption and audit details
 
 ### For Everyone (start here)
 1. Read [USER_MANUAL.md](USER_MANUAL.md) — Plain-English install, run, test, and deployment
 
 ### For SRE / On-Call
-1. Read [OPERATIONS_RUNBOOKS.md](sandbox:///mnt/agents/output/v2/OPERATIONS_RUNBOOKS.md) — Runbooks for all scenarios
-2. Reference [PLATFORM_DOCUMENTATION.md](sandbox:///mnt/agents/output/v2/PLATFORM_DOCUMENTATION.md) — Troubleshooting matrix
+1. Read [OPERATIONS_RUNBOOKS.md](OPERATIONS_RUNBOOKS.md) — Runbooks for all scenarios
+2. Reference [PLATFORM_DOCUMENTATION.md](PLATFORM_DOCUMENTATION.md) — Troubleshooting matrix
 
 ---
 

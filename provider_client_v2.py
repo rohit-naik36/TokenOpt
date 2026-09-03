@@ -6,11 +6,10 @@ Circuit breakers, exponential backoff, fallback routing, streaming support.
 import asyncio
 import httpx
 import time
-from typing import Optional, Dict, Any, AsyncGenerator, Callable, List
+from typing import Optional, Dict, Any, AsyncGenerator, List
 from dataclasses import dataclass, field
 from enum import Enum
-import json
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 
 logger = logging.getLogger("tokenopt.provider")

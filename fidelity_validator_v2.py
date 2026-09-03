@@ -4,10 +4,9 @@ Uses sentence-transformers embeddings + LLM-as-judge for output comparison.
 """
 
 import numpy as np
-from typing import Tuple, Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 from dataclasses import dataclass
 import hashlib
-import json
 import asyncio
 import logging
 from datetime import datetime
@@ -163,7 +162,8 @@ class EmbeddingFidelityValidator:
         list_items_1 = len([l for l in text1.split("\n") if l.strip().startswith(("- ", "* ", "1. ", "2. "))])
         list_items_2 = len([l for l in text2.split("\n") if l.strip().startswith(("- ", "* ", "1. ", "2. "))])
         if list_items_1 > 0 or list_items_2 > 0:
-            list_ratio = min(list_items_1, list_items_2) / max(list_items_1, list_items_2) if max(list_items_1, list_items_2) > 0 else 1.0
+            max_items = max(list_items_1, list_items_2)
+            list_ratio = min(list_items_1, list_items_2) / max_items if max_items > 0 else 1.0
             score -= (1 - list_ratio) * 0.2
 
         # Check for table structure
@@ -325,6 +325,9 @@ Respond with ONLY a number between 0.0 and 1.0."""
             "pass_rate": round(self._pass_count / total * 100, 2) if total > 0 else 0,
             "cache_hits": self._cache_hits,
             "cache_misses": self._cache_misses,
-            "cache_hit_rate": round(self._cache_hits / (self._cache_hits + self._cache_misses) * 100, 2) if (self._cache_hits + self._cache_misses) > 0 else 0,
+            "cache_hit_rate": (
+                round(self._cache_hits / (self._cache_hits + self._cache_misses) * 100, 2)
+                if (self._cache_hits + self._cache_misses) > 0 else 0
+            ),
             "embedding_cache_size": len(self._embedding_cache)
         }
