@@ -81,46 +81,39 @@ export AWS_SECRET_ACCESS_KEY="your-secret-key"
 export AWS_REGION="us-east-1"
 ```
 
-### Step 0.3: Create Project Directory Structure
+### Step 0.3: Clone Repository and Project Layout
+
+Clone the TokenOpt monorepo or navigate to the project root:
 
 ```bash
-# Create main project directory
-mkdir -p ~/tokenopt-enterprise/{infrastructure,application,helm-chart,docs,scripts}
-cd ~/tokenopt-enterprise
-
-# Create subdirectories
-mkdir -p infrastructure/{terraform,cloudformation}
-mkdir -p application/{src,tests,config}
-mkdir -p helm-chart/{templates,charts}
-mkdir -p docs/{architecture,runbooks,api}
-mkdir -p scripts/{setup,backup,monitoring}
-
-# Verify structure
-tree -L 2 ~/tokenopt-enterprise
+git clone https://github.com/rohit-naik36/TokenOpt.git
+cd TokenOpt
 ```
 
-Expected output:
+The repository is structured as a unified monorepo containing the three core products:
+
 ```
-tokenopt-enterprise/
-├── application/
-│   ├── config/
-│   ├── src/
-│   └── tests/
-├── docs/
-│   ├── api/
-│   ├── architecture/
-│   └── runbooks/
-├── helm-chart/
-│   ├── charts/
-│   └── templates/
-├── infrastructure/
-│   ├── cloudformation/
-│   └── terraform/
-└── scripts/
-    ├── backup/
-    ├── monitoring/
-    └── setup/
+TokenOpt/
+├── tokenopt-proxy/        # Production HTTP proxy service (FastAPI v2.0)
+│   ├── tokenopt_proxy_v2.py
+│   ├── provider_client_v2.py
+│   ├── persistence_layer_v2.py
+│   ├── fidelity_validator_v2.py
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── main.tf
+│   └── variables.tf
+├── tokenopt-optimizer/    # Standalone, embeddable prompt optimization engine
+│   ├── pyproject.toml
+│   └── tokenopt_optimizer/
+└── tokenopt-sdk/          # Published client SDK snapshot (v0.1.0)
+    ├── pyproject.toml
+    └── tokenopt/
 ```
+
+> **Note:** The proxy depends on `tokenopt-optimizer` via relative editable install
+> (`-e ../tokenopt-optimizer` in `requirements.txt`) and a multi-context Docker build
+> (`--build-context tokenopt_sdk=../tokenopt-optimizer`).
 
 ---
 
@@ -685,96 +678,106 @@ kubectl get secret -n monitoring prometheus-grafana -o jsonpath="{.data.admin-pa
 
 ## Phase 4: Build and Push Docker Image
 
-### Step 4.1: Create Application Dockerfile
+### Step 4.1: Production Dockerfile
+
+Navigate to the `tokenopt-proxy/` directory:
 
 ```bash
-cd ~/tokenopt-enterprise/application
+cd tokenopt-proxy
+```
 
-# Create Dockerfile
-cat > Dockerfile << 'EOF'
-FROM python:3.11-slim as builder
+The production `Dockerfile` uses a multi-stage build that bundles the core runtime and injects `tokenopt_optimizer` from its monorepo sibling context:
 
-WORKDIR /app
+```dockerfile
+FROM python:3.11-slim AS builder
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends     build-essential     libpq-dev     && rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies
+WORKDIR /build
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir \
+        "fastapi>=0.110.0,<1.0.0" \
+        "uvicorn[standard]>=0.24.0,<1.0.0" \
+        "pydantic>=2.0.0,<3.0.0" \
+        "httpx>=0.24.0,<1.0.0" \
+        "PyJWT>=2.8.0,<3.0.0" \
+        "numpy>=1.24.0,<3.0.0" \
+        "openai>=1.30.0,<2.0.0"
 
-# Production stage
 FROM python:3.11-slim
 
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    HOST=0.0.0.0 \
+    PORT=8000
+
 WORKDIR /app
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends     libpq5     curl     && rm -rf /var/lib/apt/lists/*
+# Copy the installed core packages from the builder stage
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy installed packages from builder
-COPY --from=builder /root/.local /root/.local
+# Copy application source (flat layout)
+COPY tokenopt_proxy_v2.py provider_client_v2.py persistence_layer_v2.py fidelity_validator_v2.py ./
 
-# Copy application code
-COPY src/ ./src/
-COPY config/ ./config/
+# Copy the tokenopt_optimizer SDK from its build context (monorepo sibling)
+COPY --from=tokenopt_sdk tokenopt_optimizer/ ./tokenopt_optimizer/
 
-# Ensure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+# Non-root runtime user
+RUN useradd --create-home --uid 10001 appuser
+USER appuser
 
-# Create non-root user
-RUN useradd -m -u 1000 tokenopt && chown -R tokenopt:tokenopt /app
-USER tokenopt
-
-# Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3   CMD curl -f http://localhost:8000/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=5).status==200 else 1)" || exit 1
 
-# Run application
-CMD ["python", "-m", "src.main"]
-EOF
+CMD ["sh", "-c", "uvicorn tokenopt_proxy_v2:app --host ${HOST} --port ${PORT} --workers 1"]
 ```
 
-### Step 4.2: Create requirements.txt
+### Step 4.2: Application Dependencies (requirements.txt)
 
-```bash
-cat > requirements.txt << 'EOF'
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-httpx==0.25.1
-asyncpg==0.29.0
-redis==5.0.1
-kafka-python==2.0.2
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-pydantic==2.5.0
-pydantic-settings==2.1.0
-sentence-transformers==2.2.2
+The production `requirements.txt` specifies core, sibling, and optional infrastructure packages:
+
+```
+fastapi>=0.110.0,<1.0.0
+uvicorn[standard]>=0.24.0,<1.0.0
+pydantic>=2.0.0,<3.0.0
+httpx>=0.24.0,<1.0.0
+PyJWT>=2.8.0,<3.0.0
+numpy>=1.24.0,<3.0.0
+openai>=1.30.0,<2.0.0
+
+# Sibling optimizer engine in monorepo:
+-e ../tokenopt-optimizer
+
+# Optional: smart prompt compression (graceful fallback if absent)
 headroom-ai>=0.33.0
-numpy==1.26.2
-scikit-learn==1.3.2
-prometheus-client==0.19.0
-structlog==23.2.0
-python-json-logger==2.0.7
-cryptography==41.0.7
-EOF
+
+# Optional infrastructure drivers (degrades gracefully if absent):
+asyncpg>=0.28.0
+redis>=4.5.0
+aiokafka>=0.8.0
+sentence-transformers>=2.2.0
+
+pytest>=7.0.0
 ```
 
-### Step 4.3: Build and Push to ECR
+### Step 4.3: Build with Multi-Context and Push to ECR
+
+Build using the `--build-context` flag so Docker can resolve `tokenopt_sdk` from `../tokenopt-optimizer`:
 
 ```bash
 # Create ECR repository
-aws ecr create-repository --repository-name tokenopt-proxy --region us-east-1
+aws ECR create-repository --repository-name tokenopt-proxy --region us-east-1
 
 # Get login token for ECR
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.us-east-1.amazonaws.com
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
 
-# Build Docker image
-docker build -t tokenopt-proxy:v2.0.0 .
+# Build Docker image using multi-context
+docker build --build-context tokenopt_sdk=../tokenopt-optimizer -t tokenopt-proxy:v2.0.0 .
 
 # Tag for ECR
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 docker tag tokenopt-proxy:v2.0.0 $ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/tokenopt-proxy:v2.0.0
 
 # Push to ECR
@@ -816,7 +819,17 @@ REDIS_ENDPOINT=$(terraform output -raw redis_endpoint)
 kubectl create namespace tokenopt
 
 # Create main secrets
-kubectl create secret generic tokenopt-secrets   --namespace tokenopt   --from-literal=JWT_SECRET="$JWT_SECRET"   --from-literal=ENCRYPTION_KEY="$ENCRYPTION_KEY"   --from-literal=POSTGRES_DSN="postgresql://tokenopt_admin:${RDS_PASSWORD}@${RDS_ENDPOINT}:5432/tokenopt"   --from-literal=REDIS_URL="rediss://${REDIS_ENDPOINT}:6379"   --from-literal=OPENAI_API_KEY="sk-your-openai-api-key"   --from-literal=AZURE_OPENAI_KEY="your-azure-key"   --from-literal=AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"   --from-literal=ANTHROPIC_API_KEY="sk-ant-your-anthropic-key"
+kubectl create secret generic tokenopt-secrets \
+  --namespace tokenopt \
+  --from-literal=JWT_SECRET="$JWT_SECRET" \
+  --from-literal=ENCRYPTION_KEY="$ENCRYPTION_KEY" \
+  --from-literal=POSTGRES_DSN="postgresql://tokenopt_admin:${RDS_PASSWORD}@${RDS_ENDPOINT}:5432/tokenopt" \
+  --from-literal=REDIS_URL="rediss://${REDIS_ENDPOINT}:6379" \
+  --from-literal=OPENAI_API_KEY="sk-your-openai-api-key" \
+  --from-literal=AZURE_OPENAI_KEY="your-azure-key" \
+  --from-literal=AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com" \
+  --from-literal=ANTHROPIC_API_KEY="sk-ant-your-anthropic-key" \
+  --from-literal=GEMINI_API_KEY="your-gemini-api-key"
 
 # Verify secrets (values are hidden)
 kubectl get secret tokenopt-secrets -n tokenopt -o yaml
@@ -1236,28 +1249,38 @@ curl -v https://api.tokenopt.yourcompany.com/health
 
 ## Phase 8: Database Migration and Initialization
 
-### Step 8.1: Run Database Migrations
+### Step 8.1: Schema Initialization
+
+TokenOpt Enterprise manages its own database schema automatically on application startup. When `tokenopt_proxy_v2.py` boots, `AuditDatabase.initialize()` connects via `POSTGRES_DSN` and runs:
+
+- Table creation: `audit_logs` partitioned by date (`PARTITION BY RANGE (timestamp)`)
+- Daily partition provisioning for current and upcoming periods
+- B-tree and composite indexing on `tenant_id`, `request_id`, `timestamp`, and `was_rolled_back`
+
+To verify or pre-provision the schema manually, run:
 
 ```bash
-# Create a temporary pod to run migrations
-kubectl run db-migration --rm -i --restart=Never   --image=$ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/tokenopt-proxy:v2.0.0   --namespace tokenopt   --env="POSTGRES_DSN=$(kubectl get secret tokenopt-secrets -n tokenopt -o jsonpath='{.data.POSTGRES_DSN}' | base64 -d)"   -- python -m src.migrations upgrade head
-
-# Alternative: Run migrations as init container in deployment
-# (Recommended for production - add to deployment.yaml)
+# Verify schema via temporary psql pod
+kubectl run db-verify --rm -i --restart=Never \
+  --image=postgres:15-alpine \
+  --namespace tokenopt \
+  --env="POSTGRES_DSN=$(kubectl get secret tokenopt-secrets -n tokenopt -o jsonpath='{.data.POSTGRES_DSN}' | base64 -d)" \
+  -- psql "$POSTGRES_DSN" -c "\d+ audit_logs"
 ```
 
 ### Step 8.2: Verify Database Schema
 
 ```bash
-# Connect to database and verify tables
-kubectl run db-verify --rm -i --restart=Never   --image=postgres:15-alpine   --namespace tokenopt   -- psql "$POSTGRES_DSN" -c "\dt"
+# Connect to database and verify partitioned tables
+kubectl run db-verify --rm -i --restart=Never \
+  --image=postgres:15-alpine \
+  --namespace tokenopt \
+  --env="POSTGRES_DSN=$(kubectl get secret tokenopt-secrets -n tokenopt -o jsonpath='{.data.POSTGRES_DSN}' | base64 -d)" \
+  -- psql "$POSTGRES_DSN" -c "SELECT relname FROM pg_class WHERE relname LIKE 'audit_logs%';"
 
-# Expected tables:
-# - audit_logs
-# - optimization_stats
-# - rollback_logs
-# - tenant_configs
-# - prompt_templates
+# Expected output includes:
+# - audit_logs (partitioned root)
+# - audit_logs_yYYYYmMMdDD (daily active partitions)
 ```
 
 ---
@@ -1521,12 +1544,8 @@ curl -s -X POST https://api.tokenopt.yourcompany.com/v1/chat/completions   -H "A
   }' | jq '.tokenopt'
 
 # Test optimization preview
-curl -X POST https://api.tokenopt.yourcompany.com/v1/tokenopt/validate   -H "Authorization: Bearer $ADMIN_TOKEN"   -H "Content-Type: application/json"   -d '{
-    "model": "gpt-4",
-    "messages": [
-      {"role": "user", "content": "Please provide a detailed explanation of quantum computing principles and their applications in modern cryptography."}
-    ]
-  }' | jq
+curl -X POST "https://api.tokenopt.yourcompany.com/v1/tokenopt/validate?prompt=Please+provide+a+detailed+explanation+of+quantum+computing+principles+and+their+applications+in+modern+cryptography." \
+  -H "Authorization: Bearer $ADMIN_TOKEN" | jq
 ```
 
 ### Step 10.4: Run Load Test with k6

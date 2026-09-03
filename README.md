@@ -18,11 +18,9 @@ This repository consolidates the TokenOpt product ecosystem into a unified monor
 
 ```
 .
-├── tokenopt-proxy/        # FastAPI HTTP Proxy service & Docker container
+├── tokenopt-proxy/        # FastAPI HTTP Proxy service, Dockerfile, Terraform, & docs
 ├── tokenopt-optimizer/    # Standalone Python optimizer engine
-├── tokenopt-sdk/          # Published client SDK (v0.1.0 release)
-├── docs/                  # Enterprise v2 docs & team testing guides
-└── .ai/                   # Engineering standards, decisions, and governance specs
+└── tokenopt-sdk/          # Published client SDK (v0.1.0 snapshot) + .ai/ specs
 ```
 
 ---
@@ -87,7 +85,7 @@ cd tokenopt-proxy && python -m pytest tests/ -v
 cd tokenopt-optimizer && python -m pytest tests/ -v
 
 # Test the Client SDK
-python -m pytest tests/ -v
+cd tokenopt-sdk && python -m pytest tests/ -v
 ```
 
 ---

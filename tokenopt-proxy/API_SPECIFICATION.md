@@ -64,13 +64,13 @@ GET /health
 
 ---
 
-### 2. List Models
+### 2. List Models (Planned)
 
 ```
 GET /v1/models
 ```
 
-**Description:** List available LLM models.
+**Description:** List available LLM models from configured providers. *(Planned feature — in v2.0, configure models via environment and provider router).*
 
 **Authentication:** JWT required
 
@@ -109,15 +109,13 @@ GET /v1/models
 POST /v1/chat/completions
 ```
 
-**Description:** Create a chat completion with automatic token optimization.
+**Description:** Create a chat completion with automatic token optimization, semantic compression, fidelity validation, and provider routing.
 
 **Authentication:** JWT required
 
 **Headers:**
 - `Authorization: Bearer <token>` (required)
 - `Content-Type: application/json` (required)
-- `X-TokenOpt-Optimization: {none|light|standard|aggressive}` (optional, default: tenant config)
-- `X-TokenOpt-Fidelity-Threshold: 0.995` (optional)
 
 **Request Body:**
 ```json
@@ -135,9 +133,21 @@ POST /v1/chat/completions
   ],
   "temperature": 0.7,
   "max_tokens": 500,
-  "stream": false
+  "stream": false,
+  "optimization_level": "standard",
+  "skip_optimization": false,
+  "fidelity_threshold": 0.995,
+  "preferred_provider": "openai"
 }
 ```
+
+**TokenOpt Request Extensions (JSON Body):**
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `optimization_level` | string | `"standard"` | Optimization aggressiveness: `"standard"`, `"aggressive"`, or `"conservative"` |
+| `skip_optimization` | boolean | `false` | When `true`, bypasses optimization pipeline and passes prompt directly |
+| `fidelity_threshold` | float | config default (0.995) | Custom minimum fidelity threshold (0.0 to 1.0) for this request |
+| `preferred_provider` | string | `null` | Force routing to a specific provider: `"openai"`, `"azure"`, `"anthropic"`, `"gemini"` |
 
 **Response:**
 ```json
@@ -239,13 +249,13 @@ data: [DONE]
 
 ---
 
-### 5. Create Embeddings
+#### 5. Create Embeddings (Planned)
 
 ```
 POST /v1/embeddings
 ```
 
-**Description:** Create embeddings with optimization (input text compression before embedding generation).
+**Description:** Create embeddings with optimization (input text compression before embedding generation). *(Planned feature — in v2.0, embeddings are handled internally for fidelity validation).*
 
 **Authentication:** JWT required
 
@@ -264,7 +274,7 @@ POST /v1/embeddings
   "data": [
     {
       "object": "embedding",
-      "embedding": [0.0023, -0.0091, ...],
+      "embedding": [0.0023, -0.0091],
       "index": 0
     }
   ],
@@ -288,39 +298,54 @@ POST /v1/embeddings
 ### 6. Platform Statistics
 
 ```
-GET /v1/tokenopt/stats
+GET /v1/tokenopt/stats?hours=24
 ```
 
-**Description:** Get platform usage and optimization statistics.
+**Description:** Retrieve platform performance, cache hit rate, provider latency, and cost savings statistics.
 
-**Authentication:** JWT required (admin role for all tenants, user role for own tenant)
+**Authentication:** JWT required
 
 **Query Parameters:**
-- `hours` (integer, optional): Time window in hours (default: 24, max: 720)
-- `tenant_id` (string, optional): Filter by tenant (admin only)
+- `hours` (integer, optional, default: `24`): Time window in hours.
 
 **Response:**
 ```json
 {
+  "tenant_id": "engineering",
   "period_hours": 24,
-  "total_requests": 2450000,
-  "total_original_tokens": 890000000,
-  "total_optimized_tokens": 520000000,
-  "avg_savings_pct": 41.5,
-  "avg_fidelity": 0.9975,
-  "rollback_rate": 0.8,
-  "cache_hit_rate": 62.3,
-  "total_cost_savings": 12500.50,
-  "provider_distribution": {
-    "openai": 65.2,
-    "azure": 25.1,
-    "anthropic": 9.7
+  "database": {
+    "total_requests": 145230,
+    "total_original_tokens": 58092000,
+    "total_optimized_tokens": 34855200,
+    "total_savings_pct": 40.0,
+    "total_cost_savings": 697.10,
+    "average_fidelity": 0.9976,
+    "rollback_count": 218,
+    "rollback_rate_pct": 0.15
   },
-  "optimization_level_distribution": {
-    "none": 5.0,
-    "light": 15.0,
-    "standard": 65.0,
-    "aggressive": 15.0
+  "cache": {
+    "hits": 65353,
+    "misses": 79877,
+    "hit_rate_pct": 45.0,
+    "evictions": 1200
+  },
+  "providers": {
+    "openai": {"status": "healthy", "error_rate": 0.001, "p95_latency_ms": 320},
+    "azure": {"status": "healthy", "error_rate": 0.002, "p95_latency_ms": 280},
+    "anthropic": {"status": "healthy", "error_rate": 0.000, "p95_latency_ms": 450}
+  },
+  "fidelity": {
+    "total_validations": 145230,
+    "passed": 145012,
+    "failed": 218,
+    "pass_rate_pct": 99.85,
+    "avg_score": 0.9976
+  },
+  "platform": {
+    "version": "2.0.0",
+    "max_concurrent": 100,
+    "fidelity_threshold": 0.995,
+    "llm_judge_enabled": true
   }
 }
 ```
@@ -330,35 +355,33 @@ GET /v1/tokenopt/stats
 ### 7. Rollback Logs
 
 ```
-GET /v1/tokenopt/rollbacks
+GET /v1/tokenopt/rollbacks?limit=100
 ```
 
-**Description:** Get recent rollback events for quality analysis.
+**Description:** Retrieve recent optimization rollback events for quality auditing.
 
-**Authentication:** JWT required (admin role)
+**Authentication:** JWT required
 
 **Query Parameters:**
-- `hours` (integer, optional): Time window (default: 24)
-- `limit` (integer, optional): Max results (default: 100, max: 1000)
-- `tenant_id` (string, optional): Filter by tenant
+- `limit` (integer, optional, default: `100`): Maximum entries to return.
 
 **Response:**
 ```json
 {
-  "total": 45,
+  "tenant_id": "engineering",
   "rollbacks": [
     {
-      "request_id": "uuid-1",
-      "timestamp": "2026-07-24T00:00:00Z",
-      "tenant_id": "engineering",
-      "fidelity_score": 0.9823,
+      "request_id": "uuid-1234",
+      "timestamp": "2026-07-24T14:23:05Z",
+      "model": "gpt-4",
+      "fidelity_score": 0.9912,
       "threshold": 0.995,
-      "technique": "semantic_compression",
-      "original_prompt": "Please provide a detailed explanation...",
-      "optimized_prompt": "Explain...",
-      "reason": "fidelity_below_threshold"
+      "rollback_reason": "Fidelity 0.991 below threshold 0.995",
+      "original_tokens": 450,
+      "optimized_tokens": 450
     }
-  ]
+  ],
+  "count": 1
 }
 ```
 
@@ -367,50 +390,40 @@ GET /v1/tokenopt/rollbacks
 ### 8. Preview Optimization
 
 ```
-POST /v1/tokenopt/validate
+POST /v1/tokenopt/validate?prompt=...
 ```
 
 **Description:** Preview how a prompt would be optimized without making an LLM API call.
 
 **Authentication:** JWT required
 
-**Request Body:**
-```json
-{
-  "model": "gpt-4",
-  "messages": [
-    {"role": "user", "content": "Please provide a detailed explanation of quantum computing principles and their applications in modern cryptography."}
-  ],
-  "optimization_level": "standard"
-}
-```
+**Query Parameters:**
+- `prompt` (string, required): The prompt text to optimize and preview.
 
 **Response:**
 ```json
 {
-  "original_prompt": "Please provide a detailed explanation of quantum computing principles and their applications in modern cryptography.",
-  "optimized_prompt": "Explain quantum computing principles and applications in cryptography.",
+  "original": "Please provide a detailed explanation of quantum computing principles and their applications in modern cryptography.",
+  "optimized": "Explain quantum computing principles and applications in cryptography.",
   "original_tokens": 19,
   "optimized_tokens": 11,
   "savings_pct": 42.1,
   "fidelity_score": 0.9985,
   "fidelity_passed": true,
   "techniques": ["filler_removal:3", "semantic_compression"],
-  "estimated_cost_original": 0.00057,
-  "estimated_cost_optimized": 0.00033,
-  "cost_savings": 0.00024
+  "estimated_cost_savings": "$0.000240"
 }
 ```
 
 ---
 
-### 9. Submit Feedback
+### 9. Submit Feedback (Roadmap)
 
 ```
 POST /v1/tokenopt/feedback
 ```
 
-**Description:** Submit feedback on optimization quality.
+**Description:** Submit feedback on optimization quality. *(Enterprise roadmap feature)*.
 
 **Authentication:** JWT required
 
@@ -424,25 +437,16 @@ POST /v1/tokenopt/feedback
 }
 ```
 
-**Response:**
-```json
-{
-  "status": "received",
-  "request_id": "uuid-from-response",
-  "ticket_id": "feedback-12345"
-}
-```
-
 ---
 
-### 10. Tenant Configuration (Admin)
+### 10. Tenant Configuration (Admin Roadmap)
 
 ```
 GET /v1/admin/tenant/config
 PATCH /v1/admin/tenant/config
 ```
 
-**Description:** View and update tenant optimization settings.
+**Description:** View and update tenant optimization settings. *(Enterprise roadmap feature)*.
 
 **Authentication:** JWT required with `admin` role
 

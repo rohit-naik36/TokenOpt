@@ -98,16 +98,25 @@ TokenOpt Enterprise is a transparent AI token optimization platform that sits be
 |----------|----------|---------|-------------|
 | `POSTGRES_DSN` | Yes | — | PostgreSQL connection string |
 | `REDIS_URL` | Yes | — | Redis connection string |
+| `REDIS_CLUSTER` | No | false | Use Redis in cluster mode |
 | `KAFKA_BROKERS` | No | localhost:9092 | Kafka bootstrap servers |
 | `OPENAI_API_KEY` | Yes* | — | OpenAI API key |
 | `AZURE_OPENAI_KEY` | No | — | Azure OpenAI API key |
 | `AZURE_OPENAI_ENDPOINT` | No | — | Azure OpenAI base URL |
 | `ANTHROPIC_API_KEY` | No | — | Anthropic API key |
-| `JWT_SECRET` | Yes | — | JWT signing secret (min 32 chars) |
+| `GEMINI_API_KEY` | No | — | Google Gemini API key (free tier OpenAI-compatible) |
+| `JWT_SECRET` | Yes | — | JWT signing secret (min 32 chars/bytes) |
 | `ENCRYPTION_KEY` | Yes | — | AES-256 data encryption key |
 | `FIDELITY_THRESHOLD` | No | 0.995 | Minimum fidelity score (0-1) |
 | `ENABLE_LLM_JUDGE` | No | true | Enable LLM-as-judge validation |
-| `MAX_CONCURRENT_REQUESTS` | No | 100 | Request concurrency limit |
+| `ENABLE_HEADROOM` | No | true | Enable headroom smart compressor |
+| `HEADROOM_TARGET_RATIO` | No | 0.5 | Target compression ratio (0.1 - 0.95) |
+| `HEADROOM_MIN_TOKENS` | No | 100 | Minimum token count to trigger compression |
+| `MIN_SAVINGS_PCT` | No | 2.0 | Minimum token savings percent to keep optimization |
+| `REQUIRE_REAL_FIDELITY` | No | false | Refuse to boot with degraded fails-open validator |
+| `USE_TIKTOKEN` | No | true | Use model-aware tiktoken tokenizer |
+| `MAX_CONCURRENT_REQUESTS` | No | 100 | Request concurrency limit (min 1) |
+| `REQUEST_TIMEOUT` | No | 60.0 | Upstream provider request timeout in seconds |
 | `LOG_LEVEL` | No | INFO | Logging level |
 
 *At least one LLM provider key required
@@ -385,15 +394,15 @@ aws elasticache create-snapshot   --replication-group-id tokenopt-production   -
 
 ### 7.1 Endpoints
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/health` | No | Health check |
-| GET | `/v1/models` | JWT | List available models |
-| POST | `/v1/chat/completions` | JWT | Chat completion with optimization |
-| POST | `/v1/embeddings` | JWT | Create embeddings |
-| GET | `/v1/tokenopt/stats` | JWT | Platform statistics |
-| GET | `/v1/tokenopt/rollbacks` | JWT | Recent rollback logs |
-| POST | `/v1/tokenopt/validate` | JWT | Preview optimization |
+| Method | Path | Auth | Status | Description |
+|--------|------|------|--------|-------------|
+| GET | `/health` | No | Active | Health check & backing service status |
+| POST | `/v1/chat/completions` | JWT | Active | Chat completion with optimization (standard & stream) |
+| GET | `/v1/tokenopt/stats` | JWT | Active | Platform statistics (cache, providers, fidelity, cost) |
+| GET | `/v1/tokenopt/rollbacks` | JWT | Active | Recent rollback logs |
+| POST | `/v1/tokenopt/validate` | JWT | Active | Preview optimization without provider call (`?prompt=...`) |
+| GET | `/v1/models` | JWT | Planned | List available models from configured providers |
+| POST | `/v1/embeddings` | JWT | Planned | Create embeddings with text compression |
 
 ### 7.2 Response Format
 

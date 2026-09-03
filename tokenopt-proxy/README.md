@@ -26,21 +26,42 @@
 
 ## 🚀 Quick Start
 
-### For Platform Engineers
+### Local Proxy Execution
+
+```bash
+cd tokenopt-proxy
+pip install -r requirements.txt
+export JWT_SECRET="production-tokenopt-secret-key-32chars-min"   # min 32 chars
+uvicorn tokenopt_proxy_v2:app --host 0.0.0.0 --port 8000
+```
+
+Docker build (from this folder):
+```bash
+docker build --build-context tokenopt_sdk=../tokenopt-optimizer -t tokenopt-proxy:latest .
+```
+
+Run test suite:
+```bash
+pytest tests/ -v
+```
+
+### Role-Based Documentation Guides
+
+#### For Platform Engineers
 1. Read [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) — Complete 12-phase deployment
 2. Reference [PLATFORM_DOCUMENTATION.md](PLATFORM_DOCUMENTATION.md) — Architecture and config
 3. Use [OPERATIONS_RUNBOOKS.md](OPERATIONS_RUNBOOKS.md) — Daily operations
 
-### For Software Engineers
+#### For Software Engineers
 1. Read [API_SPECIFICATION.md](API_SPECIFICATION.md) — Integration guide
 2. Reference [DEV_TEAM_QA.md](DEV_TEAM_QA.md) — Technical deep-dives
 3. Review [ARCHITECTURE_DECISION_RECORDS.md](ARCHITECTURE_DECISION_RECORDS.md) — Design rationale
 
-### For Security & Compliance
+#### For Security & Compliance
 1. Read [SECURITY_COMPLIANCE.md](SECURITY_COMPLIANCE.md) — Complete security posture
 2. Reference [PLATFORM_DOCUMENTATION.md](PLATFORM_DOCUMENTATION.md) — Encryption and audit details
 
-### For Everyone (start here)
+#### For Everyone (start here)
 1. Read [USER_MANUAL.md](USER_MANUAL.md) — Plain-English install, run, test, and deployment
 
 ### For SRE / On-Call

@@ -56,6 +56,7 @@ provider_client_v2.py    ← talks to AI providers
 persistence_layer_v2.py  ← saves records (audit log + cache)
 fidelity_validator_v2.py ← checks compression quality
 requirements.txt         ← list of extra packages to install
+../tokenopt-optimizer/   ← sibling folder: the optimizer engine package
 ```
 
 ### Step 2: Create a private environment (recommended)
@@ -80,18 +81,18 @@ You will see `(venv)` appear at the start of your terminal line.
 
 ```
 pip install -r requirements.txt
-pip install "headroom-ai>=0.33.0"
 ```
 
-If there is no `requirements.txt`, run:
-
-```
-pip install fastapi uvicorn[standard] pydantic httpx pyjwt redis aiokafka asyncpg "headroom-ai>=0.33.0"
-```
-
-> **Tip:** the headroom package is what does the smart compression. If it is
-> not installed, TokenOpt still works — it just falls back to its built-in
-> simpler compressor. No error, no breakage.
+> **Note:** `requirements.txt` installs the core packages along with the
+> sibling optimizer engine (`-e ../tokenopt-optimizer`) and `headroom-ai`.
+> If installing packages manually without `requirements.txt`, run:
+> ```
+> pip install fastapi uvicorn[standard] pydantic httpx pyjwt numpy openai "headroom-ai>=0.33.0"
+> pip install -e ../tokenopt-optimizer
+> ```
+> The optional infrastructure packages (`redis`, `asyncpg`, `aiokafka`,
+> `sentence-transformers`) can be installed if using those backends; TokenOpt
+> degrades gracefully with in-memory fallbacks when they are absent.
 
 ### Step 4: Check it works (health test)
 
@@ -117,17 +118,21 @@ warning, and uses the safe default instead.
 
 | Setting | What it does | Default | Valid values |
 |---|---|---|---|
-| `JWT_SECRET` | Secret key that locks your API (see section 6) | `change-me-in-production` | any long random text |
+| `JWT_SECRET` | Secret key for JWT verification (min 32 bytes/chars). Throws error on startup if < 32 bytes | empty (required for auth) | any random string of at least 32 characters (e.g. `openssl rand -base64 48`) |
 | `OPENAI_API_KEY` | Your OpenAI key (if using OpenAI) | empty | your key |
 | `AZURE_OPENAI_KEY` | Your Azure key (if using Azure) | empty | your key |
 | `AZURE_OPENAI_ENDPOINT` | Your Azure endpoint URL | empty | your URL |
 | `ANTHROPIC_API_KEY` | Your Anthropic key (if using Claude) | empty | your key |
+| `GEMINI_API_KEY` | Your Google Gemini key (free tier OpenAI-compatible endpoint) | empty | your key |
 | `FIDELITY_THRESHOLD` | How "safe" the quality check is, 0.0–1.0. Higher = stricter (less compression but safer) | `0.995` | 0.0 – 1.0 |
 | `ENABLE_LLM_JUDGE` | Use the AI itself to double-check compressed text (slower, more thorough) | `true` | true / false / 1 / yes / on |
 | `ENABLE_HEADROOM` | Use the headroom smart compressor | `true` | true / false / 1 / yes / on |
 | `HEADROOM_MIN_TOKENS` | Only compress requests this size or bigger (small ones are not worth it) | `100` | any whole number |
 | `HEADROOM_TARGET_RATIO` | How much of the original size to aim for, 0.1–0.95 (0.5 = aim for half the tokens) | `0.5` | 0.1 – 0.95 |
-| `MAX_CONCURRENT_REQUESTS` | How many requests TokenOpt handles at the same time. Negative values are clamped to 1 | `100` | 1 or more |
+| `MIN_SAVINGS_PCT` | Minimum token savings percent below which compression is rolled back | `2.0` | any number (percent) |
+| `REQUIRE_REAL_FIDELITY` | Enforce real embedding validator (prevents starting with degraded validator) | `false` | true / false |
+| `USE_TIKTOKEN` | Use model-aware tiktoken tokenizer when available | `true` | true / false |
+| `MAX_CONCURRENT_REQUESTS` | How many requests TokenOpt handles at the same time. Clamped to minimum 1 | `100` | 1 or more |
 | `REQUEST_TIMEOUT` | Seconds to wait for the AI provider before giving up | `60.0` | any number |
 | `POSTGRES_DSN` | Where to store the permanent audit log (a PostgreSQL database) | `postgresql://tokenopt:password@localhost:5432/tokenopt` | a database address |
 | `REDIS_URL` | Where to store the fast cache (a Redis server) | `redis://localhost:6379/0` | a server address |
@@ -164,7 +169,7 @@ for requests on **http://localhost:8000**.
 **Windows (PowerShell):**
 
 ```
-$env:JWT_SECRET = "make-up-a-long-secret-string"
+$env:JWT_SECRET = "production-tokenopt-secret-key-32chars-min"
 $env:OPENAI_API_KEY = "sk-..."
 uvicorn tokenopt_proxy_v2:app --host 0.0.0.0 --port 8000
 ```
@@ -172,7 +177,7 @@ uvicorn tokenopt_proxy_v2:app --host 0.0.0.0 --port 8000
 **Mac/Linux:**
 
 ```
-export JWT_SECRET="make-up-a-long-secret-string"
+export JWT_SECRET="production-tokenopt-secret-key-32chars-min"
 export OPENAI_API_KEY="sk-..."
 uvicorn tokenopt_proxy_v2:app --host 0.0.0.0 --port 8000
 ```
@@ -189,13 +194,15 @@ TokenOpt protects its API with a token system called **JWT**:
 - Your app must send an **Authorization** header with a token.
 - The token must be signed with the same `JWT_SECRET` you set. If you change
   the secret, old tokens stop working.
+- `JWT_SECRET` **must be at least 32 characters/bytes long** (for secure HMAC-SHA256).
+  The server will raise an error and refuse to start if it is shorter than 32 bytes.
 - Tokens have an **expiry time** (expired tokens are rejected).
 - The token normally contains a `tenant_id` — who is using the system
   (e.g. which customer). If it is missing, TokenOpt uses `default` and still
   works.
 
-**You must change `JWT_SECRET` before going live.** Anyone who knows the
-default secret can generate valid tokens.
+**You must set a secure `JWT_SECRET` before going live.** Generate one with
+`openssl rand -base64 48` or `python -c "import secrets; print(secrets.token_urlsafe(32))"`.
 
 ---
 
@@ -212,10 +219,10 @@ Install the helper package once:
 pip install pyjwt
 ```
 
-Then generate a token valid for 1 hour (save the output):
+Then generate a token valid for 1 hour using your 32+ character secret (save the output):
 
 ```
-python -c "import jwt,time; print(jwt.encode({'tenant_id':'demo','sub':'tester','exp':int(time.time())+3600}, 'change-me-in-production', algorithm='HS256'))"
+python -c "import jwt,time; print(jwt.encode({'tenant_id':'demo','sub':'tester','exp':int(time.time())+3600}, 'production-tokenopt-secret-key-32chars-min', algorithm='HS256'))"
 ```
 
 > Use the same secret you started the server with.
@@ -376,21 +383,22 @@ docker run -d -p 8000:8000 -e JWT_SECRET="long-random-secret" tokenopt
 
 ## 11. What All the Tests Mean (and How to Run Them)
 
-Everything below was run and is green (41 QE checks + 17 full-execution checks).
+The test suites in this project are automated with `pytest`:
 
-| Test | What it proves | How to run |
+| Test Suite | What it proves | How to run |
 |---|---|---|
-| QE suite | Every setting and every request option: valid, invalid, boundary, and behavior (caching, rollback, circuit breaker, failover, streaming) | `python qe_suite.py` |
-| Full execution check | The whole program boots and every endpoint works end-to-end | `python full_check.py` |
-| Headroom integration | The smart compressor works, rolls back safely, and can be switched off | `python test_headroom_integration.py` |
-| Headroom cache | Repeated identical requests reuse cached work | `python test_headroom_cache.py` |
+| Proxy Test Suite (82 tests) | Security, JWT guards, circuit breakers, cache fallbacks, degradation, streaming, tokenizer awareness, health checks | `pytest tests/ -v` (inside `tokenopt-proxy/`) |
+| Optimizer Engine Suite (68 tests) | In-process optimizer, compression algorithms, message handling, batch optimization, fidelity checks | `pytest` (inside `tokenopt-optimizer/`) |
+| Client SDK Suite (167 tests) | Published SDK compatibility, OpenAI/Anthropic/Local client wrappers, pipeline routing, observability | `pytest` (inside `tokenopt-sdk/`) |
+| Local Demo Walkthrough | End-to-end simulated run demonstrating compression savings, fidelity scores, and metadata | `python demo.py --no-llm` |
+| Live Provider Test | Live round-trip optimization with a configured upstream API key | `python test_live.py` |
 
 Typical results you should see:
 
-- QE suite: `PASSED: 41   FAILED: 0`
-- Full check: `FULL EXECUTION CHECK PASSED` (17/17)
-- Integration: tests 1–5 all print and finish without errors
-- Cache: `miss` then `hit` with the same token counts
+- Proxy suite: `82 passed`
+- Optimizer suite: `68 passed`
+- Client SDK suite: `167 passed`
+- Demo script: Prints interactive comparison showing original vs optimized tokens, savings %, and fidelity pass status.
 
 ---
 

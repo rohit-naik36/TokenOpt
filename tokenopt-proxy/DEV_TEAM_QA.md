@@ -1424,13 +1424,14 @@ Severity Levels:
 
 ### Q12.1: How do I set up a local development environment?
 **Answer:**
-1. Clone repository
-2. Create virtual environment (python3 -m venv venv)
-3. Install dependencies (pip install -r requirements-dev.txt)
-4. Start local services (docker-compose up -d postgres redis kafka)
-5. Run database migrations (alembic upgrade head)
-6. Start application (uvicorn src.main:app --reload --port 8000)
-7. Run tests (pytest tests/ -v)
+1. Clone repository (`git clone https://github.com/rohit-naik36/TokenOpt.git`)
+2. Create virtual environment (`python3 -m venv venv && source venv/bin/activate`)
+3. Install dependencies (`cd tokenopt-proxy && pip install -r requirements.txt`)
+4. Set required secrets (`export JWT_SECRET="production-tokenopt-secret-key-32chars-min"`)
+5. Optional: Start backing services (`docker-compose up -d postgres redis kafka`) — TokenOpt automatically degrades gracefully with in-memory fallbacks if absent
+6. Schema initialization is automatic on boot (`AuditDatabase.initialize()` provisions partitioned tables)
+7. Start application (`uvicorn tokenopt_proxy_v2:app --reload --port 8000`)
+8. Run tests (`pytest tests/ -v`)
 
 ### Q12.2: What is the testing strategy?
 **Answer:**
