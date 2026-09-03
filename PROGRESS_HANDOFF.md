@@ -1,6 +1,39 @@
 # TokenOpt — Session Progress & Handoff
-**Last Updated:** 2026-09-03
+**Last Updated:** 2026-09-04
 **Purpose:** Capture all work done and remaining so a new agent can resume if this session is interrupted. Update this file after every major change.
+
+---
+
+## STATUS: Session #2 (2026-09-04) — QA, commit & first push COMPLETE
+
+### What was done in THIS session
+
+**1. Full QA sweep (all green)**
+- **Tests:** `python -m pytest tests/ -q` → **82 passed** (1.93s).
+- **Lint (`ruff check .`):** 126 findings — ALL pre-existing debt, none introduced by the hardening work. Breakdown: UP006/UP045 (`Dict/List/Optional` → `dict/list/X|None`), I001 (import sort), BLE001 (blind `except Exception`), B008 (`Depends()` in FastAPI defaults — false positive, idiomatic), RUF012 (mutable class var `MODEL_PRICING`), F401 (2 unused-import notes, one is an intentional availability-guard import), PIE790 (2 bare `pass`). 94 are auto-fixable with `ruff check --fix .` + `ruff format .`.
+- **Format (`ruff format --check`):** 10 files would be reformatted (pre-existing, not in the diff).
+
+**2. Security scan (`bandit -r . -ll`) — 0 HIGH, 3 MEDIUM, 149 LOW**
+- **3 MEDIUM, all considered non-actionable:**
+  - `B608` SQL-injection (persistence_layer_v2.py:323, 371) — **false positive**: queries use asyncpg `$1` parameter placeholders; `where_clause` is built only from whitelisted column names, never raw user input.
+  - `B104` bind-to-`0.0.0.0` (tokenopt_proxy_v2.py:909) — expected for an HTTP/Docker server.
+- **149 LOW** — almost all `B101` (`assert` in tests, expected) plus `B105/B106` hardcoded test-only secrets (test fixtures, expected).
+- **Verdict:** no real security vulnerabilities.
+
+**3. Committed to git (`master`)**
+- Commit: **`9ec773b`** — "Harden TokenOpt v2.0: async embeddings, streaming audit, security guards"
+- 5 files changed, 811 insertions(+), 61 deletions(-).
+
+**4. FIRST PUSH TO GITHUB — blocked by secret scanning, then resolved**
+- Added remote: `origin = https://github.com/rohit-naik36/TokenOpt.git`
+- **Initial push was REJECTED by GitHub Push Protection** because a **real OpenRouter API key** (`sk-or-v1-...`) had been typed into `test_live.py` lines 13–14 (docstring examples).
+- **Resolution:** replaced the real key with placeholder `your-fresh-key`, `git add test_live.py`, `git commit --amend --no-edit` (rewrote history so the secret is out of the pushed commits), then `git push -u origin master` **succeeded** (`* [new branch] master -> master`). Branch now tracks `origin/master`.
+
+### ⚠️ IMPORTANT SECURITY ACTION FOR OWNER (rohitnaik36)
+The OpenRouter API key `sk-or-v1-0c12e6e5...` was committed to local git history (now amended away from the pushed branch, but it was in a commit object locally and GitHub's scanner saw it). **Treat this key as COMPROMISED. Rotate/revoke it on the OpenRouter dashboard** and generate a fresh one. Never paste a real key into a committed file (docstring/comment included) — GitHub scans all files including comments and docstrings.
+
+### Why the QA/handoff doc matters going forward
+- All 82 tests + bandit (no HIGH) should gate any future push. GitHub push protection is active on this repo and will block secrets — keep them in env vars / `.env` (gitignored), never in source.
 
 ---
 
@@ -82,12 +115,11 @@
 
 ## REMAINING / NEXT STEPS (still open from the earlier architectural review)
 
-These remain open. Their exact definitions live in the original review QA doc (`ARCHITECTURAL_REVIEW_QA.md` — verify exact wording there before implementing).
-
 - **PL-4 / PL-6**: persistence-layer items — locate exact definitions in review doc; not yet addressed.
 - **PC-1 / PC-3**: performance/consistency items — locate exact definitions in review doc; not yet addressed.
 - **Pre-existing** `requirements.txt` hardcoded path `-e C:/Users/rohit/...` (platform installed via editable dependency). Consider making this non-machine-specific.
-- **Platform lint debt**: `tokenopt_proxy_v2.py` / `fidelity_validator_v2.py` are still not fully ruff-clean (legacy `_v2` style). Optional cleanup, not required for function.
+- **Platform lint debt**: `tokenopt_proxy_v2.py` / `fidelity_validator_v2.py` are still not fully ruff-clean (legacy `_v2` style). Optional cleanup, not required for function. (See Session #2 scan: 126 findings, 94 auto-fixable.)
+- **Owned-by-owner pending**: rotate the compromised OpenRouter API key (see Session #2 section above).
 
 > The following items previously listed here are now **DONE** (removed): SDK `optimize_batch` IndexError/semaphore, SDK `_MemoryCache` thread-safety, S-2 prompt injection, P-2 biased sampling, P-4 optimizer rebuild, FV-2/FV-3 cache bounds, DF-2 port mismatch.
 
@@ -106,4 +138,6 @@ These remain open. Their exact definitions live in the original review QA doc (`
 - Update this document after every major change (name/status/findings/next steps).
 - PowerShell: use `;` not `&&`.
 - `AppConfig` reads env at class-definition/import time; tests must use `monkeypatch.setattr(proxy.AppConfig, ...)` not `setenv`.
+- **SECRETS: GitHub Push Protection is ACTIVE on this repo and blocks pushes containing secrets. Never write a real API key / secret into any source file — including comments and docstrings (the `test_live.py` docstring incident blocked the first push). Keep keys in env vars or a gitignored `.env`.**
+- Owner must rotate the leaked OpenRouter key (see Session #2).
 - `_OPTIMIZER_CACHE` and `build_optimizer()` reuse optimizers keyed by `(model, id(validator), id(cache))`; if you change that cache, keep the invalidation-by-id behavior.
