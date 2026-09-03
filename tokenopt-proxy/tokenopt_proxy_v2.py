@@ -501,13 +501,17 @@ services = ServiceManager()
 
 async def authenticate(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
     """JWT-based authentication."""
+    secret = services.config.JWT_SECRET
+    if not secret:
+        raise HTTPException(
+            status_code=503,
+            detail="Authentication unavailable: JWT_SECRET is not configured. Set the JWT_SECRET environment variable."
+        )
     try:
         token = credentials.credentials
-        # In production: verify against identity provider
-        # For now: simple JWT validation
         payload = jwt.decode(
             token,
-            services.config.JWT_SECRET,
+            secret,
             algorithms=["HS256"],
             options={"verify_exp": True}
         )
@@ -522,6 +526,9 @@ async def authenticate(credentials: HTTPAuthorizationCredentials = Depends(secur
         raise HTTPException(status_code=401, detail="Token expired") from None
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token") from None
+    except Exception as exc:  # noqa: BLE001 — never let auth crash with 500
+        logger.error("Unexpected error in authenticate: %s", exc)
+        raise HTTPException(status_code=401, detail="Authentication failed") from None
 
 # ============================================================
 # Optimization Engine (provided by the TokenOpt optimizer SDK)

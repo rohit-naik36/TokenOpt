@@ -196,6 +196,17 @@ async def main():
     print("  " + datetime.now().strftime("%A, %B %d %Y  %H:%M"))
     print("═" * 65)
 
+    # Pre-flight: check JWT_SECRET is set
+    if not os.getenv("JWT_SECRET"):
+        print("\n  ❌ JWT_SECRET environment variable is not set.")
+        print("     The server won't authenticate requests without it.\n")
+        print("     Fix — run these before starting the server AND this script:")
+        print("       $env:JWT_SECRET='demo-secret-key-for-presentation-only'")
+        print("       $env:JWT_SECRET='demo-secret-key-for-presentation-only'  # server terminal too\n")
+        print("     Then restart the server:  uvicorn tokenopt_proxy_v2:app --port 8000")
+        print("     Then re-run:              python demo.py --no-llm\n")
+        sys.exit(1)
+
     token = make_token()
 
     # Verify the server is running
