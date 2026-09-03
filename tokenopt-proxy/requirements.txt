@@ -7,10 +7,8 @@ PyJWT>=2.8.0,<3.0.0
 numpy>=1.24.0,<3.0.0
 openai>=1.30.0,<2.0.0
 
-# TokenOpt optimizer SDK (sibling package in this monorepo). The proxy imports
-# tokenopt_optimizer from here. Install this SDK into the environment before
-# running the app; the relative path points at the monorepo sibling checkout.
--e ../tokenopt-optimizer
+# TokenOpt optimizer SDK (sibling package in this monorepo).
+# Installed in CI and dev via `pip install -e tokenopt-optimizer`.
 
 # Optional: smart prompt compression (graceful degradation if absent)
 headroom-ai>=0.33.0

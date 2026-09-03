@@ -55,6 +55,7 @@ jobs:
       - name: Pytest with coverage gate (>=80%)
         run: |
           pytest tests/ -q
+          pip install -e tokenopt-optimizer
           pip install -r tokenopt-proxy/requirements.txt
           python -m pytest tokenopt-proxy/tests/ -o addopts="" -q
 
