@@ -54,7 +54,7 @@ jobs:
         run: pip install -e ".[dev]"
       - name: Pytest with coverage gate (>=80%)
         run: |
-          pytest tests/ -q
+          pytest tests/ -q --tb=short
           pip install -e tokenopt-optimizer
           pip install "fastapi>=0.110.0" "uvicorn[standard]>=0.24.0" "PyJWT>=2.8.0"
           python -m pytest tokenopt-proxy/tests/ -o addopts="" -q
