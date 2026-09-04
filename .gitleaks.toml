@@ -1,10 +1,18 @@
-# Gitleaks configuration file
+# Gitleaks configuration file for TokenOpt
+
+title = "TokenOpt Gitleaks Config"
 
 [allowlist]
-description = "Ignore historical deleted recovery codes file in early git history"
+description = "Allowlist for historical recovery codes commits and demo secret placeholder strings"
+commits = [
+    "1c534d4dedef211daac89ecbadedb481bef6d493",
+    "59511032a46adf019046e376de2bc84c4a484bc2"
+]
 paths = [
-    '''PyPI-Recovery-Codes-.*\.txt'''
+    '''PyPI-Recovery-Codes-.*''',
+    '''.*PyPI-Recovery-Codes.*'''
 ]
 regexes = [
-    '''PyPI-Recovery-Codes-.*'''
+    '''PyPI-Recovery-Codes.*''',
+    '''demo-secret-key-for-presentation-only'''
 ]

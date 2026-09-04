@@ -105,7 +105,7 @@ class AuditDatabase:
 
     def __init__(
         self,
-        dsn: str = "postgresql://tokenopt:password@localhost:5432/tokenopt",
+        dsn: str = "",
         pool_size: int = 20,
         retention_days: int = 90
     ):

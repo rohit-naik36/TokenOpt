@@ -98,7 +98,7 @@ class AppConfig:
         return raw.lower() in ("1", "true", "yes", "on")
 
     # Database
-    POSTGRES_DSN = os.getenv("POSTGRES_DSN", "postgresql://tokenopt:password@localhost:5432/tokenopt")
+    POSTGRES_DSN = os.getenv("POSTGRES_DSN", "")
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     REDIS_CLUSTER = _env_bool("REDIS_CLUSTER", False)
     KAFKA_BROKERS = os.getenv("KAFKA_BROKERS", "localhost:9092")
