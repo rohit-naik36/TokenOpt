@@ -3,6 +3,8 @@ TokenOpt v2.0 - Production API Proxy
 Integrates: real embeddings, circuit breaker providers, PostgreSQL audit, Redis cache, Kafka events.
 """
 
+from __future__ import annotations
+
 from fastapi import FastAPI, HTTPException, Request, Depends, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware

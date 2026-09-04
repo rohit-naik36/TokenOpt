@@ -7,6 +7,8 @@ configuration, the cache backend, and the fidelity validator are passed in
 application globals.
 """
 
+from __future__ import annotations
+
 import asyncio
 import hashlib
 import inspect
