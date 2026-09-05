@@ -1,7 +1,0 @@
-# CODEOWNERS — TokenOpt (single-maintainer posture)
-
-# The project is maintained by a single owner; all paths fall back to
-# the maintainer. Reviewers are approved on a per-change basis per the
-# code-review workflow (.ai/WORKFLOWS/code-review.md).
-
-* @rohit-naik36
