@@ -19,6 +19,7 @@ from tokenopt.pipeline import (
     RAGOptimizerStage,
     RouterStage,
 )
+from tokenopt.pipeline.base import PipelineStage
 
 
 def _extract_openai_shape_usage(response: Any) -> dict[str, int]:
@@ -84,7 +85,7 @@ class BaseOptimizedClient(ABC):
         surviving rules the router stage is omitted entirely, mirroring
         the no-router behavior of those providers.
         """
-        stages = [
+        stages: list[PipelineStage] = [
             RouterStage(self.config),
         ]
         if getattr(self.config, "enable_adaptive_compression", False):

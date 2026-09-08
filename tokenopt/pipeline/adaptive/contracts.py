@@ -35,6 +35,7 @@ class FidelityResult:
     semantic_similarity: float
     structural_integrity: float
     details: dict[str, Any] = field(default_factory=dict)
+    is_passthrough: bool = False
 
 
 @dataclass

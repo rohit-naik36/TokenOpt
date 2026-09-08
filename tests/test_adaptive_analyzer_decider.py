@@ -1,8 +1,7 @@
-import pytest
 
 from tokenopt.pipeline.adaptive.analyzer import Analyzer
-from tokenopt.pipeline.adaptive.contracts import CompressionProfile
 from tokenopt.pipeline.adaptive.decider import Decider
+
 
 def test_analyzer_identifies_code_blocks():
     analyzer = Analyzer()

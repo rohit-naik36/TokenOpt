@@ -10,7 +10,10 @@ class Decider:
 
     def decide(self, profile: CompressionProfile) -> CompressionDecision:
         # P0: Absolute preservation rules based on flags
-        if "IS_LAST_USER_QUERY" in profile.preservation_flags or "IS_SYSTEM_PROMPT" in profile.preservation_flags:
+        if (
+            "IS_LAST_USER_QUERY" in profile.preservation_flags
+            or "IS_SYSTEM_PROMPT" in profile.preservation_flags
+        ):
             return CompressionDecision(
                 target_technique="skip",
                 aggressiveness_ratio=0.0,
@@ -18,7 +21,10 @@ class Decider:
                 retry_budget=0
             )
 
-        if "CONTAINS_CODE" in profile.preservation_flags or "CONTAINS_STRUCTURED_DATA" in profile.preservation_flags:
+        if (
+            "CONTAINS_CODE" in profile.preservation_flags
+            or "CONTAINS_STRUCTURED_DATA" in profile.preservation_flags
+        ):
             return CompressionDecision(
                 target_technique="whitespace_only",
                 aggressiveness_ratio=0.0, # Do not truncate, only strip space safely

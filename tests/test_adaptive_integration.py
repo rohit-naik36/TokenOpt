@@ -1,13 +1,14 @@
 """Test integration of Adaptive Compression into existing pipeline."""
 
-import pytest
 import time
-from tokenopt.config import TokenOptConfig
-from tokenopt.pipeline.base import OptimizationContext
-from tokenopt.pipeline.adaptive.stage import AdaptiveCompressorStage
-from tokenopt.pipeline.adaptive.contracts import Evaluator, FidelityResult
+
 from tokenopt import OpenAI
+from tokenopt.config import TokenOptConfig
+from tokenopt.pipeline.adaptive.contracts import Evaluator, FidelityResult
+from tokenopt.pipeline.adaptive.stage import AdaptiveCompressorStage
+from tokenopt.pipeline.base import OptimizationContext
 from tokenopt.pipeline.compressor import CompressorStage
+
 
 def _ctx(messages, model="gpt-4o", config=None):
     config = config or TokenOptConfig()
@@ -24,25 +25,29 @@ class DeterministicTestEvaluator(Evaluator):
         # Reject if critical substrings are missing
         for req in self.reject_substrings:
             if req in original and req not in optimized:
-                return FidelityResult(False, 0.0, 0.0, 0.0, {"missing": req})
+                return FidelityResult(False, 0.0, 0.0, 0.0, {"missing": req}, False)
 
         # Reject if overly compressed
         if len(original) > 0 and len(optimized) / len(original) < self.min_length_ratio:
-            return FidelityResult(False, 0.5, 0.5, 0.5, {"reason": "too short"})
+            return FidelityResult(False, 0.5, 0.5, 0.5, {"reason": "too short"}, False)
 
-        return FidelityResult(True, 1.0, 1.0, 1.0, {})
+        return FidelityResult(True, 1.0, 1.0, 1.0, {}, False)
 
 class SlowEvaluator(Evaluator):
     def evaluate(self, original: str, optimized: str) -> FidelityResult:
         time.sleep(1.1)
-        return FidelityResult(False, 0.0, 0.0, 0.0, {})
+        return FidelityResult(False, 0.0, 0.0, 0.0, {}, False)
 
 
 def test_adaptive_rejects_missing_content_and_retries():
     stage = AdaptiveCompressorStage()
     stage.evaluator = DeterministicTestEvaluator(min_length_ratio=0.8) # must keep 80% length
 
-    text = "Here is some conversational text that basically has a lot of fillers basically essentially " * 10
+    text = (
+        "Here is some conversational text that basically has a lot "
+        "of fillers basically essentially "
+    ) * 10
+
     ctx = _ctx([
         {"role": "user", "content": text},
         {"role": "user", "content": "I am the last query"}
@@ -60,7 +65,11 @@ def test_adaptive_preserves_mixed_prompt():
         {"role": "user", "content": "Historical filler conversation: please kindly ignore"},
         {"role": "user", "content": "RAG Chunk:\n{\n  \"fact\": \"sky is blue\"\n}"},
         {"role": "user", "content": "RAG Chunk:\n```python\nprint('code')\n```"},
-        {"role": "user", "content": "please kindly basically explain this very simple concept to me right now"}
+        {
+            "role": "user",
+            "content": "please kindly basically explain this very simple concept "
+            "to me right now"
+        }
     ]
 
     ctx = _ctx(messages)

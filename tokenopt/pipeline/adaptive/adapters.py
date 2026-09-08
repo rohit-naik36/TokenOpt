@@ -5,8 +5,14 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from tokenopt.pipeline.adaptive.contracts import CompressionDecision, Evaluator, Executor, FidelityResult
+from tokenopt.pipeline.adaptive.contracts import (
+    CompressionDecision,
+    Evaluator,
+    Executor,
+    FidelityResult,
+)
 from tokenopt.utils.token_counter import count_tokens, truncate_to_tokens
+
 
 class BaseExecutor(Executor):
     """Executes compression using heuristics or ML semantic reduction."""
@@ -60,5 +66,6 @@ class PassThroughEvaluator(Evaluator):
             overall_score=1.0,
             semantic_similarity=1.0,
             structural_integrity=1.0,
-            details={"note": "fail-open passthrough evaluator"}
+            details={"note": "fail-open passthrough evaluator"},
+            is_passthrough=True
         )

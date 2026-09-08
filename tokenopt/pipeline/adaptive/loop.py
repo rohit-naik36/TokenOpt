@@ -10,6 +10,7 @@ from tokenopt.pipeline.adaptive.contracts import (
     Executor,
     OptimizationResult,
 )
+from tokenopt.utils.token_counter import count_tokens
 
 
 class AdaptiveCompressionLoop:
@@ -19,22 +20,32 @@ class AdaptiveCompressionLoop:
         self,
         executor: Executor,
         evaluator: Evaluator,
+        model: str = "gpt-4o",
         min_token_savings: int = 50,
         max_latency_ms: float = 1000.0,
     ):
         self.executor = executor
         self.evaluator = evaluator
+        self.model = model
         self.min_token_savings = min_token_savings
         self.max_latency_ms = max_latency_ms
 
-    def optimize_segment(self, text: str, initial_decision: CompressionDecision) -> OptimizationResult:
+    def optimize_segment(
+        self, text: str, initial_decision: CompressionDecision
+    ) -> OptimizationResult:
         """Run the bounded feedback loop on a segment."""
 
         # Fast path bypass
-        if initial_decision.target_technique == "skip" or initial_decision.aggressiveness_ratio == 0.0:
+        if (
+            initial_decision.target_technique == "skip"
+            or initial_decision.aggressiveness_ratio == 0.0
+        ):
             if initial_decision.target_technique == "whitespace_only":
-                # execute whitespace strip immediately
-                optimized = self.executor.execute(text, initial_decision)
+                try:
+                    optimized = self.executor.execute(text, initial_decision)
+                except Exception:
+                    optimized = text
+
                 return OptimizationResult(
                     original_text=text,
                     optimized_text=optimized,
@@ -61,15 +72,19 @@ class AdaptiveCompressionLoop:
             if elapsed_ms > self.max_latency_ms:
                 break
 
-            # 2. Execute
-            candidate = self.executor.execute(text, decision)
+            try:
+                # 2. Execute
+                candidate = self.executor.execute(text, decision)
 
-            # Calculate mock savings based on length for now, in integration
-            # this would use the real token counter.
-            tokens_saved = len(text) - len(candidate)
+                # Use real token counting
+                tokens_saved = count_tokens(text, self.model) - count_tokens(candidate, self.model)
 
-            # 3. Evaluate
-            fidelity = self.evaluator.evaluate(text, candidate)
+                # 3. Evaluate
+                fidelity = self.evaluator.evaluate(text, candidate)
+            except Exception:
+                # If anything fails (executor crash, evaluator crash), break the loop
+                # to guarantee we fail-open and return the original text.
+                break
 
             # 4. Accept / Retry
             if fidelity.passed:

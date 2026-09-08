@@ -7,10 +7,11 @@ from typing import Any
 from tokenopt.config import TokenOptConfig
 from tokenopt.pipeline.base import OptimizationContext, PipelineStage
 
+from .adapters import BaseExecutor, PassThroughEvaluator
 from .analyzer import Analyzer
 from .decider import Decider
 from .loop import AdaptiveCompressionLoop
-from .adapters import BaseExecutor, PassThroughEvaluator
+
 
 class AdaptiveCompressorStage(PipelineStage):
     """Compress prompts adaptively using segments, bounds, and fidelity."""
@@ -35,7 +36,7 @@ class AdaptiveCompressorStage(PipelineStage):
 
     def process(self, ctx: OptimizationContext) -> OptimizationContext:
         executor = BaseExecutor(model=ctx.model, llmlingua_engine=self._get_llmlingua())
-        loop = AdaptiveCompressionLoop(executor, self.evaluator)
+        loop = AdaptiveCompressionLoop(executor, self.evaluator, model=ctx.model)
 
         compressed_messages = []
         total_saved = 0
@@ -73,8 +74,12 @@ class AdaptiveCompressorStage(PipelineStage):
 
             result = loop.optimize_segment(content, decision)
 
-            # Check if fallback occurred (it failed fidelity/latency but couldn't get a better option)
-            if result.final_fidelity is None and decision.target_technique != "skip" and decision.target_technique != "whitespace_only":
+            # Check if fallback occurred (fidelity/latency failed)
+            if (
+                result.final_fidelity is None
+                and decision.target_technique != "skip"
+                and decision.target_technique != "whitespace_only"
+            ):
                 segments_fallback += 1
 
             total_saved += result.tokens_saved
@@ -88,5 +93,7 @@ class AdaptiveCompressorStage(PipelineStage):
         ctx.metrics["compression_iterations"] = total_iterations
         ctx.metrics["compression_segments_analyzed"] = segments_analyzed
         ctx.metrics["compression_segments_skipped"] = segments_skipped
-        ctx.metrics["compression_fallback_rate"] = (segments_fallback / segments_analyzed) if segments_analyzed > 0 else 0.0
+        ctx.metrics["compression_fallback_rate"] = (
+            (segments_fallback / segments_analyzed) if segments_analyzed > 0 else 0.0
+        )
         return ctx
