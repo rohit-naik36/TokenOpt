@@ -14,6 +14,7 @@ def _ctx(messages, model="gpt-4o", config=None):
     config = config or TokenOptConfig()
     return OptimizationContext(messages=messages, model=model, config=config)
 
+
 class DeterministicTestEvaluator(Evaluator):
     """A deterministic evaluator for testing the feedback loop."""
 
@@ -33,6 +34,7 @@ class DeterministicTestEvaluator(Evaluator):
 
         return FidelityResult(True, 1.0, 1.0, 1.0, {}, False)
 
+
 class SlowEvaluator(Evaluator):
     def evaluate(self, original: str, optimized: str) -> FidelityResult:
         time.sleep(1.1)
@@ -41,20 +43,20 @@ class SlowEvaluator(Evaluator):
 
 def test_adaptive_rejects_missing_content_and_retries():
     stage = AdaptiveCompressorStage()
-    stage.evaluator = DeterministicTestEvaluator(min_length_ratio=0.8) # must keep 80% length
+    stage.evaluator = DeterministicTestEvaluator(min_length_ratio=0.8)  # must keep 80% length
 
     text = (
         "Here is some conversational text that basically has a lot "
         "of fillers basically essentially "
     ) * 10
 
-    ctx = _ctx([
-        {"role": "user", "content": text},
-        {"role": "user", "content": "I am the last query"}
-    ])
+    ctx = _ctx(
+        [{"role": "user", "content": text}, {"role": "user", "content": "I am the last query"}]
+    )
 
     result = stage.process(ctx)
     assert result.metrics["compression_iterations"] > 0
+
 
 def test_adaptive_preserves_mixed_prompt():
     stage = AdaptiveCompressorStage()
@@ -63,13 +65,12 @@ def test_adaptive_preserves_mixed_prompt():
     messages = [
         {"role": "system", "content": "You are a helpful assistant. Please basically explain."},
         {"role": "user", "content": "Historical filler conversation: please kindly ignore"},
-        {"role": "user", "content": "RAG Chunk:\n{\n  \"fact\": \"sky is blue\"\n}"},
+        {"role": "user", "content": 'RAG Chunk:\n{\n  "fact": "sky is blue"\n}'},
         {"role": "user", "content": "RAG Chunk:\n```python\nprint('code')\n```"},
         {
             "role": "user",
-            "content": "please kindly basically explain this very simple concept "
-            "to me right now"
-        }
+            "content": "please kindly basically explain this very simple concept to me right now",
+        },
     ]
 
     ctx = _ctx(messages)
@@ -82,13 +83,14 @@ def test_adaptive_preserves_mixed_prompt():
     assert len(result.messages[1]["content"]) <= len(messages[1]["content"])
 
     # JSON preserved
-    assert "\"fact\": \"sky is blue\"" in result.messages[2]["content"]
+    assert '"fact": "sky is blue"' in result.messages[2]["content"]
 
     # Code preserved
     assert "```python\nprint('code')\n```" in result.messages[3]["content"]
 
     # Last user query preserved (this is a key adaptive feature vs legacy)
     assert "please kindly basically" in result.messages[4]["content"]
+
 
 def test_adaptive_fails_open_on_exhausted_retries():
     stage = AdaptiveCompressorStage()
@@ -104,6 +106,7 @@ def test_adaptive_fails_open_on_exhausted_retries():
     assert result.messages[0]["content"] == text
     assert result.metrics["compression_iterations"] >= 2
 
+
 def test_adaptive_fails_open_on_latency_budget():
     stage = AdaptiveCompressorStage()
     stage.evaluator = SlowEvaluator()
@@ -115,6 +118,7 @@ def test_adaptive_fails_open_on_latency_budget():
 
     assert result.messages[0]["content"] == text
     assert result.metrics["compression_iterations"] > 2
+
 
 def test_toggle_adaptive_false_uses_legacy():
     config = TokenOptConfig()
@@ -128,6 +132,7 @@ def test_toggle_adaptive_false_uses_legacy():
 
     assert has_legacy is True
     assert has_adaptive is False
+
 
 def test_toggle_adaptive_true_uses_adaptive():
     config = TokenOptConfig()

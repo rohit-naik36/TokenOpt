@@ -18,7 +18,7 @@ class Decider:
                 target_technique="skip",
                 aggressiveness_ratio=0.0,
                 target_tokens=profile.token_count,
-                retry_budget=0
+                retry_budget=0,
             )
 
         if (
@@ -27,20 +27,20 @@ class Decider:
         ):
             return CompressionDecision(
                 target_technique="whitespace_only",
-                aggressiveness_ratio=0.0, # Do not truncate, only strip space safely
+                aggressiveness_ratio=0.0,  # Do not truncate, only strip space safely
                 target_tokens=profile.token_count,
-                retry_budget=0
+                retry_budget=0,
             )
 
         # Risk-based targeting
         if profile.risk_score < 0.2 and profile.compressibility > 0.5:
             # Low risk, highly compressible
-            aggressiveness = 0.6 # target 60% reduction
+            aggressiveness = 0.6  # target 60% reduction
             technique = "ml_semantic"
             retry_budget = 3
         elif profile.risk_score < 0.5:
             # Moderate risk
-            aggressiveness = 0.3 # target 30% reduction
+            aggressiveness = 0.3  # target 30% reduction
             technique = "heuristic"
             retry_budget = 2
         else:
@@ -55,5 +55,5 @@ class Decider:
             target_technique=technique,
             aggressiveness_ratio=aggressiveness,
             target_tokens=target_tokens,
-            retry_budget=retry_budget
+            retry_budget=retry_budget,
         )

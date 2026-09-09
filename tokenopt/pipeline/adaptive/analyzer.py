@@ -8,8 +8,7 @@ from tokenopt.pipeline.adaptive.contracts import CompressionProfile
 from tokenopt.utils.token_counter import count_tokens
 
 FILLER_WORDS_REGEX = re.compile(
-    r'\b(?:please|kindly|would you|could you|I think|I believe|basically)\b',
-    re.IGNORECASE
+    r"\b(?:please|kindly|would you|could you|I think|I believe|basically)\b", re.IGNORECASE
 )
 
 
@@ -31,7 +30,7 @@ class Analyzer:
 
         # 1. Structural Data Signal
         # JSON, XML-like tags, simple tables
-        if re.search(r'[\{\}\[\]\<\>]', text) or re.search(r'\|.*\|.*\|', text):
+        if re.search(r"[\{\}\[\]\<\>]", text) or re.search(r"\|.*\|.*\|", text):
             signals["structural_data"] = 1.0
             flags.append("CONTAINS_STRUCTURED_DATA")
         else:

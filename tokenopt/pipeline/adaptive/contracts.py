@@ -9,6 +9,7 @@ from typing import Any, Protocol
 @dataclass
 class CompressionProfile:
     """Segment-aware profile mapping signals and risk."""
+
     segment_id: str
     role: str
     token_count: int
@@ -21,6 +22,7 @@ class CompressionProfile:
 @dataclass
 class CompressionDecision:
     """Decision parameters dictating how a segment should be compressed."""
+
     target_technique: str
     aggressiveness_ratio: float
     target_tokens: int
@@ -30,6 +32,7 @@ class CompressionDecision:
 @dataclass
 class FidelityResult:
     """Lightweight fidelity evaluation result."""
+
     passed: bool
     overall_score: float
     semantic_similarity: float
@@ -41,6 +44,7 @@ class FidelityResult:
 @dataclass
 class OptimizationResult:
     """Result of an optimization loop on a single segment."""
+
     original_text: str
     optimized_text: str
     tokens_saved: int
@@ -50,9 +54,11 @@ class OptimizationResult:
 
 class Executor(Protocol):
     """Executes compression on a segment based on a decision."""
+
     def execute(self, text: str, decision: CompressionDecision) -> str: ...
 
 
 class Evaluator(Protocol):
     """Evaluates the fidelity of a compressed segment."""
+
     def evaluate(self, original_text: str, optimized_text: str) -> FidelityResult: ...

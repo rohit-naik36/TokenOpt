@@ -29,6 +29,7 @@ class AdaptiveCompressorStage(PipelineStage):
         if self._llmlingua is None:
             try:
                 from llmlingua import PromptCompressor
+
                 self._llmlingua = PromptCompressor()
             except ImportError:
                 pass
@@ -58,14 +59,14 @@ class AdaptiveCompressorStage(PipelineStage):
             segments_analyzed += 1
 
             role = msg.get("role", "user")
-            is_last_user_query = (role == "user" and i == len(ctx.messages) - 1)
+            is_last_user_query = role == "user" and i == len(ctx.messages) - 1
 
             profile = self.analyzer.analyze(
                 content,
                 role=role,
                 segment_id=str(i),
                 is_last_user_query=is_last_user_query,
-                model=ctx.model
+                model=ctx.model,
             )
             decision = self.decider.decide(profile)
 

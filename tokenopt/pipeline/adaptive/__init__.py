@@ -24,5 +24,5 @@ __all__ = [
     "OptimizationResult",
     "Executor",
     "Evaluator",
-    "AdaptiveCompressorStage"
+    "AdaptiveCompressorStage",
 ]

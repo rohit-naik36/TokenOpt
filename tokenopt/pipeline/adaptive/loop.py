@@ -51,7 +51,7 @@ class AdaptiveCompressionLoop:
                     optimized_text=optimized,
                     tokens_saved=0,  # Ignored for bypass
                     iterations=1,
-                    final_fidelity=None
+                    final_fidelity=None,
                 )
 
             return OptimizationResult(
@@ -59,7 +59,7 @@ class AdaptiveCompressionLoop:
                 optimized_text=text,
                 tokens_saved=0,
                 iterations=0,
-                final_fidelity=None
+                final_fidelity=None,
             )
 
         start_time = time.perf_counter()
@@ -94,7 +94,7 @@ class AdaptiveCompressionLoop:
                         optimized_text=candidate,
                         tokens_saved=tokens_saved,
                         iterations=iteration + 1,
-                        final_fidelity=fidelity
+                        final_fidelity=fidelity,
                     )
                 else:
                     # Passed but not worth the overhead, fail-open
@@ -108,8 +108,8 @@ class AdaptiveCompressionLoop:
                 decision = CompressionDecision(
                     target_technique=decision.target_technique,
                     aggressiveness_ratio=new_aggressiveness,
-                    target_tokens=int(decision.target_tokens * 1.2), # loosen target
-                    retry_budget=decision.retry_budget - 1
+                    target_tokens=int(decision.target_tokens * 1.2),  # loosen target
+                    retry_budget=decision.retry_budget - 1,
                 )
 
         # Exhausted budget or failed conditions -> fail-open
@@ -118,5 +118,5 @@ class AdaptiveCompressionLoop:
             optimized_text=text,
             tokens_saved=0,
             iterations=initial_decision.retry_budget + 1,
-            final_fidelity=None
+            final_fidelity=None,
         )

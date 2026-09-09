@@ -1,4 +1,3 @@
-
 from tokenopt.pipeline.adaptive.contracts import CompressionDecision, FidelityResult
 from tokenopt.pipeline.adaptive.loop import AdaptiveCompressionLoop
 
@@ -14,7 +13,8 @@ class MockExecutor:
             return text.strip()
         # Mock reduction based on aggressiveness
         target_len = int(len(text) * (1.0 - decision.aggressiveness_ratio))
-        return text[:max(target_len, 1)]
+        return text[: max(target_len, 1)]
+
 
 class MockEvaluator:
     def __init__(self, pass_on_iteration=1):
@@ -29,7 +29,7 @@ class MockEvaluator:
             overall_score=0.9 if passed else 0.5,
             semantic_similarity=0.9,
             structural_integrity=1.0,
-            is_passthrough=True
+            is_passthrough=True,
         )
 
 
@@ -58,7 +58,7 @@ def test_loop_executes_whitespace_only():
         target_technique="whitespace_only",
         aggressiveness_ratio=0.0,
         target_tokens=100,
-        retry_budget=0
+        retry_budget=0,
     )
     result = loop.optimize_segment("  hello world  ", decision)
 
@@ -86,7 +86,7 @@ def test_loop_accepts_first_pass():
 
 def test_loop_retries_and_lowers_aggressiveness():
     executor = MockExecutor()
-    evaluator = MockEvaluator(pass_on_iteration=2) # fails first time, passes second
+    evaluator = MockEvaluator(pass_on_iteration=2)  # fails first time, passes second
     loop = AdaptiveCompressionLoop(executor, evaluator, min_token_savings=0)
 
     text = "a" * 100
@@ -107,7 +107,7 @@ def test_loop_retries_and_lowers_aggressiveness():
 
 def test_loop_fails_open_if_budget_exhausted():
     executor = MockExecutor()
-    evaluator = MockEvaluator(pass_on_iteration=99) # never passes
+    evaluator = MockEvaluator(pass_on_iteration=99)  # never passes
     loop = AdaptiveCompressionLoop(executor, evaluator)
 
     text = "a" * 100
@@ -119,15 +119,18 @@ def test_loop_fails_open_if_budget_exhausted():
 
     assert result.optimized_text == text
     assert result.tokens_saved == 0
-    assert len(executor.calls) == 3 # original + 2 retries
+    assert len(executor.calls) == 3  # original + 2 retries
+
 
 class CrashingExecutor(MockExecutor):
     def execute(self, text, decision):
         raise RuntimeError("Executor exploded")
 
+
 class CrashingEvaluator(MockEvaluator):
     def evaluate(self, original, candidate):
         raise ValueError("Evaluator exploded")
+
 
 def test_loop_fails_open_on_executor_crash():
     executor = CrashingExecutor()
@@ -141,7 +144,8 @@ def test_loop_fails_open_on_executor_crash():
 
     # Should instantly break and return original text
     assert result.optimized_text == "hello world"
-    assert result.iterations == 3 # exhausts budget and fails open
+    assert result.iterations == 3  # exhausts budget and fails open
+
 
 def test_loop_fails_open_on_evaluator_crash():
     executor = MockExecutor()
@@ -156,6 +160,7 @@ def test_loop_fails_open_on_evaluator_crash():
     assert result.optimized_text == "hello world"
     assert result.iterations == 3
 
+
 def test_loop_fails_open_on_whitespace_bypass_crash():
     executor = CrashingExecutor()
     evaluator = MockEvaluator()
@@ -165,7 +170,7 @@ def test_loop_fails_open_on_whitespace_bypass_crash():
         target_technique="whitespace_only",
         aggressiveness_ratio=0.0,
         target_tokens=10,
-        retry_budget=0
+        retry_budget=0,
     )
     result = loop.optimize_segment("hello world", decision)
 

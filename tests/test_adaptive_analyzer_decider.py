@@ -1,4 +1,3 @@
-
 from tokenopt.pipeline.adaptive.analyzer import Analyzer
 from tokenopt.pipeline.adaptive.decider import Decider
 
