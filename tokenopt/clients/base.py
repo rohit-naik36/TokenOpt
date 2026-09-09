@@ -19,6 +19,7 @@ from tokenopt.pipeline import (
     RAGOptimizerStage,
     RouterStage,
 )
+from tokenopt.pipeline.base import PipelineStage
 
 
 def _extract_openai_shape_usage(response: Any) -> dict[str, int]:
@@ -84,14 +85,21 @@ class BaseOptimizedClient(ABC):
         surviving rules the router stage is omitted entirely, mirroring
         the no-router behavior of those providers.
         """
-        stages = [
+        stages: list[PipelineStage] = [
             RouterStage(self.config),
-            CompressorStage(self.config),
+        ]
+        if getattr(self.config, "enable_adaptive_compression", False):
+            from tokenopt.pipeline.adaptive.stage import AdaptiveCompressorStage
+            stages.append(AdaptiveCompressorStage(self.config))
+        elif self.config.enable_compression:
+            stages.append(CompressorStage(self.config))
+
+        stages.extend([
             ContextSummarizerStage(self.config),
             CacheStage(self.config),
             RAGOptimizerStage(self.config),
             FewShotSelectorStage(self.config),
-        ]
+        ])
         if routing_rule_filter is not None:
             stages = [s for s in stages if s.name != "router"]
             rules = [r for r in self.config.routing_rules if routing_rule_filter(r)]
