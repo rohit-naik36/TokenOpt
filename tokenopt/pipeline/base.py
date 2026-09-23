@@ -9,6 +9,7 @@ from time import perf_counter
 from typing import Any
 
 from tokenopt.config import TokenOptConfig
+from tokenopt.pipeline.preservation import PreservationMap
 from tokenopt.utils.token_counter import count_message_tokens
 
 
@@ -24,6 +25,7 @@ class OptimizationContext:
     metrics: dict[str, Any] = field(default_factory=dict)
     original_messages: list[dict[str, Any]] = field(default_factory=list)
     original_token_count: int = 0
+    preservation_map: PreservationMap | None = None
 
     def __post_init__(self) -> None:
         # The pipeline must own its working copy.
