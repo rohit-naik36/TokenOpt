@@ -1,10 +1,11 @@
-"""Base optimization pipeline and stages."""
+"""Core pipeline primitives and optimization context."""
 
 from __future__ import annotations
 
-import time
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from dataclasses import dataclass, field
+from time import perf_counter
 from typing import Any
 
 from tokenopt.config import TokenOptConfig
@@ -13,48 +14,66 @@ from tokenopt.utils.token_counter import count_message_tokens
 
 @dataclass
 class OptimizationContext:
-    """Context passed through optimization pipeline stages."""
+    """Mutable state passed through the optimization pipeline."""
 
     messages: list[dict[str, Any]]
     model: str
     config: TokenOptConfig
-    model_explicit: bool = False  # caller passed model= to the client
+    model_explicit: bool = False
     metadata: dict[str, Any] = field(default_factory=dict)
     metrics: dict[str, Any] = field(default_factory=dict)
-
-    # Original values for comparison
     original_messages: list[dict[str, Any]] = field(default_factory=list)
     original_token_count: int = 0
 
     def __post_init__(self) -> None:
+        # The pipeline must own its working copy.
+        # Stages may transform ctx.messages without mutating the
+        # caller-owned message structure.
+        self.messages = deepcopy(self.messages)
+
+        # Keep an independent snapshot of the original pipeline input.
         if not self.original_messages:
-            self.original_messages = [m.copy() for m in self.messages]
+            self.original_messages = deepcopy(self.messages)
+
         if not self.original_token_count:
-            self.original_token_count = count_message_tokens(self.messages, self.model)
+            self.original_token_count = count_message_tokens(
+                self.messages,
+                self.model,
+            )
 
 
 class PipelineStage(ABC):
-    """Base class for optimization pipeline stages."""
+    """Base class for all optimization pipeline stages."""
 
-    name: str = "base"
+    name = "stage"
+
+    def __init__(self, config: TokenOptConfig | None = None):
+        self.config = config
+
+    def __call__(self, ctx: OptimizationContext) -> OptimizationContext:
+        start = perf_counter()
+
+        ctx = self.process(ctx)
+
+        elapsed_ms = (perf_counter() - start) * 1000
+        ctx.metrics[f"{self.name}_latency_ms"] = elapsed_ms
+
+        return ctx
 
     @abstractmethod
     def process(self, ctx: OptimizationContext) -> OptimizationContext:
         """Process the context through this stage."""
-        pass
-
-    def __call__(self, ctx: OptimizationContext) -> OptimizationContext:
-        start = time.perf_counter()
-        result = self.process(ctx)
-        elapsed = time.perf_counter() - start
-        result.metrics[f"{self.name}_latency_ms"] = elapsed * 1000
-        return result
+        raise NotImplementedError
 
 
 class OptimizationPipeline:
-    """Sequential optimization pipeline."""
+    """Executes configured optimization stages with fail-open behavior."""
 
-    def __init__(self, stages: list[PipelineStage], config: TokenOptConfig):
+    def __init__(
+        self,
+        stages: list[PipelineStage],
+        config: TokenOptConfig,
+    ):
         self.stages = stages
         self.config = config
 
@@ -63,43 +82,68 @@ class OptimizationPipeline:
         messages: list[dict[str, Any]],
         model: str,
         model_explicit: bool = False,
-        **kwargs: Any
+        **metadata: Any,
     ) -> OptimizationContext:
-        """Run the full optimization pipeline."""
         ctx = OptimizationContext(
             messages=messages,
             model=model,
             config=self.config,
             model_explicit=model_explicit,
-            metadata=kwargs,
+            metadata=metadata,
         )
 
         for stage in self.stages:
-            if self._should_run_stage(stage):
-                try:
-                    ctx = stage(ctx)
-                except Exception as e:
-                    # Fail open: optimization errors must never break the request
-                    ctx.metrics[f"{stage.name}_error"] = str(e)
+            if not self._should_run_stage(stage):
+                continue
 
-        # Final metrics
-        ctx.metrics["final_token_count"] = count_message_tokens(ctx.messages, ctx.model)
-        ctx.metrics["token_reduction"] = (
-            ctx.original_token_count - ctx.metrics["final_token_count"]
+            # Deep checkpoint because message content can contain nested
+            # dictionaries/lists/structured content blocks.
+            checkpoint_messages = deepcopy(ctx.messages)
+            checkpoint_model = ctx.model
+            checkpoint_metadata = deepcopy(ctx.metadata)
+
+            try:
+                ctx = stage(ctx)
+
+            except Exception as e:
+                # Restore all mutable state owned by the failed stage.
+                #
+                # Metrics are deliberately preserved so the failure remains
+                # visible to observability and callers.
+                ctx.messages = checkpoint_messages
+                ctx.model = checkpoint_model
+                ctx.metadata = checkpoint_metadata
+                ctx.metrics[f"{stage.name}_error"] = str(e)
+
+        final_token_count = count_message_tokens(
+            ctx.messages,
+            ctx.model,
         )
-        ctx.metrics["token_reduction_pct"] = (
-            ctx.metrics["token_reduction"] / ctx.original_token_count * 100
-            if ctx.original_token_count > 0 else 0
+
+        ctx.metrics["original_token_count"] = ctx.original_token_count
+        ctx.metrics["optimized_token_count"] = final_token_count
+        ctx.metrics["tokens_saved"] = (
+            ctx.original_token_count - final_token_count
         )
 
         return ctx
 
     def _should_run_stage(self, stage: PipelineStage) -> bool:
-        """Check if stage should run based on config."""
-        stage_config_map = {
-            "compressor": self.config.enable_compression,
-            "cache": self.config.cache_enabled,
-            "router": self.config.enable_routing,
-            "summarizer": self.config.enable_summarization,
-        }
-        return stage_config_map.get(stage.name, True)
+        """Return whether a stage is enabled by configuration."""
+
+        stage_name = stage.name
+
+        if stage_name == "router":
+            return self.config.enable_routing
+
+        if stage_name == "compressor":
+            return self.config.enable_compression
+
+        if stage_name == "summarizer":
+            return self.config.enable_summarization
+
+        if stage_name == "cache":
+            return self.config.cache_enabled
+
+        # RAG and few-shot currently run when explicitly present.
+        return True

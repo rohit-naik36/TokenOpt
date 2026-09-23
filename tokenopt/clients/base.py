@@ -197,7 +197,10 @@ class BaseOptimizedClient(ABC):
             else {"prompt_tokens": 0, "completion_tokens": 0}
         )
 
-        optimized_tokens = ctx.metrics.get("final_token_count", ctx.original_token_count)
+        optimized_tokens = ctx.metrics.get(
+            "optimized_token_count",
+            ctx.original_token_count
+        )
         tokens_saved = ctx.original_token_count - optimized_tokens
 
         routing_reason = ctx.metrics.get("routing_rule", "")
