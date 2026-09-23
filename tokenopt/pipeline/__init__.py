@@ -1,5 +1,6 @@
 """Pipeline stages for TokenOpt optimization."""
 
+from tokenopt.pipeline.analyzer import ContextAnalyzer
 from tokenopt.pipeline.base import OptimizationContext, OptimizationPipeline, PipelineStage
 from tokenopt.pipeline.cache import CacheStage
 from tokenopt.pipeline.compressor import CompressorStage, ContextSummarizerStage
@@ -22,6 +23,7 @@ __all__ = [
     "OptimizationContext",
     "OptimizationPipeline",
     "PipelineStage",
+    "ContextAnalyzer",
     "CompressorStage",
     "ContextSummarizerStage",
     "CacheStage",
