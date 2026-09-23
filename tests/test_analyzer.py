@@ -13,12 +13,20 @@ from __future__ import annotations
 
 import pytest
 
+from copy import deepcopy
+
 from evaluation.cases import get_cases
+from tokenopt.config import TokenOptConfig
 from tokenopt.pipeline.analyzer import (
+    AnalyzerStage,
     ContextAnalyzer,
     detect_structure,
     extract_invariants,
 )
+from tokenopt.pipeline.base import OptimizationContext, OptimizationPipeline
+from tokenopt.pipeline.compressor import CompressorStage, ContextSummarizerStage
+from tokenopt.pipeline.router import RouterStage
+from tokenopt.utils.token_counter import count_message_tokens
 from tokenopt.pipeline.preservation import (
     DetectionCertainty,
     EntityCategory,
@@ -800,3 +808,198 @@ class TestP3RemovalSafetyAndFillerDetection:
 
         # In natural prose, these concise operational commands are P2_COMPRESSIBLE
         assert unit.preservation_class == PreservationClass.P2_COMPRESSIBLE
+
+
+class TestAnalyzerStage:
+    """Test AnalyzerStage pipeline integration, contracts, and safety invariants."""
+
+    def test_analyzer_stage_attaches_preservation_map(self):
+        """1. AnalyzerStage attaches a valid PreservationMap."""
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Deploy cluster-prod-01 to port 8080."},
+        ]
+        config = TokenOptConfig()
+        ctx = OptimizationContext(messages=messages, model="gpt-4o", config=config)
+        stage = AnalyzerStage(config=config)
+
+        res_ctx = stage(ctx)
+        assert res_ctx.preservation_map is not None
+        assert isinstance(res_ctx.preservation_map, PreservationMap)
+
+    def test_expected_unit_count_produced(self):
+        """2. Expected unit count is produced matching input message count."""
+        messages = [
+            {"role": "system", "content": "System directive."},
+            {"role": "user", "content": "User question."},
+            {"role": "assistant", "content": "Assistant answer."},
+        ]
+        config = TokenOptConfig()
+        ctx = OptimizationContext(messages=messages, model="gpt-4o", config=config)
+        stage = AnalyzerStage(config=config)
+
+        stage(ctx)
+        assert len(ctx.preservation_map.units) == 3
+
+    def test_message_roles_preserved_in_units(self):
+        """3. Message roles are preserved correctly across units."""
+        messages = [
+            {"role": "system", "content": "Rule 1"},
+            {"role": "user", "content": "Query 1"},
+            {"role": "assistant", "content": "Response 1"},
+            {"role": "user", "content": "Query 2"},
+        ]
+        config = TokenOptConfig()
+        ctx = OptimizationContext(messages=messages, model="gpt-4o", config=config)
+        stage = AnalyzerStage(config=config)
+
+        stage(ctx)
+        expected_roles = ["system", "user", "assistant", "user"]
+        actual_roles = [unit.role for unit in ctx.preservation_map.units]
+        assert actual_roles == expected_roles
+
+    def test_original_message_content_unchanged(self):
+        """4. Original message content is completely unchanged."""
+        messages = [
+            {"role": "user", "content": "Do not delete this line under any circumstances."},
+            {"role": "assistant", "content": "Understood. Maintaining status quo."},
+        ]
+        messages_snapshot = [dict(m) for m in messages]
+        config = TokenOptConfig()
+        ctx = OptimizationContext(messages=messages, model="gpt-4o", config=config)
+        stage = AnalyzerStage(config=config)
+
+        stage(ctx)
+        assert ctx.messages == messages_snapshot
+        assert ctx.original_messages == messages_snapshot
+
+    def test_analyzer_stage_returns_same_context_object(self):
+        """5. AnalyzerStage returns the identical OptimizationContext object."""
+        messages = [{"role": "user", "content": "Hello"}]
+        config = TokenOptConfig()
+        ctx = OptimizationContext(messages=messages, model="gpt-4o", config=config)
+        stage = AnalyzerStage(config=config)
+
+        ret = stage(ctx)
+        assert ret is ctx
+
+    def test_pipeline_executes_with_analyzer_stage_present(self):
+        """6. Existing pipeline can execute end-to-end with AnalyzerStage present."""
+        messages = [
+            {"role": "system", "content": "You are a code assistant."},
+            {"role": "user", "content": "Please write a function for cluster-99."},
+        ]
+        config = TokenOptConfig()
+        pipeline = OptimizationPipeline(
+            [
+                AnalyzerStage(config),
+                RouterStage(config),
+                CompressorStage(config),
+                ContextSummarizerStage(config),
+            ],
+            config,
+        )
+
+        ctx = pipeline.run(messages, "gpt-4o")
+        assert ctx.preservation_map is not None
+        assert "analyzer_latency_ms" in ctx.metrics
+        assert "router_latency_ms" in ctx.metrics
+        assert "compressor_latency_ms" in ctx.metrics
+        assert len(ctx.preservation_map.units) == 2
+
+    def test_analyzer_stage_is_deterministic(self):
+        """7. AnalyzerStage produces identical PreservationMap across repeated runs."""
+        messages = [
+            {"role": "system", "content": "Directive Level-4 [EXEC-SUMMARY]"},
+            {"role": "user", "content": "Check node-prod-02 on 2026-03-31 with MAX_RETRIES=5."},
+        ]
+        config = TokenOptConfig()
+        stage = AnalyzerStage(config=config)
+
+        ctx1 = OptimizationContext(messages=messages, model="gpt-4o", config=config)
+        stage(ctx1)
+
+        ctx2 = OptimizationContext(messages=messages, model="gpt-4o", config=config)
+        stage(ctx2)
+
+        assert ctx1.preservation_map.to_dict() == ctx2.preservation_map.to_dict()
+
+    def test_empty_and_minimal_input_works(self):
+        """8. Empty and minimal message lists work gracefully without errors."""
+        config = TokenOptConfig()
+        stage = AnalyzerStage(config=config)
+
+        # Empty messages
+        ctx_empty = OptimizationContext(messages=[], model="gpt-4o", config=config)
+        stage(ctx_empty)
+        assert ctx_empty.preservation_map is not None
+        assert len(ctx_empty.preservation_map.units) == 0
+        assert len(ctx_empty.preservation_map.invariants) == 0
+
+        # Minimal single empty message
+        ctx_minimal = OptimizationContext(
+            messages=[{"role": "user", "content": ""}],
+            model="gpt-4o",
+            config=config,
+        )
+        stage(ctx_minimal)
+        assert ctx_minimal.preservation_map is not None
+        assert len(ctx_minimal.preservation_map.units) == 1
+
+    def test_existing_context_with_none_preservation_map_compatible(self):
+        """9. Existing contexts with preservation_map=None remain fully compatible."""
+        config = TokenOptConfig()
+        ctx = OptimizationContext(
+            messages=[{"role": "user", "content": "test"}],
+            model="gpt-4o",
+            config=config,
+            preservation_map=None,
+        )
+        assert ctx.preservation_map is None
+        # Downstream stages should handle preservation_map=None without error
+        compressor = CompressorStage(config=config)
+        res = compressor.process(ctx)
+        assert res.preservation_map is None
+        assert res.messages is not None
+
+    def test_analyzer_exception_propagates_naturally(self):
+        """10. AnalyzerStage propagates exceptions naturally without custom interception."""
+        class ExplodingAnalyzer(ContextAnalyzer):
+            def analyze(self, messages):
+                raise RuntimeError("Analyzer internal fault")
+
+        config = TokenOptConfig()
+        failing_stage = AnalyzerStage(config=config, analyzer=ExplodingAnalyzer())
+        ctx = OptimizationContext(
+            messages=[{"role": "user", "content": "Important user request"}],
+            model="gpt-4o",
+            config=config,
+        )
+
+        # Direct stage invocation: exception propagates naturally
+        with pytest.raises(RuntimeError, match="Analyzer internal fault"):
+            failing_stage(ctx)
+
+        # Pipeline invocation: pipeline's pre-existing generic exception handling catches it
+        pipeline = OptimizationPipeline([failing_stage, RouterStage(config)], config)
+        pipeline_ctx = pipeline.run([{"role": "user", "content": "Important user request"}], "gpt-4o")
+        assert "analyzer_error" in pipeline_ctx.metrics
+        assert pipeline_ctx.messages == [{"role": "user", "content": "Important user request"}]
+
+    def test_analyzer_stage_does_not_modify_token_counts_or_message_content(self):
+        """11. AnalyzerStage does not alter message text or token counts."""
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Please deploy service-auth to staging."},
+        ]
+        config = TokenOptConfig()
+        ctx = OptimizationContext(messages=messages, model="gpt-4o", config=config)
+        tokens_before = ctx.original_token_count
+        messages_before = deepcopy(ctx.messages)
+
+        stage = AnalyzerStage(config=config)
+        stage.process(ctx)
+
+        tokens_after = count_message_tokens(ctx.messages, ctx.model)
+        assert tokens_after == tokens_before
+        assert ctx.messages == messages_before

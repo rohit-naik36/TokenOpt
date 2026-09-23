@@ -20,6 +20,8 @@ import json
 import re
 from typing import Any
 
+from tokenopt.config import TokenOptConfig
+from tokenopt.pipeline.base import OptimizationContext, PipelineStage
 from tokenopt.pipeline.preservation import (
     ContextUnit,
     DetectionCertainty,
@@ -503,3 +505,36 @@ class ContextAnalyzer:
             units=tuple(all_units),
             invariants=tuple(all_invariants),
         )
+
+
+# =============================================================================
+# Analyzer Pipeline Stage
+# =============================================================================
+
+class AnalyzerStage(PipelineStage):
+    """Pipeline stage that analyzes prompt context and attaches a PreservationMap.
+
+    Its sole responsibility is:
+    1. Receive OptimizationContext.
+    2. Read existing input messages/context.
+    3. Invoke ContextAnalyzer.
+    4. Attach the resulting PreservationMap to ctx.preservation_map.
+    5. Return ctx.
+
+    The stage does NOT mutate message contents, compress, truncate, or plan transformations.
+    """
+
+    name = "analyzer"
+
+    def __init__(
+        self,
+        config: TokenOptConfig | None = None,
+        analyzer: ContextAnalyzer | None = None,
+    ) -> None:
+        super().__init__(config)
+        self.analyzer = analyzer or ContextAnalyzer()
+
+    def process(self, ctx: OptimizationContext) -> OptimizationContext:
+        """Analyze context messages and record the preservation map."""
+        ctx.preservation_map = self.analyzer.analyze(ctx.messages)
+        return ctx

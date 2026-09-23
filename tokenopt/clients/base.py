@@ -11,6 +11,7 @@ from typing import Any
 from tokenopt.config import RoutingRule, TokenOptConfig, get_default_config
 from tokenopt.observability import MetricsCollector, RequestMetrics, estimate_cost, get_logger
 from tokenopt.pipeline import (
+    AnalyzerStage,
     CacheStage,
     CompressorStage,
     ContextSummarizerStage,
@@ -85,6 +86,7 @@ class BaseOptimizedClient(ABC):
         the no-router behavior of those providers.
         """
         stages = [
+            AnalyzerStage(self.config),
             RouterStage(self.config),
             CompressorStage(self.config),
             ContextSummarizerStage(self.config),
@@ -96,7 +98,14 @@ class BaseOptimizedClient(ABC):
             stages = [s for s in stages if s.name != "router"]
             rules = [r for r in self.config.routing_rules if routing_rule_filter(r)]
             if rules:
-                stages.insert(0, RouterStage(replace(self.config, routing_rules=rules)))
+                compressor_idx = next(
+                    (i for i, s in enumerate(stages) if s.name == "compressor"),
+                    len(stages),
+                )
+                stages.insert(
+                    compressor_idx,
+                    RouterStage(replace(self.config, routing_rules=rules)),
+                )
         return OptimizationPipeline(stages, self.config)
 
     @abstractmethod
