@@ -33,6 +33,12 @@ class RAGOptimizerStage(PipelineStage):
         # Optimize chunks
         optimized_chunks = self._optimize_chunks(rag_chunks, query)
 
+        if not optimized_chunks:
+            ctx.metrics["rag_original_chunks"] = len(rag_chunks)
+            ctx.metrics["rag_optimized_chunks"] = 0
+            ctx.metrics["rag_optimization_applied"] = False
+            return ctx
+
         # Reconstruct messages with optimized chunks
         ctx.messages = self._reconstruct_messages(ctx.messages, optimized_chunks, query)
         ctx.metrics["rag_original_chunks"] = len(rag_chunks)
