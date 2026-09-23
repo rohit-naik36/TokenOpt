@@ -34,7 +34,6 @@ from tokenopt.pipeline.preservation import (
     TransformationEligibility,
 )
 
-
 # =============================================================================
 # Deterministic Structure Detection
 # =============================================================================
@@ -160,7 +159,9 @@ def detect_structure(content: str, role: str) -> tuple[StructuralType, Detection
             for line in lines[1:]:
                 if line.startswith(("    ", "\t")) or (not line.strip() and code_block_lines):
                     code_block_lines.append(line)
-                elif re.match(r"^(?:Could you|Please|Would you|Can you|Thanks|I think)\b", line.strip()):
+                elif re.match(
+                    r"^(?:Could you|Please|Would you|Can you|Thanks|I think)\b", line.strip()
+                ):
                     break
                 else:
                     break
@@ -182,7 +183,11 @@ def detect_structure(content: str, role: str) -> tuple[StructuralType, Detection
 _IDENTIFIER_PATTERNS = [
     (r"\[DOC-\d+\]", "Citation identifier", 0),
     (r"\b(?:prod|dev|staging)-[a-zA-Z0-9_-]+\b", "Environment resource identifier", re.IGNORECASE),
-    (r"\b(?:cluster|node|replica|service)-[a-zA-Z0-9_-]+\b", "System component identifier", re.IGNORECASE),
+    (
+        r"\b(?:cluster|node|replica|service)-[a-zA-Z0-9_-]+\b",
+        "System component identifier",
+        re.IGNORECASE,
+    ),
     (r"\bMW-\d+\b", "Maintenance window identifier", 0),
     (r"\bproject\s+[A-Z0-9][A-Za-z0-9_-]*\b", "Project identifier", 0),
     (r"\bAUTH-TOKEN-[A-Za-z0-9_-]+\b", "Authentication token identifier", 0),
@@ -211,8 +216,17 @@ _URL_ENDPOINT_PATTERNS = [
 ]
 
 _NUMERIC_CONSTRAINT_PATTERNS = [
-    (r"\b\d+(?:\.\d+)?\s*(?:sections?|words?|tokens?|ms|seconds?|minutes?|hours?|days?|req/min|Gbps|Mbps|Kbps)\b", "Numeric quantity with unit", re.IGNORECASE),
-    (r"\b\d{1,3}(?:,\d{3})+\s+requests\s+per\s+minute\b", "Rate limit specification", re.IGNORECASE),
+    (
+        r"\b\d+(?:\.\d+)?\s*(?:sections?|words?|tokens?|ms|seconds?|minutes?|hours?|days?|"
+        r"req/min|Gbps|Mbps|Kbps)\b",
+        "Numeric quantity with unit",
+        re.IGNORECASE,
+    ),
+    (
+        r"\b\d{1,3}(?:,\d{3})+\s+requests\s+per\s+minute\b",
+        "Rate limit specification",
+        re.IGNORECASE,
+    ),
     (r"\b\d+(?:\.\d+)?%", "Percentage constraint", 0),
     (r"\b\d+\s+bullet\s+points?\b", "Count constraint", re.IGNORECASE),
     (r"\bversion\s+\d+(?:\.\d+)+\b", "Version constraint", re.IGNORECASE),
@@ -225,7 +239,11 @@ _DATETIME_CONSTRAINT_PATTERNS = [
 ]
 
 _NEGATIVE_CONSTRAINT_PATTERNS = [
-    (r"\b(?:do not|never|must not|cannot|shall not|should not|prohibit(?:s|ed)?)\b\s+[^.!?\n;]+", "Negative operational constraint", re.IGNORECASE),
+    (
+        r"\b(?:do not|never|must not|cannot|shall not|should not|prohibit(?:s|ed)?)\b\s+[^.!?\n;]+",
+        "Negative operational constraint",
+        re.IGNORECASE,
+    ),
 ]
 
 _CONFIGURATION_VALUE_PATTERNS = [
@@ -237,7 +255,11 @@ _CONFIGURATION_VALUE_PATTERNS = [
 _SECURITY_COMPLIANCE_PATTERNS = [
     (r"\bLevel-[0-9]+\b", "Security compliance level", 0),
     (r"\[EXEC-SUMMARY\]", "Executive summary directive", 0),
-    (r"\b(?:JWT(?:\s+tokens?)?|gRPC|OAuth\s+2\.0|mTLS|TLS\s+termination)\b", "Security protocol directive", 0),
+    (
+        r"\b(?:JWT(?:\s+tokens?)?|gRPC|OAuth\s+2\.0|mTLS|TLS\s+termination)\b",
+        "Security protocol directive",
+        0,
+    ),
     (r"\b(?:Phase|Tier|Sev)-[0-9]+\b", "Phase, tier, or severity level", 0),
     (r"\b(?:Breach|Compliant)\b", "Compliance status", 0),
 ]
@@ -252,7 +274,9 @@ def extract_invariants(
     invariants: list[PreservedInvariant] = []
     seen: set[str] = set()
 
-    def _add_match(marker: str, category: EntityCategory, inv_type: InvariantType, desc: str) -> None:
+    def _add_match(
+        marker: str, category: EntityCategory, inv_type: InvariantType, desc: str
+    ) -> None:
         marker = marker.strip().rstrip(".,;:!?'\"")
         if not marker or marker in seen:
             return
@@ -398,7 +422,8 @@ def classify_unit(
     if structural_type == StructuralType.JSON:
         p_class = PreservationClass.P1_INFORMATION
         eligibility = TransformationEligibility(
-            allow_lossless_normalization=(certainty == DetectionCertainty.DETECTED),  # minification only for valid JSON
+            # minification only for valid JSON
+            allow_lossless_normalization=(certainty == DetectionCertainty.DETECTED),
             allow_meaning_preserving_compression=False,
             allow_removal=False,
             allow_truncation=False,
@@ -446,7 +471,8 @@ def classify_unit(
     eligibility = TransformationEligibility(
         allow_lossless_normalization=True,
         allow_meaning_preserving_compression=True,
-        allow_removal=False,  # Whole unit cannot be deleted when it has substantive content or invariants
+        # Whole unit cannot be deleted when it has substantive content or invariants
+        allow_removal=False,
         allow_truncation=False,  # Blind token boundary truncation prohibited
         required_validators=(),
     )

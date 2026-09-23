@@ -16,7 +16,7 @@ class RAGOptimizerStage(PipelineStage):
     name = "rag_optimizer"
 
     def __init__(self, config: TokenOptConfig | None = None):
-        self.config = config or TokenOptConfig()
+        self.config: TokenOptConfig = config or TokenOptConfig()
         self._embedding_provider = get_embedding_provider(fallback=True)
 
     def process(self, ctx: OptimizationContext) -> OptimizationContext:

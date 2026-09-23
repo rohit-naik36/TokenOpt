@@ -11,6 +11,7 @@ Verifies:
 """
 
 from dataclasses import FrozenInstanceError
+
 import pytest
 
 from tokenopt.config import TokenOptConfig

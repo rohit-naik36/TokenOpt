@@ -20,7 +20,7 @@ class FewShotSelectorStage(PipelineStage):
         config: TokenOptConfig | None = None,
         examples: list[dict] | None = None,
     ):
-        self.config = config or TokenOptConfig()
+        self.config: TokenOptConfig = config or TokenOptConfig()
         self.examples = examples or []
         self._embedding_provider = get_embedding_provider(fallback=True)
 

@@ -5,6 +5,13 @@ from tokenopt.pipeline.base import OptimizationContext, OptimizationPipeline, Pi
 from tokenopt.pipeline.cache import CacheStage
 from tokenopt.pipeline.compressor import CompressorStage, ContextSummarizerStage
 from tokenopt.pipeline.fewshot import FewShotSelectorStage
+from tokenopt.pipeline.planner import (
+    CandidateDecision,
+    CandidatePlan,
+    CandidatePlanner,
+    CandidateType,
+    ProtectedUnit,
+)
 from tokenopt.pipeline.preservation import (
     ContextUnit,
     DetectionCertainty,
@@ -25,6 +32,11 @@ __all__ = [
     "PipelineStage",
     "AnalyzerStage",
     "ContextAnalyzer",
+    "CandidatePlanner",
+    "CandidatePlan",
+    "CandidateDecision",
+    "ProtectedUnit",
+    "CandidateType",
     "CompressorStage",
     "ContextSummarizerStage",
     "CacheStage",

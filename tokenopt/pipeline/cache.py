@@ -33,7 +33,7 @@ class CacheStage(PipelineStage):
     name = "cache"
 
     def __init__(self, config: TokenOptConfig | None = None):
-        self.config = config or TokenOptConfig()
+        self.config: TokenOptConfig = config or TokenOptConfig()
         self._cache: OrderedDict[str, CacheEntry] = OrderedDict()
         self._embedding_provider = get_embedding_provider(fallback=True)
         self._redis = None

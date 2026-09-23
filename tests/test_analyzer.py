@@ -11,9 +11,9 @@ Tests:
 
 from __future__ import annotations
 
-import pytest
-
 from copy import deepcopy
+
+import pytest
 
 from evaluation.cases import get_cases
 from tokenopt.config import TokenOptConfig
@@ -25,8 +25,6 @@ from tokenopt.pipeline.analyzer import (
 )
 from tokenopt.pipeline.base import OptimizationContext, OptimizationPipeline
 from tokenopt.pipeline.compressor import CompressorStage, ContextSummarizerStage
-from tokenopt.pipeline.router import RouterStage
-from tokenopt.utils.token_counter import count_message_tokens
 from tokenopt.pipeline.preservation import (
     DetectionCertainty,
     EntityCategory,
@@ -35,6 +33,8 @@ from tokenopt.pipeline.preservation import (
     PreservationMap,
     StructuralType,
 )
+from tokenopt.pipeline.router import RouterStage
+from tokenopt.utils.token_counter import count_message_tokens
 
 
 class TestStructureDetection:
@@ -47,7 +47,14 @@ class TestStructureDetection:
         assert certainty == DetectionCertainty.DETECTED
 
     def test_detect_python_fenced_valid(self):
-        text = "Here is the code:\n```python\ndef add(a: int, b: int) -> int:\n    return a + b\n```\nDone."
+        text = (
+            "Here is the code:\n"
+            "```python\n"
+            "def add(a: int, b: int) -> int:\n"
+            "    return a + b\n"
+            "```\n"
+            "Done."
+        )
         stype, certainty = detect_structure(text, "user")
         assert stype == StructuralType.CODE_PYTHON
         assert certainty == DetectionCertainty.DETECTED
@@ -185,7 +192,10 @@ class TestEntityExtraction:
     """Test deterministic entity extraction across all 8 abstract categories."""
 
     def test_extract_identifiers(self):
-        content = "See [DOC-401] for cluster prod-db-replica-02 on node-01 during MW-88 for project Apollo."
+        content = (
+            "See [DOC-401] for cluster prod-db-replica-02 on node-01 "
+            "during MW-88 for project Apollo."
+        )
         invs = extract_invariants(content, 0, "user")
         id_invs = [inv for inv in invs if inv.category == EntityCategory.IDENTIFIER]
         markers = {inv.marker for inv in id_invs}
@@ -199,7 +209,10 @@ class TestEntityExtraction:
             assert inv.invariant_type == InvariantType.LEXICAL
 
     def test_extract_error_codes(self):
-        content = "Encountered KERN-ERR-0x89AB and fatal 0xDEADBEEF causing ValueError. CRITICAL_ALERT_ASSERTION raised."
+        content = (
+            "Encountered KERN-ERR-0x89AB and fatal 0xDEADBEEF "
+            "causing ValueError. CRITICAL_ALERT_ASSERTION raised."
+        )
         invs = extract_invariants(content, 0, "user")
         err_invs = [inv for inv in invs if inv.category == EntityCategory.ERROR_CODE]
         markers = {inv.marker for inv in err_invs}
@@ -210,7 +223,10 @@ class TestEntityExtraction:
         assert "CRITICAL_ALERT_ASSERTION" in markers
 
     def test_extract_urls_and_endpoints(self):
-        content = "Endpoint https://dr.internal.net/v1 or /v2/telemetry listening on port 8443. Email security-ops@acme.corp."
+        content = (
+            "Endpoint https://dr.internal.net/v1 or /v2/telemetry listening on port 8443. "
+            "Email security-ops@acme.corp."
+        )
         invs = extract_invariants(content, 0, "user")
         url_invs = [inv for inv in invs if inv.category == EntityCategory.URL_OR_ENDPOINT]
         markers = {inv.marker for inv in url_invs}
@@ -221,7 +237,10 @@ class TestEntityExtraction:
         assert "security-ops@acme.corp" in markers
 
     def test_extract_numeric_constraints(self):
-        content = "Structure into 5 sections with 150 words. Target 99.99% availability with 50,000 requests per minute and version 4.2."
+        content = (
+            "Structure into 5 sections with 150 words. Target 99.99% availability "
+            "with 50,000 requests per minute and version 4.2."
+        )
         invs = extract_invariants(content, 0, "user")
         num_invs = [inv for inv in invs if inv.category == EntityCategory.NUMERIC_CONSTRAINT]
         markers = {inv.marker for inv in num_invs}
@@ -264,7 +283,10 @@ class TestEntityExtraction:
         assert "MAX_RETRIES" in markers
 
     def test_extract_security_compliance(self):
-        content = "Must enforce Level-4 compliance with [EXEC-SUMMARY] using JWT tokens, gRPC, and Phase-2."
+        content = (
+            "Must enforce Level-4 compliance with [EXEC-SUMMARY] using JWT tokens, "
+            "gRPC, and Phase-2."
+        )
         invs = extract_invariants(content, 0, "user")
         sec_invs = [inv for inv in invs if inv.category == EntityCategory.SECURITY_COMPLIANCE]
         markers = {inv.marker for inv in sec_invs}
@@ -340,7 +362,10 @@ class TestFalsePositiveResistance:
         assert len(cfg_invs) == 0
 
     def test_url_punctuation_stripping(self):
-        content = "Please refer to https://dr.internal.net/v1, and /v2/telemetry. Also security-ops@acme.corp!"
+        content = (
+            "Please refer to https://dr.internal.net/v1, and /v2/telemetry. "
+            "Also security-ops@acme.corp!"
+        )
         invs = extract_invariants(content, 0, "user")
         url_invs = {inv.marker for inv in invs if inv.category == EntityCategory.URL_OR_ENDPOINT}
         assert "https://dr.internal.net/v1" in url_invs
@@ -354,7 +379,10 @@ class TestPreservationClassificationRules:
     def test_system_role_gets_p0_authority(self):
         analyzer = ContextAnalyzer()
         messages = [
-            {"role": "system", "content": "You are a database specialist on prod-db-01. Follow Level-4."},
+            {
+                "role": "system",
+                "content": "You are a database specialist on prod-db-01. Follow Level-4.",
+            },
         ]
         pmap = analyzer.analyze(messages)
         unit = pmap.units[0]
@@ -444,7 +472,8 @@ class TestPreservationClassificationRules:
         unit = pmap.units[0]
         assert unit.structural_type == StructuralType.JSON
         assert unit.preservation_class == PreservationClass.P1_INFORMATION
-        assert unit.eligibility.allow_lossless_normalization is True  # Whitespace minification allowed
+        # Whitespace minification allowed
+        assert unit.eligibility.allow_lossless_normalization is True
         assert unit.eligibility.allow_meaning_preserving_compression is False
         assert unit.eligibility.allow_truncation is False
         assert unit.eligibility.required_validators == ()
@@ -729,7 +758,9 @@ class TestAdversarialStructuralAmbiguityVsInformation:
         assert unit.eligibility.allow_truncation is False
 
     def test_case_10_mixed_prose_containing_real_protected_constraint(self):
-        """10. Mixed prose containing real protected constraints remains P2 with invariants attached."""
+        """10. Mixed prose containing real protected constraints remains P2 with
+        invariants attached.
+        """
         analyzer = ContextAnalyzer()
         content = (
             "Please ensure that the system does not exceed 50,000 requests per minute "
@@ -982,7 +1013,10 @@ class TestAnalyzerStage:
 
         # Pipeline invocation: pipeline's pre-existing generic exception handling catches it
         pipeline = OptimizationPipeline([failing_stage, RouterStage(config)], config)
-        pipeline_ctx = pipeline.run([{"role": "user", "content": "Important user request"}], "gpt-4o")
+        pipeline_ctx = pipeline.run(
+            [{"role": "user", "content": "Important user request"}],
+            "gpt-4o",
+        )
         assert "analyzer_error" in pipeline_ctx.metrics
         assert pipeline_ctx.messages == [{"role": "user", "content": "Important user request"}]
 
