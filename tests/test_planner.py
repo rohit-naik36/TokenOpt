@@ -15,7 +15,8 @@ Tests:
 12. Same PreservationMap produces identical CandidatePlan.
 13. Empty PreservationMap works.
 14. Mixed P0/P1/P2/P3 units are classified correctly.
-15. Existing 12-case evaluation corpus can be analyzed into a plan without modifying corpus messages.
+15. Existing 12-case evaluation corpus can be analyzed into a plan without modifying
+    corpus messages.
 16. No candidate is created merely because a unit is short.
 17. No candidate is created merely because a unit contains a number.
 18. No candidate is created merely because a unit contains a keyword.
@@ -32,7 +33,6 @@ import pytest
 from evaluation.cases import get_cases
 from tokenopt.pipeline.analyzer import ContextAnalyzer
 from tokenopt.pipeline.planner import (
-    CandidateDecision,
     CandidatePlan,
     CandidatePlanner,
     CandidateType,
@@ -92,7 +92,8 @@ class TestPreservationRules:
             message_index=0,
             role="system",
             preservation_class=PreservationClass.P0_AUTHORITY,
-            allow_meaning_preserving_compression=True,  # Even if misconfigured, P0 must NEVER be a candidate
+            # Even if misconfigured, P0 must NEVER be a candidate
+            allow_meaning_preserving_compression=True,
             allow_removal=True,
         )
         pmap = PreservationMap(units=(unit,))
@@ -121,7 +122,8 @@ class TestPreservationRules:
             message_index=0,
             role="user",
             preservation_class=PreservationClass.P1_INFORMATION,
-            allow_meaning_preserving_compression=True,  # Even if misconfigured, P1 must NEVER be a candidate
+            # Even if misconfigured, P1 must NEVER be a candidate
+            allow_meaning_preserving_compression=True,
             allow_removal=True,
             invariants=(inv,),
         )
@@ -139,7 +141,9 @@ class TestPreservationRules:
         assert protected.unit is unit
 
     def test_p2_produces_compress_candidate_only_when_eligible(self):
-        """3. P2 produces a COMPRESS candidate only when allow_meaning_preserving_compression=True."""
+        """3. P2 produces a COMPRESS candidate only when
+        allow_meaning_preserving_compression=True.
+        """
         unit = _make_unit(
             message_index=0,
             role="user",
@@ -271,7 +275,9 @@ class TestDeterminismAndOrdering:
     """Test deterministic output, candidate ordering, and reproducibility."""
 
     def test_candidate_ordering_is_deterministic(self):
-        """7. Candidate and protected unit ordering matches the input PreservationMap unit sequence."""
+        """7. Candidate and protected unit ordering matches the input PreservationMap unit
+        sequence.
+        """
         u0 = _make_unit(0, "system", preservation_class=PreservationClass.P0_AUTHORITY)
         u1 = _make_unit(
             1, "user", preservation_class=PreservationClass.P3_REMOVABLE, allow_removal=True
@@ -304,7 +310,10 @@ class TestDeterminismAndOrdering:
         """12. Identical PreservationMap produces identical CandidatePlan across repeated runs."""
         u0 = _make_unit(0, "system", preservation_class=PreservationClass.P0_AUTHORITY)
         u1 = _make_unit(
-            1, "user", preservation_class=PreservationClass.P2_COMPRESSIBLE, allow_meaning_preserving_compression=True
+            1,
+            "user",
+            preservation_class=PreservationClass.P2_COMPRESSIBLE,
+            allow_meaning_preserving_compression=True,
         )
         pmap = PreservationMap(units=(u0, u1))
         planner = CandidatePlanner()
@@ -393,7 +402,10 @@ class TestImmutabilityAndSafety:
         """10. Planner does not mutate the input PreservationMap."""
         u0 = _make_unit(0, "system", preservation_class=PreservationClass.P0_AUTHORITY)
         u1 = _make_unit(
-            1, "user", preservation_class=PreservationClass.P2_COMPRESSIBLE, allow_meaning_preserving_compression=True
+            1,
+            "user",
+            preservation_class=PreservationClass.P2_COMPRESSIBLE,
+            allow_meaning_preserving_compression=True,
         )
         pmap = PreservationMap(units=(u0, u1))
         pmap_snapshot = deepcopy(pmap)
@@ -464,7 +476,7 @@ class TestImmutabilityAndSafety:
         assert isinstance(plan, CandidatePlan)
 
     def test_unknown_preservation_class_defensive_fallback(self):
-        """Unknown or unexpected preservation class is protected unconditionally by fail-safe policy."""
+        """Unknown preservation classes are protected by the fail-safe policy."""
         unit = _make_unit(0, "user", preservation_class=PreservationClass.P2_COMPRESSIBLE)
         # Create a unit with a custom/unknown preservation_class value
         object.__setattr__(unit, "preservation_class", "UNKNOWN_FUTURE_CLASS")
@@ -554,7 +566,9 @@ class TestCriticalSafety:
     """Test the mandatory multi-class preservation scenario."""
 
     def test_critical_safety_mixed_preservation_map(self):
-        """20. Comprehensive verification that P0, P1, P2, P3 maintain distinct identities without generic collapse."""
+        """20. Comprehensive verification that P0, P1, P2, P3 maintain distinct identities
+        without generic collapse.
+        """
         inv_num = PreservedInvariant(
             category=EntityCategory.NUMERIC_CONSTRAINT,
             invariant_type=InvariantType.SEMANTIC,
@@ -657,7 +671,9 @@ class TestCorpusIntegration:
     """Test candidate planning against the 12 evaluation corpus cases."""
 
     def test_all_12_cases_produce_valid_plans_without_mutating_corpus(self):
-        """15. Existing 12-case evaluation corpus produces valid CandidatePlans without modifying corpus messages."""
+        """15. Existing 12-case evaluation corpus produces valid CandidatePlans without
+        modifying corpus messages.
+        """
         analyzer = ContextAnalyzer()
         planner = CandidatePlanner()
         cases = get_cases()

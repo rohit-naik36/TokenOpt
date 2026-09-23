@@ -194,12 +194,14 @@ class CandidatePlanner:
                     StructuralType.MARKDOWN_TABLE,
                 ):
                     reason = (
-                        f"P1_INFORMATION: Protected structural syntax ({unit.structural_type.value}); "
+                        f"P1_INFORMATION: Protected structural syntax "
+                        f"({unit.structural_type.value}); "
                         "ineligible for removal or lossy transformation"
                     )
                 elif unit.invariants:
                     reason = (
-                        f"P1_INFORMATION: Protected invariant content ({len(unit.invariants)} invariant(s)); "
+                        f"P1_INFORMATION: Protected invariant content "
+                        f"({len(unit.invariants)} invariant(s)); "
                         "ineligible for removal or lossy transformation"
                     )
                 else:
@@ -227,7 +229,10 @@ class CandidatePlanner:
                             candidate_type=CandidateType.COMPRESS,
                             preservation_class=p_class,
                             eligibility=eligibility,
-                            reason="P2_COMPRESSIBLE: Eligible for meaning-preserving compression per eligibility policy",
+                            reason=(
+                                "P2_COMPRESSIBLE: Eligible for meaning-preserving "
+                                "compression per eligibility policy"
+                            ),
                         )
                     )
                 else:
@@ -236,7 +241,10 @@ class CandidatePlanner:
                             unit=unit,
                             message_index=unit.message_index,
                             preservation_class=p_class,
-                            reason="P2_COMPRESSIBLE: Compression disallowed by transformation eligibility policy",
+                            reason=(
+                                "P2_COMPRESSIBLE: Compression disallowed by "
+                                "transformation eligibility policy"
+                            ),
                         )
                     )
 
@@ -259,7 +267,10 @@ class CandidatePlanner:
                             unit=unit,
                             message_index=unit.message_index,
                             preservation_class=p_class,
-                            reason="P3_REMOVABLE: Removal disallowed by transformation eligibility policy",
+                            reason=(
+                                "P3_REMOVABLE: Removal disallowed by "
+                                "transformation eligibility policy"
+                            ),
                         )
                     )
 
@@ -270,7 +281,10 @@ class CandidatePlanner:
                         unit=unit,
                         message_index=unit.message_index,
                         preservation_class=p_class,
-                        reason=f"UNKNOWN_CLASS ({p_class}): Protected unconditionally by fail-safe policy",
+                        reason=(
+                            f"UNKNOWN_CLASS ({p_class}): "
+                            "Protected unconditionally by fail-safe policy"
+                        ),
                     )
                 )
 
