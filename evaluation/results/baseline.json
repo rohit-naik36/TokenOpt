@@ -1,0 +1,766 @@
+{
+  "timestamp": "2026-09-23T13:19:23.911955+00:00",
+  "stage": "compressor",
+  "model": "gpt-4o-mini",
+  "compression_ratio_config": 0.5,
+  "aggregate": {
+    "total_original_tokens": 1050,
+    "total_optimized_tokens": 821,
+    "total_tokens_saved": 229,
+    "aggregate_reduction_pct": 21.81,
+    "cases_total": 12,
+    "fidelity_passed": 7,
+    "fidelity_failed": 5,
+    "fidelity_pass_rate": 58.33,
+    "deterministic_passed": 12,
+    "deterministic_failed": 0,
+    "total_cases": 12,
+    "fidelity_passed_cases": 7,
+    "fidelity_failed_cases": 5,
+    "fidelity_pass_rate_pct": 58.33,
+    "deterministic_passed_cases": 12,
+    "deterministic_failed_cases": 0,
+    "deterministic_pass_rate_pct": 100.0
+  },
+  "cases": [
+    {
+      "case_id": "case_01_simple_conversation",
+      "id": "case_01_simple_conversation",
+      "category": "simple_conversation",
+      "description": "Multi-turn dialogue with polite pleasantries and microservice deployment details.",
+      "original_tokens": 98,
+      "optimized_tokens": 92,
+      "tokens_saved": 6,
+      "reduction_pct": 6.12,
+      "expected_markers_count": 6,
+      "preserved_markers": [
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "project Apollo"
+        },
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "service-auth"
+        },
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "service-billing"
+        },
+        {
+          "message_index": 1,
+          "role": "assistant",
+          "marker": "gRPC"
+        },
+        {
+          "message_index": 1,
+          "role": "assistant",
+          "marker": "JWT tokens"
+        },
+        {
+          "message_index": 2,
+          "role": "user",
+          "marker": "port 8443"
+        }
+      ],
+      "missing_markers": [],
+      "role_preservation_passed": true,
+      "marker_preservation_passed": true,
+      "syntax_valid": null,
+      "deterministic_passed": true,
+      "fidelity_passed": true,
+      "failure_reasons": [],
+      "original_messages": [
+        {
+          "role": "user",
+          "content": "Hello! Could you please help me understand the deployment architecture for project Apollo? I basically need to know how service-auth communicates with service-billing."
+        },
+        {
+          "role": "assistant",
+          "content": "Project Apollo uses gRPC for inter-service communication. Service-auth issues signed JWT tokens that service-billing verifies using a shared public key."
+        },
+        {
+          "role": "user",
+          "content": "I think that makes sense. Would you please clarify if port 8443 is used for TLS termination on service-billing?"
+        }
+      ],
+      "optimized_messages": [
+        {
+          "role": "user",
+          "content": "Hello!   help me understand the deployment architecture for project Apollo? I  need to know how service-auth communicates with service-billing."
+        },
+        {
+          "role": "assistant",
+          "content": "Project Apollo uses gRPC for inter-service communication. Service-auth issues signed JWT tokens that service-billing verifies using a shared public key."
+        },
+        {
+          "role": "user",
+          "content": "that makes sense.   clarify if port 8443 is used for TLS termination on service-billing?"
+        }
+      ]
+    },
+    {
+      "case_id": "case_02_instruction_heavy",
+      "id": "case_02_instruction_heavy",
+      "category": "instruction_heavy",
+      "description": "Structured system directives imposing formatting limits and security classifications.",
+      "original_tokens": 108,
+      "optimized_tokens": 105,
+      "tokens_saved": 3,
+      "reduction_pct": 2.78,
+      "expected_markers_count": 4,
+      "preserved_markers": [
+        {
+          "message_index": 0,
+          "role": "system",
+          "marker": "Level-4"
+        },
+        {
+          "message_index": 0,
+          "role": "system",
+          "marker": "3 bullet points"
+        },
+        {
+          "message_index": 0,
+          "role": "system",
+          "marker": "[EXEC-SUMMARY]"
+        },
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "infrastructure migration"
+        }
+      ],
+      "missing_markers": [],
+      "role_preservation_passed": true,
+      "marker_preservation_passed": true,
+      "syntax_valid": null,
+      "deterministic_passed": true,
+      "fidelity_passed": true,
+      "failure_reasons": [],
+      "original_messages": [
+        {
+          "role": "system",
+          "content": "You are an executive report generator. Follow these strict rules:\nRule 1: Always enforce Level-4 security compliance.\nRule 2: Limit output to exactly 3 bullet points.\nRule 3: Begin response with [EXEC-SUMMARY]."
+        },
+        {
+          "role": "user",
+          "content": "Please kindly prepare the brief for the infrastructure migration. I believe we must address cloud security."
+        },
+        {
+          "role": "assistant",
+          "content": "Understood. I will follow Level-4 guidelines and generate 3 bullet points under [EXEC-SUMMARY]."
+        }
+      ],
+      "optimized_messages": [
+        {
+          "role": "system",
+          "content": "You are an executive report generator. Follow these strict rules:\nRule 1: Always enforce Level-4 security compliance.\nRule 2: Limit output to exactly 3 bullet points.\nRule 3: Begin response with [EXEC-SUMMARY]."
+        },
+        {
+          "role": "user",
+          "content": "prepare the brief for the infrastructure migration.  we must address cloud security."
+        },
+        {
+          "role": "assistant",
+          "content": "Understood. I will follow Level-4 guidelines and generate 3 bullet points under [EXEC-SUMMARY]."
+        }
+      ]
+    },
+    {
+      "case_id": "case_03_system_user",
+      "id": "case_03_system_user",
+      "category": "system_user",
+      "description": "System role setting database target coupled with specific user maintenance request.",
+      "original_tokens": 51,
+      "optimized_tokens": 48,
+      "tokens_saved": 3,
+      "reduction_pct": 5.88,
+      "expected_markers_count": 5,
+      "preserved_markers": [
+        {
+          "message_index": 0,
+          "role": "system",
+          "marker": "PostgreSQL 16"
+        },
+        {
+          "message_index": 0,
+          "role": "system",
+          "marker": "prod-db-replica-02"
+        },
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "customer_orders"
+        },
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "idx_orders_customer_id"
+        },
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "MW-88"
+        }
+      ],
+      "missing_markers": [],
+      "role_preservation_passed": true,
+      "marker_preservation_passed": true,
+      "syntax_valid": null,
+      "deterministic_passed": true,
+      "fidelity_passed": true,
+      "failure_reasons": [],
+      "original_messages": [
+        {
+          "role": "system",
+          "content": "You are a database specialist for PostgreSQL 16 on target cluster prod-db-replica-02."
+        },
+        {
+          "role": "user",
+          "content": "Would you please check customer_orders for index idx_orders_customer_id before maintenance MW-88?"
+        }
+      ],
+      "optimized_messages": [
+        {
+          "role": "system",
+          "content": "You are a database specialist for PostgreSQL 16 on target cluster prod-db-replica-02."
+        },
+        {
+          "role": "user",
+          "content": "check customer_orders for index idx_orders_customer_id before maintenance MW-88?"
+        }
+      ]
+    },
+    {
+      "case_id": "case_04_numeric_constraints",
+      "id": "case_04_numeric_constraints",
+      "category": "numeric_constraints",
+      "description": "Performance review request with explicit numerical metrics, sections, and word counts.",
+      "original_tokens": 70,
+      "optimized_tokens": 68,
+      "tokens_saved": 2,
+      "reduction_pct": 2.86,
+      "expected_markers_count": 3,
+      "preserved_markers": [
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "5 sections"
+        },
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "150 words"
+        },
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "Q4 2025"
+        }
+      ],
+      "missing_markers": [],
+      "role_preservation_passed": true,
+      "marker_preservation_passed": true,
+      "syntax_valid": null,
+      "deterministic_passed": true,
+      "fidelity_passed": true,
+      "failure_reasons": [],
+      "original_messages": [
+        {
+          "role": "system",
+          "content": "You are an editorial and financial assistant tracking report requirements."
+        },
+        {
+          "role": "user",
+          "content": "Please kindly structure the Q4 2025 review into 5 sections with approximately 150 words each."
+        },
+        {
+          "role": "assistant",
+          "content": "Understood. Formatting Q4 2025 analysis into 5 sections with 150 words per section."
+        }
+      ],
+      "optimized_messages": [
+        {
+          "role": "system",
+          "content": "You are an editorial and financial assistant tracking report requirements."
+        },
+        {
+          "role": "user",
+          "content": "structure the Q4 2025 review into 5 sections with approximately 150 words each."
+        },
+        {
+          "role": "assistant",
+          "content": "Understood. Formatting Q4 2025 analysis into 5 sections with 150 words per section."
+        }
+      ]
+    },
+    {
+      "case_id": "case_05_date_constraints",
+      "id": "case_05_date_constraints",
+      "category": "date_constraints",
+      "description": "Project launch schedule governed by binding contractual milestone dates.",
+      "original_tokens": 70,
+      "optimized_tokens": 67,
+      "tokens_saved": 3,
+      "reduction_pct": 4.29,
+      "expected_markers_count": 2,
+      "preserved_markers": [
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "Phase-2"
+        },
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "2026-01-15"
+        }
+      ],
+      "missing_markers": [],
+      "role_preservation_passed": true,
+      "marker_preservation_passed": true,
+      "syntax_valid": null,
+      "deterministic_passed": true,
+      "fidelity_passed": true,
+      "failure_reasons": [],
+      "original_messages": [
+        {
+          "role": "system",
+          "content": "You are a scheduling coordinator tracking contractual milestones."
+        },
+        {
+          "role": "user",
+          "content": "Would you please verify the launch window for Phase-2? The agreement requires delivery on 2026-01-15."
+        },
+        {
+          "role": "assistant",
+          "content": "Confirmed. Phase-2 milestone is scheduled for delivery on 2026-01-15."
+        }
+      ],
+      "optimized_messages": [
+        {
+          "role": "system",
+          "content": "You are a scheduling coordinator tracking contractual milestones."
+        },
+        {
+          "role": "user",
+          "content": "verify the launch window for Phase-2? The agreement requires delivery on 2026-01-15."
+        },
+        {
+          "role": "assistant",
+          "content": "Confirmed. Phase-2 milestone is scheduled for delivery on 2026-01-15."
+        }
+      ]
+    },
+    {
+      "case_id": "case_06_code",
+      "id": "case_06_code",
+      "category": "code",
+      "description": "Python class implementation with rate limiting and exception handling.",
+      "original_tokens": 67,
+      "optimized_tokens": 39,
+      "tokens_saved": 28,
+      "reduction_pct": 41.79,
+      "expected_markers_count": 4,
+      "preserved_markers": [
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "class PaymentGatewayClient"
+        },
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "MAX_RETRIES"
+        },
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "def process_payment"
+        }
+      ],
+      "missing_markers": [
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "raise ValueError(\"Invalid amount\")"
+        }
+      ],
+      "role_preservation_passed": true,
+      "marker_preservation_passed": false,
+      "syntax_valid": false,
+      "deterministic_passed": true,
+      "fidelity_passed": false,
+      "failure_reasons": [
+        "missing_required_marker",
+        "python_syntax_invalid"
+      ],
+      "original_messages": [
+        {
+          "role": "user",
+          "content": "Please review this Python implementation:\n\nclass PaymentGatewayClient:\n    MAX_RETRIES = 3\n    def process_payment(self, amount: float) -> bool:\n        if amount <= 0.0:\n            raise ValueError(\"Invalid amount\")\n        return True\n\nCould you verify the error handling?"
+        }
+      ],
+      "optimized_messages": [
+        {
+          "role": "user",
+          "content": "review this Python implementation:\n\nclass PaymentGatewayClient:\n MAX_RETRIES = 3\n def process_payment(self, amount: float) -> bool:\n if amount <="
+        }
+      ]
+    },
+    {
+      "case_id": "case_07_json",
+      "id": "case_07_json",
+      "category": "json",
+      "description": "Infrastructure configuration payload serialized as JSON.",
+      "original_tokens": 90,
+      "optimized_tokens": 52,
+      "tokens_saved": 38,
+      "reduction_pct": 42.22,
+      "expected_markers_count": 3,
+      "preserved_markers": [
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "\"cluster_id\": \"us-east-prod-77\""
+        },
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "\"node_count\": 12"
+        }
+      ],
+      "missing_markers": [
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "\"failover_endpoint\": \"https://dr.internal.net/v1\""
+        }
+      ],
+      "role_preservation_passed": true,
+      "marker_preservation_passed": false,
+      "syntax_valid": false,
+      "deterministic_passed": true,
+      "fidelity_passed": false,
+      "failure_reasons": [
+        "missing_required_marker",
+        "json_invalid"
+      ],
+      "original_messages": [
+        {
+          "role": "user",
+          "content": "Please parse this configuration payload:\n\n{\n  \"cluster_id\": \"us-east-prod-77\",\n  \"node_count\": 12,\n  \"auto_scaling\": true,\n  \"instance_type\": \"c6i.2xlarge\",\n  \"primary_zone\": \"us-east-1a\",\n  \"failover_endpoint\": \"https://dr.internal.net/v1\"\n}\n\nCould you check node_count?"
+        }
+      ],
+      "optimized_messages": [
+        {
+          "role": "user",
+          "content": "parse this configuration payload:\n\n{\n \"cluster_id\": \"us-east-prod-77\",\n \"node_count\": 12,\n \"auto_scaling\": true,\n \"instance_type\": \"c6i.2xlarge\",\n \""
+        }
+      ]
+    },
+    {
+      "case_id": "case_08_markdown_table",
+      "id": "case_08_markdown_table",
+      "category": "markdown_table",
+      "description": "Regional SLA availability report formatted as a Markdown table.",
+      "original_tokens": 129,
+      "optimized_tokens": 71,
+      "tokens_saved": 58,
+      "reduction_pct": 44.96,
+      "expected_markers_count": 4,
+      "preserved_markers": [
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "| Region | Tier | SLA Target | Actual Availability | Status |"
+        },
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "US-East"
+        }
+      ],
+      "missing_markers": [
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "EU-Central"
+        },
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "Breach"
+        }
+      ],
+      "role_preservation_passed": true,
+      "marker_preservation_passed": false,
+      "syntax_valid": false,
+      "deterministic_passed": true,
+      "fidelity_passed": false,
+      "failure_reasons": [
+        "missing_required_marker",
+        "markdown_structure_invalid"
+      ],
+      "original_messages": [
+        {
+          "role": "user",
+          "content": "Please inspect the SLA status table below:\n\n| Region | Tier | SLA Target | Actual Availability | Status |\n|:---|:---:|:---:|:---:|:---|\n| US-East | Tier-1 | 99.99% | 99.995% | Compliant |\n| EU-Central | Tier-2 | 99.90% | 99.850% | Breach |\n| AP-South | Tier-1 | 99.99% | 99.992% | Compliant |\n\nCould you identify which region had the SLA Breach?"
+        }
+      ],
+      "optimized_messages": [
+        {
+          "role": "user",
+          "content": "inspect the SLA status table below:\n\n| Region | Tier | SLA Target | Actual Availability | Status |\n|:---|:---:|:---:|:---:|:---|\n| US-East | Tier-1 | 99.99% | 99.995% | Compliant |\n| EU"
+        }
+      ]
+    },
+    {
+      "case_id": "case_09_rag_context",
+      "id": "case_09_rag_context",
+      "category": "rag_context",
+      "description": "Technical documentation snippets with explicit document IDs and API constraints.",
+      "original_tokens": 115,
+      "optimized_tokens": 85,
+      "tokens_saved": 30,
+      "reduction_pct": 26.09,
+      "expected_markers_count": 7,
+      "preserved_markers": [
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "[DOC-401]"
+        },
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "[DOC-402]"
+        },
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "[DOC-403]"
+        },
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "/v2/telemetry"
+        },
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "50,000 requests per minute"
+        }
+      ],
+      "missing_markers": [
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "security-ops@acme.corp"
+        },
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "15 minutes"
+        }
+      ],
+      "role_preservation_passed": true,
+      "marker_preservation_passed": false,
+      "syntax_valid": null,
+      "deterministic_passed": true,
+      "fidelity_passed": false,
+      "failure_reasons": [
+        "missing_required_marker"
+      ],
+      "original_messages": [
+        {
+          "role": "system",
+          "content": "You are a technical question-answering assistant. Base answers only on provided documents."
+        },
+        {
+          "role": "user",
+          "content": "Reference Documents:\n[DOC-401]: The ACME gateway uses OAuth 2.0 with mTLS for endpoint /v2/telemetry.\n[DOC-402]: Rate limits for tier Platinum are set to 50,000 requests per minute.\n[DOC-403]: Incident response requires Sev-1 notification to security-ops@acme.corp within 15 minutes.\n\nWhat is the notification requirement in DOC-403?"
+        }
+      ],
+      "optimized_messages": [
+        {
+          "role": "system",
+          "content": "You are a technical question-answering assistant. Base answers only on provided documents."
+        },
+        {
+          "role": "user",
+          "content": "Reference Documents:\n[DOC-401]: The ACME gateway uses OAuth 2.0 with mTLS for endpoint /v2/telemetry.\n[DOC-402]: Rate limits for tier Platinum are set to 50,000 requests per minute.\n[DOC-403]: Incident"
+        }
+      ]
+    },
+    {
+      "case_id": "case_10_repetitive_context",
+      "id": "case_10_repetitive_context",
+      "category": "repetitive_context",
+      "description": "Prompt containing excessive whitespace and multiple filler phrases around critical tokens.",
+      "original_tokens": 84,
+      "optimized_tokens": 77,
+      "tokens_saved": 7,
+      "reduction_pct": 8.33,
+      "expected_markers_count": 2,
+      "preserved_markers": [
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "AUTH-TOKEN-XY99"
+        },
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "enforce_strict_validation=true"
+        }
+      ],
+      "missing_markers": [],
+      "role_preservation_passed": true,
+      "marker_preservation_passed": true,
+      "syntax_valid": null,
+      "deterministic_passed": true,
+      "fidelity_passed": true,
+      "failure_reasons": [],
+      "original_messages": [
+        {
+          "role": "system",
+          "content": "You are a configuration validator tracking deployment parameters."
+        },
+        {
+          "role": "user",
+          "content": "Please kindly note that we basically need to verify the following.\n\n\n\n\nI believe the token is AUTH-TOKEN-XY99.\n\n\n\n    Would you please ensure that enforce_strict_validation=true is set?"
+        },
+        {
+          "role": "assistant",
+          "content": "Understood. Verifying AUTH-TOKEN-XY99 and enforce_strict_validation=true for production."
+        }
+      ],
+      "optimized_messages": [
+        {
+          "role": "system",
+          "content": "You are a configuration validator tracking deployment parameters."
+        },
+        {
+          "role": "user",
+          "content": "note that we  need to verify the following.\n\n the token is AUTH-TOKEN-XY99.\n\n   ensure that enforce_strict_validation=true is set?"
+        },
+        {
+          "role": "assistant",
+          "content": "Understood. Verifying AUTH-TOKEN-XY99 and enforce_strict_validation=true for production."
+        }
+      ]
+    },
+    {
+      "case_id": "case_11_truncation_risk",
+      "id": "case_11_truncation_risk",
+      "category": "truncation_risk",
+      "description": "Lengthy diagnostic log where naive truncation risks dropping terminal critical alerts.",
+      "original_tokens": 115,
+      "optimized_tokens": 64,
+      "tokens_saved": 51,
+      "reduction_pct": 44.35,
+      "expected_markers_count": 3,
+      "preserved_markers": [
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "System telemetry audit log"
+        }
+      ],
+      "missing_markers": [
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "CRITICAL_ALERT_ASSERTION"
+        },
+        {
+          "message_index": 0,
+          "role": "user",
+          "marker": "KERN-ERR-0x89AB"
+        }
+      ],
+      "role_preservation_passed": true,
+      "marker_preservation_passed": false,
+      "syntax_valid": null,
+      "deterministic_passed": true,
+      "fidelity_passed": false,
+      "failure_reasons": [
+        "missing_required_marker"
+      ],
+      "original_messages": [
+        {
+          "role": "user",
+          "content": "System telemetry audit log section 1: Normal operating parameters observed across cluster node-01 through node-20. CPU load average 22.4%, memory utilization 41.2%, network ingress 1.2 Gbps. All diagnostic checks passed for background worker threads. Periodic health probe returned status code 200 OK. Standard maintenance tasks executed without deviation from standard operating procedure.\n\nCRITICAL_ALERT_ASSERTION: Node-99 entered fatal panic state with kernel error KERN-ERR-0x89AB. Immediate failover required."
+        }
+      ],
+      "optimized_messages": [
+        {
+          "role": "user",
+          "content": "System telemetry audit log section 1: Normal operating parameters observed across cluster node-01 through node-20. CPU load average 22.4%, memory utilization 41.2%, network ingress 1.2 Gbps. All diagnostic checks passed for background worker threads. Periodic"
+        }
+      ]
+    },
+    {
+      "case_id": "case_12_minimal_compression",
+      "id": "case_12_minimal_compression",
+      "category": "minimal_compression",
+      "description": "Dense structured SQL query with no conversational filler or excessive whitespace.",
+      "original_tokens": 53,
+      "optimized_tokens": 53,
+      "tokens_saved": 0,
+      "reduction_pct": 0.0,
+      "expected_markers_count": 2,
+      "preserved_markers": [
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "SELECT order_id, customer_id, total_amount"
+        },
+        {
+          "message_index": 1,
+          "role": "user",
+          "marker": "FROM orders WHERE status = 'SHIPPED';"
+        }
+      ],
+      "missing_markers": [],
+      "role_preservation_passed": true,
+      "marker_preservation_passed": true,
+      "syntax_valid": null,
+      "deterministic_passed": true,
+      "fidelity_passed": true,
+      "failure_reasons": [],
+      "original_messages": [
+        {
+          "role": "system",
+          "content": "You are a database query analyzer."
+        },
+        {
+          "role": "user",
+          "content": "SELECT order_id, customer_id, total_amount FROM orders WHERE status = 'SHIPPED';"
+        },
+        {
+          "role": "assistant",
+          "content": "Query confirmed: targeting orders table with status filter."
+        }
+      ],
+      "optimized_messages": [
+        {
+          "role": "system",
+          "content": "You are a database query analyzer."
+        },
+        {
+          "role": "user",
+          "content": "SELECT order_id, customer_id, total_amount FROM orders WHERE status = 'SHIPPED';"
+        },
+        {
+          "role": "assistant",
+          "content": "Query confirmed: targeting orders table with status filter."
+        }
+      ]
+    }
+  ]
+}
