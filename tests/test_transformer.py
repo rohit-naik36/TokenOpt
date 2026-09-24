@@ -33,7 +33,7 @@ from tokenopt.clients.openai_client import OpenAI
 from tokenopt.config import TokenOptConfig
 from tokenopt.pipeline.analyzer import AnalyzerStage
 from tokenopt.pipeline.base import OptimizationContext, OptimizationPipeline
-from tokenopt.pipeline.compressor import CompressorStage, compress_message_content
+from tokenopt.pipeline.compressor import CompressorStage
 from tokenopt.pipeline.planner import (
     CandidatePlan,
     CandidatePlanner,
@@ -41,6 +41,8 @@ from tokenopt.pipeline.planner import (
 from tokenopt.pipeline.preservation import (
     ContextUnit,
     DetectionCertainty,
+    EntityCategory,
+    InvariantType,
     PreservationClass,
     PreservationMap,
     PreservedInvariant,
@@ -146,18 +148,18 @@ class TestP0Protected:
         assert result.messages[0]["content"] == original_content
         assert len(result.messages) == 1
 
-    def test_p0_compress_message_content_not_invoked(self) -> None:
-        """1. P0 protected: compress_message_content must not be called."""
+    def test_p0_compress_not_invoked(self) -> None:
+        """1. P0 protected: prose transformation must not be called."""
         messages = [{"role": "system", "content": "Authority content."}]
         unit = _make_unit(0, role="system", preservation_class=PreservationClass.P0_AUTHORITY)
         pmap = _make_pmap(unit)
         ctx = _make_ctx(messages, pmap)
 
-        with patch(
-            "tokenopt.pipeline.transformer.compress_message_content"
-        ) as mock_compress:
+        with patch.object(
+            TransformerStage, "_transform_prose_message"
+        ) as mock_transform:
             TransformerStage().process(ctx)
-            mock_compress.assert_not_called()
+            mock_transform.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -188,18 +190,18 @@ class TestP1Protected:
         assert result.messages[0]["content"] == original_content
         assert len(result.messages) == 1
 
-    def test_p1_compress_message_content_not_invoked(self) -> None:
-        """2. P1 protected: compress_message_content must not be called."""
+    def test_p1_compress_not_invoked(self) -> None:
+        """2. P1 protected: prose transformation must not be called."""
         messages = [{"role": "user", "content": "Critical information here."}]
         unit = _make_unit(0, preservation_class=PreservationClass.P1_INFORMATION)
         pmap = _make_pmap(unit)
         ctx = _make_ctx(messages, pmap)
 
-        with patch(
-            "tokenopt.pipeline.transformer.compress_message_content"
-        ) as mock_compress:
+        with patch.object(
+            TransformerStage, "_transform_prose_message"
+        ) as mock_transform:
             TransformerStage().process(ctx)
-            mock_compress.assert_not_called()
+            mock_transform.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -208,10 +210,10 @@ class TestP1Protected:
 
 
 class TestP2CompressCandidate:
-    """P2 COMPRESS candidates must be passed to compress_message_content."""
+    """P2 COMPRESS candidates must be passed to prose transformation."""
 
     def test_p2_compress_invokes_compression_engine(self) -> None:
-        """3. P2 COMPRESS: compress_message_content is called exactly once."""
+        """3. P2 COMPRESS: _transform_prose_message is called exactly once."""
         messages = [{"role": "user", "content": "Please   help me understand this."}]
         unit = _make_unit(
             0, preservation_class=PreservationClass.P2_COMPRESSIBLE, allow_compression=True
@@ -219,9 +221,10 @@ class TestP2CompressCandidate:
         pmap = _make_pmap(unit)
         ctx = _make_ctx(messages, pmap)
 
-        with patch(
-            "tokenopt.pipeline.transformer.compress_message_content",
-            wraps=compress_message_content,
+        with patch.object(
+            TransformerStage,
+            "_transform_prose_message",
+            wraps=TransformerStage()._transform_prose_message,
         ) as spy:
             TransformerStage().process(ctx)
             spy.assert_called_once()
@@ -284,7 +287,7 @@ class TestP2Protected:
         assert len(result.messages) == 1
 
     def test_p2_ineligible_compress_not_invoked(self) -> None:
-        """4. P2 ineligible: compress_message_content must not be called."""
+        """4. P2 ineligible: prose transformation must not be called."""
         messages = [{"role": "user", "content": "Some message."}]
         unit = _make_unit(
             0, preservation_class=PreservationClass.P2_COMPRESSIBLE, allow_compression=False
@@ -292,11 +295,11 @@ class TestP2Protected:
         pmap = _make_pmap(unit)
         ctx = _make_ctx(messages, pmap)
 
-        with patch(
-            "tokenopt.pipeline.transformer.compress_message_content"
-        ) as mock_compress:
+        with patch.object(
+            TransformerStage, "_transform_prose_message"
+        ) as mock_transform:
             TransformerStage().process(ctx)
-            mock_compress.assert_not_called()
+            mock_transform.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -458,18 +461,18 @@ class TestUnknownPreservationState:
         assert result.messages[0]["content"] == original_content
 
     def test_unknown_class_compress_not_invoked(self) -> None:
-        """7. Unknown class: compress_message_content must not be called."""
+        """7. Unknown class: prose transformation must not be called."""
         messages = [{"role": "user", "content": "Unknown class message."}]
         unit = _make_unit(0, preservation_class=PreservationClass.P2_COMPRESSIBLE)
         object.__setattr__(unit, "preservation_class", "FUTURE_UNKNOWN_CLASS")
         pmap = _make_pmap(unit)
         ctx = _make_ctx(messages, pmap)
 
-        with patch(
-            "tokenopt.pipeline.transformer.compress_message_content"
-        ) as mock_compress:
+        with patch.object(
+            TransformerStage, "_transform_prose_message"
+        ) as mock_transform:
             TransformerStage().process(ctx)
-            mock_compress.assert_not_called()
+            mock_transform.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -610,7 +613,7 @@ class TestPlannerTransformerIntegration:
             plan_calls.append(pm)
             return original_plan(pm)
 
-        stage._planner.plan = spy_plan  # type: ignore[method-assign]
+        stage._planner.plan = spy_plan  # type: ignore[method-assign,assignment]
         stage.process(ctx)
 
         assert len(plan_calls) == 1
@@ -662,12 +665,13 @@ class TestNoIndependentClassification:
         pmap = _make_pmap(unit)
         ctx = _make_ctx(messages, pmap)
 
-        with patch(
-            "tokenopt.pipeline.transformer.compress_message_content",
-            wraps=compress_message_content,
+        with patch.object(
+            TransformerStage,
+            "_transform_prose_message",
+            wraps=TransformerStage()._transform_prose_message,
         ) as spy:
             TransformerStage().process(ctx)
-            # Transformer delegated to compressor because the PLAN said COMPRESS
+            # Transformer delegated to prose transformation because the PLAN said COMPRESS
             spy.assert_called_once()
 
 
@@ -866,7 +870,8 @@ class TestProductionPipelineIntegration:
         assert ctx.preservation_map is not None
         assert ctx.metrics.get("transformer_applied") is True
         assert ctx.metrics.get("transformer_compress_count") == 0
-        assert ctx.metrics.get("transformer_protected_count") >= 1
+        val = ctx.metrics.get("transformer_protected_count")
+        assert val is not None and val >= 1
 
     def test_eligible_p2_is_transformed_in_production_path(self) -> None:
         """Test C: Eligible P2 compressible content is transformed via production pipeline."""
@@ -902,3 +907,375 @@ class TestProductionPipelineIntegration:
         assert ctx.messages[0]["content"] == compressible_prose
         assert "transformer_latency_ms" not in ctx.metrics
         assert "transformer_applied" not in ctx.metrics
+
+
+# =============================================================================
+# Checkpoint 7: Deterministic Preservation-Aware Transformation Tests
+# =============================================================================
+
+class TestCP7Eligibility:
+    """Eligibility rules: only P2 COMPRESS PROSE units are transformed."""
+
+    def test_p0_authority_remains_strictly_unchanged(self) -> None:
+        """P0 authority units pass through byte-for-byte unchanged."""
+        raw = "You are a secure system coordinator. Please follow protocol."
+        messages = [{"role": "system", "content": raw}]
+        unit = _make_unit(0, role="system", preservation_class=PreservationClass.P0_AUTHORITY)
+        ctx = _make_ctx(messages, _make_pmap(unit))
+
+        res = TransformerStage().process(ctx)
+        assert res.messages[0]["content"] == raw
+
+    def test_p1_information_remains_strictly_unchanged(self) -> None:
+        """P1 information units pass through byte-for-byte unchanged."""
+        raw = "Deploy cluster-01 to region us-east-1. Please confirm status."
+        messages = [{"role": "user", "content": raw}]
+        unit = _make_unit(0, preservation_class=PreservationClass.P1_INFORMATION)
+        ctx = _make_ctx(messages, _make_pmap(unit))
+
+        res = TransformerStage().process(ctx)
+        assert res.messages[0]["content"] == raw
+
+    def test_structured_content_is_never_transformed(self) -> None:
+        """Units with structural type CODE_PYTHON, JSON, etc. are never transformed."""
+        code_raw = "def compute(x):\n    # Please calculate\n    return x * 2"
+        messages = [{"role": "user", "content": code_raw}]
+        unit = ContextUnit(
+            message_index=0,
+            role="user",
+            structural_type=StructuralType.CODE_PYTHON,
+            detection_certainty=DetectionCertainty.DETECTED,
+            preservation_class=PreservationClass.P2_COMPRESSIBLE,
+            eligibility=_make_eligibility(allow_compression=True),
+        )
+        ctx = _make_ctx(messages, _make_pmap(unit))
+
+        res = TransformerStage().process(ctx)
+        assert res.messages[0]["content"] == code_raw
+
+    def test_p2_prose_eligible_is_transformed(self) -> None:
+        """P2 PROSE units with compressible filler are transformed."""
+        raw = "Could you please basically provide the summary? Thank you."
+        messages = [{"role": "user", "content": raw}]
+        unit = _make_unit(
+            0,
+            preservation_class=PreservationClass.P2_COMPRESSIBLE,
+            allow_compression=True,
+        )
+        ctx = _make_ctx(messages, _make_pmap(unit))
+
+        res = TransformerStage().process(ctx)
+        assert res.messages[0]["content"] != raw
+        assert "provide the summary" in res.messages[0]["content"]
+        assert "could you please" not in res.messages[0]["content"].lower()
+        assert "thank you" not in res.messages[0]["content"].lower()
+
+
+class TestCP7BPESafety:
+    """BPE safety: verify absence of blind token truncation."""
+
+    def test_long_prose_is_never_tail_truncated(self) -> None:
+        """Long prose message must not be sliced at an arbitrary token index."""
+        raw = (
+            "System telemetry audit log section 1: Normal operating parameters observed "
+            "across cluster node-01 through node-20. "
+            "CPU load average 22.4%, memory utilization 41.2%, network ingress 1.2 Gbps. "
+            "All diagnostic checks passed for background worker threads. "
+            "Periodic health probe returned status code 200 OK. "
+            "Standard maintenance tasks executed without deviation from standard "
+            "operating procedure.\n\n"
+            "CRITICAL_ALERT_ASSERTION: Node-99 entered fatal panic state with kernel error "
+            "KERN-ERR-0x89AB. Immediate failover required."
+        )
+        messages = [{"role": "user", "content": raw}]
+        invariants = (
+            PreservedInvariant(
+                category=EntityCategory.IDENTIFIER,
+                invariant_type=InvariantType.LEXICAL,
+                marker="KERN-ERR-0x89AB",
+                message_index=0,
+                role="user",
+            ),
+            PreservedInvariant(
+                category=EntityCategory.SECURITY_COMPLIANCE,
+                invariant_type=InvariantType.LEXICAL,
+                marker="CRITICAL_ALERT_ASSERTION",
+                message_index=0,
+                role="user",
+            ),
+        )
+        unit = _make_unit(
+            0,
+            preservation_class=PreservationClass.P2_COMPRESSIBLE,
+            allow_compression=True,
+            invariants=invariants,
+        )
+        ctx = _make_ctx(messages, _make_pmap(unit))
+
+        res = TransformerStage().process(ctx)
+        content = res.messages[0]["content"]
+        # In CP5/CP6, BPE truncation sliced off the entire terminal alert.
+        # In CP7, the terminal alert must be 100% intact!
+        assert "KERN-ERR-0x89AB" in content
+        assert "CRITICAL_ALERT_ASSERTION" in content
+        assert "Immediate failover required." in content
+
+
+class TestCP7Invariants:
+    """Invariant preservation across multiple categories."""
+
+    def test_all_invariant_categories_survive_transformation(self) -> None:
+        """Identifiers, error codes, URLs, numeric constraints, and dates must survive."""
+        raw = (
+            "Please check node cluster-alpha-09 at https://acme.corp/api/v2. "
+            "Encountered error code ERR-SEC-0x7F2A on 2026-03-31. "
+            "Threshold limit is exactly 5000 requests. Thank you."
+        )
+        messages = [{"role": "user", "content": raw}]
+        invariants = (
+            PreservedInvariant(
+                category=EntityCategory.IDENTIFIER,
+                invariant_type=InvariantType.LEXICAL,
+                marker="cluster-alpha-09",
+                message_index=0,
+                role="user",
+            ),
+            PreservedInvariant(
+                category=EntityCategory.URL_OR_ENDPOINT,
+                invariant_type=InvariantType.LEXICAL,
+                marker="https://acme.corp/api/v2",
+                message_index=0,
+                role="user",
+            ),
+            PreservedInvariant(
+                category=EntityCategory.ERROR_CODE,
+                invariant_type=InvariantType.LEXICAL,
+                marker="ERR-SEC-0x7F2A",
+                message_index=0,
+                role="user",
+            ),
+            PreservedInvariant(
+                category=EntityCategory.DATETIME_CONSTRAINT,
+                invariant_type=InvariantType.LEXICAL,
+                marker="2026-03-31",
+                message_index=0,
+                role="user",
+            ),
+            PreservedInvariant(
+                category=EntityCategory.NUMERIC_CONSTRAINT,
+                invariant_type=InvariantType.LEXICAL,
+                marker="5000 requests",
+                message_index=0,
+                role="user",
+            ),
+        )
+        unit = _make_unit(
+            0,
+            preservation_class=PreservationClass.P2_COMPRESSIBLE,
+            allow_compression=True,
+            invariants=invariants,
+        )
+        ctx = _make_ctx(messages, _make_pmap(unit))
+
+        res = TransformerStage().process(ctx)
+        out = res.messages[0]["content"]
+
+        for inv in invariants:
+            assert inv.marker in out
+        # Filler stripped, pleasantry removed
+        assert "please" not in out.lower()
+        assert "thank you" not in out.lower()
+
+
+class TestCP7BoundaryDetection:
+    """Conservative boundary detection: technical patterns do not trigger false sentence splits."""
+
+    def test_decimals_versions_abbreviations_endpoints(self) -> None:
+        """Verify decimals, versions, abbreviations, URLs, endpoints don't split sentences."""
+        from tokenopt.pipeline.transformer import _split_sentences
+
+        text = (
+            "Load is 22.4% and ingress is 1.2 Gbps for version v4.2 and PostgreSQL 16.0.1. "
+            "Refer to e.g. section 3.14 at https://example.com/api/v1 for contact "
+            "support@acme.corp. Have a great day."
+        )
+        invariants = ["PostgreSQL 16.0.1", "support@acme.corp"]
+        sentences = _split_sentences(text, invariants)
+
+        # Should split into 3 logical sentences
+        assert len(sentences) == 3
+        assert "22.4%" in sentences[0][0]
+        assert "1.2 Gbps" in sentences[0][0]
+        assert "v4.2" in sentences[0][0]
+        assert "PostgreSQL 16.0.1" in sentences[0][0]
+        assert "e.g." in sentences[1][0]
+        assert "3.14" in sentences[1][0]
+        assert "https://example.com/api/v1" in sentences[1][0]
+        assert "support@acme.corp" in sentences[1][0]
+        assert "Have a great day." in sentences[2][0]
+
+
+class TestCP7FillerAndDirectives:
+    """Directive keyword protection and certified filler removal."""
+
+    def test_directives_are_strictly_preserved(self) -> None:
+        """Sentences containing directive keywords must never be pruned."""
+        raw = (
+            "You must ensure the deployment is verified before maintenance MW-01. "
+            "Do not restart background services. "
+            "Hope this helps."
+        )
+        messages = [{"role": "user", "content": raw}]
+        unit = _make_unit(
+            0,
+            preservation_class=PreservationClass.P2_COMPRESSIBLE,
+            allow_compression=True,
+        )
+        ctx = _make_ctx(messages, _make_pmap(unit))
+
+        res = TransformerStage().process(ctx)
+        out = res.messages[0]["content"]
+
+        assert "You must ensure the deployment is verified before maintenance MW-01." in out
+        assert "Do not restart background services." in out
+        assert "Hope this helps." not in out
+
+    def test_inline_filler_removal(self) -> None:
+        """Inline conversational filler phrases are removed when word boundaries match."""
+        raw = "As a matter of fact, basically we could you please inspect the service."
+        messages = [{"role": "user", "content": raw}]
+        unit = _make_unit(
+            0,
+            preservation_class=PreservationClass.P2_COMPRESSIBLE,
+            allow_compression=True,
+        )
+        ctx = _make_ctx(messages, _make_pmap(unit))
+
+        res = TransformerStage().process(ctx)
+        out = res.messages[0]["content"]
+        assert "inspect the service" in out
+        assert "as a matter of fact" not in out.lower()
+        assert "basically" not in out.lower()
+        assert "could you" not in out.lower()
+        assert "please" not in out.lower()
+
+
+class TestCP7DuplicateSentences:
+    """Exact duplicate sentence removal."""
+
+    def test_exact_duplicate_sentences_removed(self) -> None:
+        """Exact identical sentences are deduplicated, keeping the first."""
+        raw = (
+            "Reviewing system status now. "
+            "Reviewing system status now. "
+            "All checks completed successfully."
+        )
+        messages = [{"role": "user", "content": raw}]
+        unit = _make_unit(
+            0,
+            preservation_class=PreservationClass.P2_COMPRESSIBLE,
+            allow_compression=True,
+        )
+        ctx = _make_ctx(messages, _make_pmap(unit))
+
+        res = TransformerStage().process(ctx)
+        out = res.messages[0]["content"]
+        assert out.count("Reviewing system status now.") == 1
+        assert "All checks completed successfully." in out
+
+    def test_duplicate_with_invariant_is_not_removed(self) -> None:
+        """Duplicate sentences containing invariants must not be removed."""
+        raw = (
+            "Target cluster is cluster-omega-99. "
+            "Target cluster is cluster-omega-99."
+        )
+        messages = [{"role": "user", "content": raw}]
+        inv = PreservedInvariant(
+            category=EntityCategory.IDENTIFIER,
+            invariant_type=InvariantType.LEXICAL,
+            marker="cluster-omega-99",
+            message_index=0,
+            role="user",
+        )
+        unit = _make_unit(
+            0,
+            preservation_class=PreservationClass.P2_COMPRESSIBLE,
+            allow_compression=True,
+            invariants=(inv,),
+        )
+        ctx = _make_ctx(messages, _make_pmap(unit))
+
+        res = TransformerStage().process(ctx)
+        out = res.messages[0]["content"]
+        # Because it contains an invariant, it is not pruned
+        assert out.count("cluster-omega-99") == 2
+
+
+class TestCP7Fallback:
+    """Local preflight fallback to original content."""
+
+    def test_local_preflight_failure_falls_back_to_original(self) -> None:
+        """If local preflight fails, the original message is returned unmodified."""
+        raw = "Important alert: token AUTH-XYZ-123. Hope this helps."
+        messages = [{"role": "user", "content": raw}]
+        inv = PreservedInvariant(
+            category=EntityCategory.IDENTIFIER,
+            invariant_type=InvariantType.LEXICAL,
+            marker="AUTH-XYZ-123",
+            message_index=0,
+            role="user",
+        )
+        unit = _make_unit(
+            0,
+            preservation_class=PreservationClass.P2_COMPRESSIBLE,
+            allow_compression=True,
+            invariants=(inv,),
+        )
+        ctx = _make_ctx(messages, _make_pmap(unit))
+
+        stage = TransformerStage()
+        # Mock preflight to fail artificially
+        with patch.object(stage, "_local_preflight", return_value=False):
+            res = stage.process(ctx)
+
+        # Must fall back to raw content unchanged
+        assert res.messages[0]["content"] == raw
+        assert res.metrics.get("transform_fallback_count") == 1
+
+
+class TestCP7EndToEndPipeline:
+    """End-to-end pipeline test across the 12 evaluation cases."""
+
+    def test_all_12_cases_pass_validator_with_zero_rollbacks(self) -> None:
+        """Run all 12 cases through Analyzer -> Router -> Transformer -> Validator."""
+        from evaluation.cases import get_cases
+        from tokenopt.pipeline.analyzer import AnalyzerStage
+        from tokenopt.pipeline.router import RouterStage
+        from tokenopt.pipeline.validator import ValidatorStage
+
+        cases = get_cases()
+        config = TokenOptConfig()
+        pipeline = OptimizationPipeline(
+            stages=[
+                AnalyzerStage(config),
+                RouterStage(config),
+                TransformerStage(config),
+                ValidatorStage(config),
+            ],
+            config=config,
+        )
+
+        for case in cases:
+            ctx = pipeline.run(case.messages, "gpt-4o")
+            # Validator must ACCEPT every case
+            assert ctx.metrics.get("validation_decision") == "accept", (
+                f"Case {case.id} was rejected by Validator: "
+                f"violations={ctx.metrics.get('validation_violations')}"
+            )
+            assert ctx.metrics.get("rollback_applied") is False, (
+                f"Case {case.id} suffered unexpected rollback"
+            )
+            # Invariants checked must equal invariants passed
+            checked = ctx.metrics.get("validation_invariants_checked", 0)
+            passed = ctx.metrics.get("validation_invariants_passed", 0)
+            assert checked == passed, f"Case {case.id} lost invariants: {passed}/{checked}"
