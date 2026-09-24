@@ -141,6 +141,18 @@ class TestGatewayEndpoints:
         assert "LLM provider error" in resp.json()["detail"]
         assert "Ollama connection refused" in resp.json()["detail"]
 
+    def test_streaming_rejected_with_400(self, client: TestClient) -> None:
+        """Streaming requests return 400 Bad Request in Prototype v0.1."""
+        payload = {
+            "model": "llama3.1",
+            "messages": [{"role": "user", "content": "Hello"}],
+            "stream": True,
+        }
+        resp = client.post("/v1/chat/completions", json=payload)
+        assert resp.status_code == 400
+        assert "Streaming is not supported in Prototype v0.1" in resp.json()["detail"]
+
+
 
 class TestPrototypeSafetyAndGating:
     """Verify prototype configuration gating and preservation boundary safety."""

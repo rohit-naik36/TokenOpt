@@ -79,7 +79,12 @@ def create_app(config: TokenOptConfig | None = None) -> FastAPI:
 
     @app.post("/v1/chat/completions")
     async def chat_completions(req: ChatCompletionRequest) -> Response:
-        """Execute OpenAI-compatible chat completion through TokenOpt pipeline."""
+        if req.stream:
+            raise HTTPException(
+                status_code=400,
+                detail="Streaming is not supported in Prototype v0.1. Set stream=false.",
+            )
+
         if not req.messages:
             raise HTTPException(status_code=400, detail="Messages list cannot be empty.")
 
