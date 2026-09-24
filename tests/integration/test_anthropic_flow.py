@@ -20,14 +20,14 @@ def test_drop_in_messages_full_flow(
     response = anthropic_client.messages.create(
         model="claude-3-5-sonnet",
         max_tokens=100,
-        messages=[{"role": "user", "content": "Hello"}],
+        messages=[{"role": "user", "content": "Explain the deployment process"}],
     )
 
     assert response.content[0].text == "mock reply"
     assert len(anthropic_requests) == 1
     body = anthropic_requests[0]
     assert body["model"] == "claude-3-5-sonnet"
-    assert body["messages"] == [{"role": "user", "content": "Hello"}]
+    assert body["messages"] == [{"role": "user", "content": "Explain the deployment process"}]
     assert body["max_tokens"] == 100
 
     summary = anthropic_client.get_metrics_summary()
@@ -134,7 +134,7 @@ def test_custom_rule_no_match_preserves_explicit_model(
 def test_identical_second_call_hits_cache(
     anthropic_client: Anthropic, anthropic_requests: list
 ) -> None:
-    messages = [{"role": "user", "content": "Hello"}]
+    messages = [{"role": "user", "content": "Explain the deployment process"}]
 
     first = anthropic_client.messages.create(
         model="claude-3-5-sonnet", messages=messages
@@ -162,7 +162,7 @@ def test_provider_error_reraises_and_records_metrics(
     with pytest.raises(anthropic.APIStatusError):
         client.messages.create(
             model="claude-3-5-sonnet",
-            messages=[{"role": "user", "content": "Hello"}],
+            messages=[{"role": "user", "content": "Explain the deployment process"}],
         )
 
     summary = client.get_metrics_summary()

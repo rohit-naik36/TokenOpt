@@ -307,6 +307,21 @@ class TestP2Protected:
 class TestP3RemoveCandidate:
     """P3 REMOVE candidates must be omitted entirely from the output."""
 
+    def test_p3_remove_omits_single_message(self) -> None:
+        """5. P3 REMOVE: sole message is removed when planner designates REMOVE."""
+        messages = [{"role": "user", "content": "Okay!"}]
+        unit = _make_unit(
+            0, preservation_class=PreservationClass.P3_REMOVABLE, allow_removal=True
+        )
+        pmap = _make_pmap(unit)
+        ctx = _make_ctx(messages, pmap)
+
+        result = TransformerStage().process(ctx)
+
+        # Transformer must NOT override planner based on message count: output is empty.
+        assert result.messages == []
+        assert result.metrics["transformer_remove_count"] == 1
+
     def test_p3_remove_omits_message(self) -> None:
         """5. P3 REMOVE: message is not present in output."""
         messages = [
@@ -324,14 +339,43 @@ class TestP3RemoveCandidate:
 
         assert len(result.messages) == 1
         assert result.messages[0]["content"] == "You are a helpful assistant."
+        assert result.metrics["transformer_remove_count"] == 1
 
-    def test_p3_remove_metric_recorded(self) -> None:
-        """5. P3 REMOVE: remove count metric is incremented."""
+    def test_all_messages_removable_produces_empty_output(self) -> None:
+        """5. P3 REMOVE: if all messages are removable, output is empty (no silent restore)."""
         messages = [
-            {"role": "system", "content": "You are an assistant."},
-            {"role": "user", "content": "Okay!"},
+            {"role": "user", "content": "Hello!"},
+            {"role": "assistant", "content": "Hi there!"},
         ]
-        unit_0 = _make_unit(0, role="system", preservation_class=PreservationClass.P0_AUTHORITY)
+        unit_0 = _make_unit(
+            0, preservation_class=PreservationClass.P3_REMOVABLE, allow_removal=True
+        )
+        unit_1 = _make_unit(
+            1,
+            role="assistant",
+            preservation_class=PreservationClass.P3_REMOVABLE,
+            allow_removal=True,
+        )
+        pmap = _make_pmap(unit_0, unit_1)
+        ctx = _make_ctx(messages, pmap)
+
+        result = TransformerStage().process(ctx)
+
+        # Must NOT silently restore original messages when all are removable.
+        assert result.messages == []
+        assert result.metrics["transformer_remove_count"] == 2
+
+    def test_mixed_protected_p1_and_removable_p3(self) -> None:
+        """5. P3 REMOVE: protected P1 remains exactly unchanged, P3 is removed."""
+        p1_code = "```python\ndef test(): pass\n```"
+        messages = [
+            {"role": "user", "content": p1_code},
+            {"role": "user", "content": "Thanks!"},
+        ]
+        unit_0 = _make_unit(
+            0,
+            preservation_class=PreservationClass.P1_INFORMATION,
+        )
         unit_1 = _make_unit(
             1, preservation_class=PreservationClass.P3_REMOVABLE, allow_removal=True
         )
@@ -339,21 +383,27 @@ class TestP3RemoveCandidate:
         ctx = _make_ctx(messages, pmap)
 
         result = TransformerStage().process(ctx)
-        assert result.metrics["transformer_remove_count"] == 1
-        assert len(result.messages) == 1
 
-    def test_p3_sole_message_preserved_by_turn_non_destruction(self) -> None:
-        """5. P3 REMOVE: sole message is preserved per turn non-destruction rule."""
-        messages = [{"role": "user", "content": "Okay!"}]
+        assert len(result.messages) == 1
+        assert result.messages[0]["content"] == p1_code
+        assert result.metrics["transformer_remove_count"] == 1
+        assert result.metrics["transformer_protected_count"] == 1
+
+    def test_planner_authority_no_message_count_override(self) -> None:
+        """5. P3 REMOVE: transformer strictly obeys CandidatePlan without message-count checks."""
+        messages = [{"role": "user", "content": "Sure."}]
         unit = _make_unit(
             0, preservation_class=PreservationClass.P3_REMOVABLE, allow_removal=True
         )
         pmap = _make_pmap(unit)
         ctx = _make_ctx(messages, pmap)
 
-        result = TransformerStage().process(ctx)
-        assert len(result.messages) == 1
-        assert result.messages[0]["content"] == "Okay!"
+        stage = TransformerStage()
+        result = stage.process(ctx)
+
+        # Proves transformer does not override plan decisions based on len(messages)
+        assert len(result.messages) == 0
+        assert result.metrics["transformer_remove_count"] == 1
 
 
 # ---------------------------------------------------------------------------

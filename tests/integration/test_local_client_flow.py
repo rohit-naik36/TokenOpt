@@ -29,13 +29,15 @@ def test_openai_compatible_backend_full_flow(
     )
 
     response = client.chat.completions.create(
-        messages=[{"role": "user", "content": "Hello"}],
+        messages=[{"role": "user", "content": "Explain the deployment status"}],
     )
 
     assert response.choices[0].message.content == "mock reply"
     assert len(openai_requests) == 1
     assert openai_requests[0]["model"] == "llama3.1"
-    assert openai_requests[0]["messages"] == [{"role": "user", "content": "Hello"}]
+    assert openai_requests[0]["messages"] == [
+        {"role": "user", "content": "Explain the deployment status"}
+    ]
 
     summary = client.get_metrics_summary()
     assert summary["total_requests"] == 1
@@ -50,7 +52,7 @@ def test_local_cache_hit_short_circuits(
         base_url="http://localhost:8000/v1",
         http_client=httpx.Client(transport=openai_transport),
     )
-    messages = [{"role": "user", "content": "Hello"}]
+    messages = [{"role": "user", "content": "Explain the deployment status"}]
 
     client.chat.completions.create(messages=messages)
     client.chat.completions.create(messages=messages)
@@ -68,7 +70,7 @@ def test_local_provider_error_reraises(error_transport: httpx.MockTransport) -> 
 
     with pytest.raises(openai.APIStatusError):
         client.chat.completions.create(
-            messages=[{"role": "user", "content": "Hello"}],
+            messages=[{"role": "user", "content": "Explain the deployment status"}],
         )
 
     assert client.get_metrics_summary()["error_rate"] == 1.0
@@ -106,7 +108,9 @@ def test_ollama_backend_end_to_end(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setitem(sys.modules, "ollama", ollama)
 
     client = LocalClient(model="llama3.1", base_url="http://localhost:11434")
-    response = client.chat_completion([{"role": "user", "content": "Hello"}])
+    response = client.chat_completion(
+        [{"role": "user", "content": "Explain the deployment status"}]
+    )
 
     assert response.choices[0].message.content == "mock reply"
     assert response.usage.prompt_tokens == 12
@@ -116,7 +120,7 @@ def test_ollama_backend_end_to_end(monkeypatch: pytest.MonkeyPatch) -> None:
 
     body = requests[0]
     assert body["model"] == "llama3.1"
-    assert body["messages"] == [{"role": "user", "content": "Hello"}]
+    assert body["messages"] == [{"role": "user", "content": "Explain the deployment status"}]
 
 
 def test_local_factory_end_to_end(
@@ -131,7 +135,7 @@ def test_local_factory_end_to_end(
 
     assert isinstance(client, LocalClient)
     response = client.chat.completions.create(
-        messages=[{"role": "user", "content": "Hello"}],
+        messages=[{"role": "user", "content": "Explain the deployment status"}],
     )
 
     assert response.choices[0].message.content == "mock reply"
