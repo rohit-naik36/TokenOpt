@@ -9,10 +9,10 @@ This repository follows an Open-Core Dual-Licensing model:
    production pilot agreement from TokenOpt.
    See tokenopt-proxy/LICENSE for full commercial terms.
 
-2. TokenOpt Client SDK (tokenopt-sdk/):
+2. TokenOpt Core Engine & Client SDK (tokenopt/):
    Licensed under the open-source MIT License.
    Free of charge for embedding into client applications (pip install tokenopt).
-   See tokenopt-sdk/LICENSE for terms.
+
 
 3. TokenOpt Optimizer Core (tokenopt-optimizer/):
    Licensed under the open-source MIT License.

@@ -2,100 +2,148 @@
 
 [![CI](https://github.com/rohit-naik36/TokenOpt/actions/workflows/ci.yml/badge.svg)](https://github.com/rohit-naik36/TokenOpt/actions/workflows/ci.yml)
 
-TokenOpt is an enterprise AI token optimization platform and client SDK. It reduces LLM prompt size, latency, and cost through transparent compression, semantic caching, model routing, and quality-fidelity validation.
+TokenOpt is a preservation-aware LLM token optimization engine and gateway. It reduces prompt size, latency, and cost through deterministic structural analysis, invariant preservation, candidate planning, and strict rollback validation.
 
 ---
 
-## Monorepo Architecture
-
-This repository consolidates the TokenOpt product ecosystem into a unified monorepo:
-
-| Folder | Component | Description |
-| ------ | --------- | ----------- |
-| [`tokenopt-proxy/`](tokenopt-proxy/) | **HTTP Enterprise Proxy** | Production FastAPI service (`v2.0`) with async embeddings, circuit breaker provider router, PostgreSQL audit trail, Redis cache, and Kafka event streamer. See [Proxy README](tokenopt-proxy/README.md). |
-| [`tokenopt-optimizer/`](tokenopt-optimizer/) | **Optimizer Engine** | Standalone, embeddable `tokenopt_optimizer` engine with response fidelity validation, batch optimization, TTL LRU cache, and tokenizers. See [Optimizer README](tokenopt-optimizer/README.md). |
-| [`tokenopt-sdk/`](tokenopt-sdk/) | **Client SDK (`v0.1.0`)** | Drop-in `tokenopt` client SDK for OpenAI, Anthropic, and local models (Ollama/vLLM/llama.cpp). See [SDK README](tokenopt-sdk/README.md). |
+## Repository Structure & Architecture Lineage
 
 ```
 .
-├── tokenopt-proxy/        # FastAPI HTTP Proxy service, Dockerfile, Terraform, & docs
-├── tokenopt-optimizer/    # Standalone Python optimizer engine
-└── tokenopt-sdk/          # Published client SDK (v0.1.0 snapshot) + .ai/ specs
+├── tokenopt/              # CANONICAL: Core optimization engine (CP1-CP7) & Prototype v0.1 Gateway
+├── tests/                 # Canonical test suite (413 tests, 94% statement coverage)
+├── evaluation/            # Architecture evaluation and checkpoint benchmarks
+├── pyproject.toml         # Root package configuration (pip install -e .)
+├── tokenopt-proxy/        # LEGACY/REFERENCE: Standalone v2 enterprise HTTP proxy service
+└── tokenopt-optimizer/    # LEGACY/REFERENCE: Standalone prompt optimizer microservice
 ```
+
+### 1. Canonical Engine & Prototype Gateway (`tokenopt/`)
+The primary codebase under active development. It implements the formal Checkpoint 1–7 (CP1–CP7) preservation architecture and the Prototype v0.1 FastAPI Optimization Gateway.
+
+**Canonical Pipeline Architecture:**
+```
+Prompt / Messages
+       │
+       ▼
+1. Context Analyzer (Structural AST, P0/P1/P2 classification, PreservationMap)
+       │
+       ▼
+2. Model Router (Rule-based and complexity routing)
+       │
+       ▼
+3. Transformer (Preservation-aware transformation: P2 PROSE candidate mutation only)
+       │
+       ▼
+4. Validator (Invariant verification: P0/P1 integrity check; rollback on violation)
+       │
+       ▼
+Downstream Stages (Summarizer, Semantic Cache, RAG Optimizer, FewShot Selector)
+```
+
+**Prototype v0.1 Gateway Contract:**
+- Accepts OpenAI-compatible chat completion requests (`POST /v1/chat/completions`).
+- Active optimization boundary: `Analyzer -> Router -> Transformer -> Validator -> Provider`.
+- Downstream mutating stages (`ContextSummarizerStage`, `RAGOptimizerStage`, `FewShotSelectorStage`) are safely disabled via `get_prototype_config()`, ensuring that `ValidatorStage` is the final gate for all context modifications before dispatching to the provider.
+- Telemetry headers: Returns comprehensive telemetry including `x-tokenopt-original-tokens`, `x-tokenopt-optimized-tokens`, `x-tokenopt-tokens-saved`, `x-tokenopt-reduction-pct`, `x-tokenopt-pipeline-latency-ms`, `x-tokenopt-model-latency-ms`, `x-tokenopt-validation-decision`, and `x-tokenopt-rollback-applied`.
+- Streaming (`stream=true`) is explicitly rejected with HTTP 400 in Prototype v0.1.
+
+### 2. Legacy Reference Services (`tokenopt-proxy/` & `tokenopt-optimizer/`)
+- `tokenopt-proxy/`: A standalone reverse proxy service developed during earlier phases, providing JWT authentication, circuit breakers, and database audit logs.
+- `tokenopt-optimizer/`: An earlier standalone compressor implementation.
+- Both directories are preserved for historical reference and backward-compatibility evaluations; they do not form part of the active CP1–CP7 canonical pipeline.
 
 ---
 
-## Quick Start — Proxy & Enterprise Platform
+## Token Accounting & Cost Semantics
 
-### Running the Proxy (Local)
+TokenOpt clearly distinguishes between local tokenizer estimations and provider-reported usage:
 
-```bash
-cd tokenopt-proxy
-pip install -r requirements.txt
-set JWT_SECRET="demo-secret-key-for-presentation-only"
-uvicorn tokenopt_proxy_v2:app --host 0.0.0.0 --port 8000
-```
+1. **Token Accounting:**
+   - `original_tokens` and `optimized_tokens`: Local estimations calculated by TokenOpt using `tiktoken` before and after optimization stages.
+   - `output_tokens`: Number of completion tokens generated by the model.
+   - `provider_input_tokens` and `provider_output_tokens`: Exact token counts reported directly by the provider API (e.g. OpenAI `usage.prompt_tokens` or Ollama `prompt_eval_count`), populated when available.
 
-### Running the Demo Script
+2. **Cost Semantics:**
+   - `estimated_cost`: Baseline estimated cost in USD of the **unoptimized request** (calculated from `original_tokens` + `output_tokens`).
+   - `optimized_cost`: Estimated cost in USD of the **optimized request** (calculated from `optimized_tokens` + `output_tokens`).
+   - `cost_saved`: Total estimated cost savings in USD (`estimated_cost - optimized_cost`).
 
-```bash
-cd tokenopt-proxy
-set JWT_SECRET="demo-secret-key-for-presentation-only"
-python demo.py --no-llm
-```
-
-### Docker Build
-
-```bash
-cd tokenopt-proxy
-docker build --build-context tokenopt_sdk=../tokenopt-optimizer -t tokenopt-proxy:latest .
-```
+3. **Embedding Providers & Fallback:**
+   - When `sentence-transformers` is installed (`tokenopt[semantic]`), `EmbeddingProvider` uses `all-MiniLM-L6-v2` for semantic similarity.
+   - In environments without external ML dependencies, `SimpleEmbeddingProvider` provides an exact-match hash-based fallback (`similarity=1.0` if hash matches, `0.0` otherwise). This guarantees deterministic, fail-safe operation with zero external model downloads.
 
 ---
 
-## Quick Start — TokenOpt Client SDK (`v0.1.0`)
+## Quick Start
 
-The SDK provides drop-in replacement wrappers for OpenAI and Anthropic clients:
+### 1. Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/rohit-naik36/TokenOpt.git
+cd TokenOpt
+
+# Install canonical package with development and server dependencies
+pip install -e ".[dev,server]"
+```
+
+### 2. Running the Prototype v0.1 Gateway
+
+```bash
+# Start the FastAPI gateway server on port 8000
+uvicorn tokenopt.server:app --host 0.0.0.0 --port 8000
+```
+
+Send a test request via `curl`:
+```bash
+curl -X POST http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "llama3.1",
+    "messages": [
+      {"role": "user", "content": "Please kindly describe project Apollo in detail. Basically in my opinion it is great."}
+    ],
+    "temperature": 0.5
+  }'
+```
+
+### 3. Using the Python Client SDK
 
 ```python
 from tokenopt import OpenAI
 
-# Drop-in replacement for standard OpenAI client
+# Drop-in replacement for OpenAI client with automated prompt optimization
 client = OpenAI()
 
 response = client.chat.completions.create(
     model="gpt-4o",
-    messages=[{"role": "user", "content": "Explain quantum computing in simple terms..."}],
+    messages=[{"role": "user", "content": "Please kindly explain the difference between a router and a cache in detail."}],
 )
+
 print(response.choices[0].message.content)
-print("Metrics:", client.get_metrics_summary())
+print("Metrics Summary:", client.get_metrics_summary())
 ```
 
 ---
 
 ## Testing & Quality Assurance
 
-Run the test suite for any component:
+Run the canonical test suite:
 
 ```bash
-# Test the HTTP Proxy & Hardening Suite (82 tests)
-cd tokenopt-proxy && python -m pytest tests/ -v
+# Run all canonical tests (413 tests, coverage gate >= 80%)
+pytest tests/ -v
 
-# Test the Standalone Optimizer Engine
-cd tokenopt-optimizer && python -m pytest tests/ -v
-
-# Test the Client SDK
-cd tokenopt-sdk && python -m pytest tests/ -v
+# Run linting and type checks
+ruff check tokenopt tests
+mypy tokenopt
 ```
 
 ---
 
 ## Licensing
 
-This repository follows an **Open-Core Dual-Licensing** model:
-
-- **TokenOpt Enterprise Platform (`tokenopt-proxy/`)**: Licensed under the **TokenOpt Enterprise Commercial License** ([tokenopt-proxy/LICENSE](tokenopt-proxy/LICENSE)). Commercial / paid software; production use requires an enterprise license agreement or authorized production pilot agreement.
-- **Client SDK (`tokenopt-sdk/`)**: Licensed under the **MIT License** ([tokenopt-sdk/LICENSE](tokenopt-sdk/LICENSE)). Free for embedding into client applications.
-- **Optimizer Engine (`tokenopt-optimizer/`)**: Licensed under the **MIT License** ([tokenopt-optimizer/LICENSE](tokenopt-optimizer/LICENSE)). Standalone embeddable core.
-
-See [LICENSE](LICENSE) for the full monorepo licensing summary.
+- **TokenOpt Canonical Engine & Client SDK (`tokenopt/`)**: Licensed under the **MIT License** ([LICENSE](LICENSE)). Free for embedding into client applications and services.
+- **Standalone Optimizer Core (`tokenopt-optimizer/`)**: Licensed under the **MIT License** ([tokenopt-optimizer/LICENSE](tokenopt-optimizer/LICENSE)).
+- **Enterprise Platform Proxy (`tokenopt-proxy/`)**: Licensed under the **TokenOpt Enterprise Commercial License** ([tokenopt-proxy/LICENSE](tokenopt-proxy/LICENSE)).
