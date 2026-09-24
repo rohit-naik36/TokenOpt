@@ -30,6 +30,12 @@ from tokenopt.pipeline.preservation import (
 from tokenopt.pipeline.rag_optimizer import RAGOptimizerStage
 from tokenopt.pipeline.router import RouterStage
 from tokenopt.pipeline.transformer import TransformerStage
+from tokenopt.pipeline.validator import (
+    InvariantViolation,
+    ValidationDecision,
+    ValidationResult,
+    ValidatorStage,
+)
 
 __all__ = [
     "OptimizationContext",
@@ -46,6 +52,10 @@ __all__ = [
     "ContextSummarizerStage",
     "compress_message_content",
     "TransformerStage",
+    "ValidatorStage",
+    "ValidationDecision",
+    "InvariantViolation",
+    "ValidationResult",
     "CacheStage",
     "RouterStage",
     "RAGOptimizerStage",

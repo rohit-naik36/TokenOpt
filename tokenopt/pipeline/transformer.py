@@ -69,11 +69,13 @@ class TransformerStage(PipelineStage):
         if ctx.preservation_map is None:
             # No plan possible without a PreservationMap — fail safe.
             ctx.metrics["transformer_skipped"] = "no_preservation_map"
+            ctx.metadata["surviving_indices"] = list(range(len(ctx.messages)))
             return ctx
 
         plan: CandidatePlan = self._planner.plan(ctx.preservation_map)
 
         transformed: list[dict[str, Any]] = []
+        surviving_indices: list[int] = []
 
         target_tokens = int(
             ctx.original_token_count * ctx.config.compression_ratio
@@ -89,6 +91,7 @@ class TransformerStage(PipelineStage):
             if candidate is None:
                 # No plan entry: protected by fail-safe.
                 transformed.append(msg)
+                surviving_indices.append(idx)
                 protected_count += 1
                 continue
 
@@ -97,6 +100,7 @@ class TransformerStage(PipelineStage):
                 transformed.append(
                     compress_message_content(msg, target_tokens, ctx.model)
                 )
+                surviving_indices.append(idx)
                 compress_count += 1
 
             elif candidate.candidate_type == CandidateType.REMOVE:
@@ -106,9 +110,11 @@ class TransformerStage(PipelineStage):
             else:
                 # Defensive fallback for any unknown future CandidateType.
                 transformed.append(msg)
+                surviving_indices.append(idx)
                 protected_count += 1
 
         ctx.messages = transformed
+        ctx.metadata["surviving_indices"] = surviving_indices
 
         ctx.metrics["transformer_applied"] = True
         ctx.metrics["compression_applied"] = True

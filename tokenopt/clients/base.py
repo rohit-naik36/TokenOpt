@@ -19,6 +19,7 @@ from tokenopt.pipeline import (
     RAGOptimizerStage,
     RouterStage,
     TransformerStage,
+    ValidatorStage,
 )
 
 
@@ -89,6 +90,7 @@ class BaseOptimizedClient(ABC):
             AnalyzerStage(self.config),
             RouterStage(self.config),
             TransformerStage(self.config),
+            ValidatorStage(self.config),
             ContextSummarizerStage(self.config),
             CacheStage(self.config),
             RAGOptimizerStage(self.config),
