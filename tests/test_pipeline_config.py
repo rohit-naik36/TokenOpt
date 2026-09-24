@@ -2,7 +2,7 @@
 
 from copy import deepcopy
 
-from tokenopt.config import TokenOptConfig, get_default_config
+from tokenopt.config import TokenOptConfig, get_default_config, get_prototype_config
 from tokenopt.pipeline.base import OptimizationContext, OptimizationPipeline, PipelineStage
 from tokenopt.pipeline.cache import CacheStage
 from tokenopt.pipeline.compressor import CompressorStage, ContextSummarizerStage
@@ -119,6 +119,27 @@ def test_rag_and_fewshot_run_by_default():
 
     assert "rag_optimizer_latency_ms" in ctx.metrics
     assert "fewshot_latency_ms" in ctx.metrics
+
+
+def test_rag_and_fewshot_disabled_skips_stages():
+    config = TokenOptConfig(enable_rag=False, enable_fewshot=False)
+
+    ctx = _pipeline(config, "rag", "fewshot").run(_messages(), "gpt-4o")
+
+    assert "rag_optimizer_latency_ms" not in ctx.metrics
+    assert "fewshot_latency_ms" not in ctx.metrics
+
+
+def test_prototype_config_skips_downstream_mutating_stages():
+    config = get_prototype_config()
+
+    ctx = _pipeline(config, "summarizer", "cache", "rag", "fewshot").run(_messages(), "gpt-4o")
+
+    assert "summarizer_latency_ms" not in ctx.metrics
+    assert "cache_latency_ms" not in ctx.metrics
+    assert "rag_optimizer_latency_ms" not in ctx.metrics
+    assert "fewshot_latency_ms" not in ctx.metrics
+
 
 
 class _BoomStage(PipelineStage):
