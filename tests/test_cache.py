@@ -307,3 +307,52 @@ def test_does_not_mutate_original_messages():
     stage.store_response(ctx, "response-1")
     assert ctx.original_messages == expected
     assert messages == expected
+
+
+def test_exact_hit_prevented_on_different_model():
+    config = TokenOptConfig()
+    stage = _stage(config)
+    ctx1 = _ctx([{"role": "user", "content": "hello world"}], config, model="gpt-4o")
+    stage.process(ctx1)
+    stage.store_response(ctx1, "response-gpt4o")
+
+    # Identical prompt, but different model
+    ctx2 = _ctx([{"role": "user", "content": "hello world"}], config, model="gpt-4o-mini")
+    result = stage.process(ctx2)
+    assert result.metrics["cache_hit"] is False
+    assert result.metadata.get("cache_hit") is not True
+
+
+def test_exact_hit_prevented_on_different_generation_params():
+    config = TokenOptConfig()
+    stage = _stage(config)
+    ctx1 = OptimizationContext(
+        messages=[{"role": "user", "content": "hello world"}],
+        model="gpt-4o",
+        config=config,
+        metadata={"temperature": 0.0},
+    )
+    stage.process(ctx1)
+    stage.store_response(ctx1, "response-temp0")
+
+    # Identical prompt and model, but temperature 1.0
+    ctx2 = OptimizationContext(
+        messages=[{"role": "user", "content": "hello world"}],
+        model="gpt-4o",
+        config=config,
+        metadata={"temperature": 1.0},
+    )
+    result = stage.process(ctx2)
+    assert result.metrics["cache_hit"] is False
+
+    # Matching temperature 0.0
+    ctx3 = OptimizationContext(
+        messages=[{"role": "user", "content": "hello world"}],
+        model="gpt-4o",
+        config=config,
+        metadata={"temperature": 0.0},
+    )
+    result3 = stage.process(ctx3)
+    assert result3.metrics["cache_hit"] is True
+    assert result3.metadata["cached_response"] == "response-temp0"
+

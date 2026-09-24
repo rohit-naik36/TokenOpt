@@ -13,6 +13,22 @@ from tokenopt.pipeline.base import OptimizationContext, PipelineStage
 from tokenopt.utils.embeddings import get_embedding_provider, hash_text
 from tokenopt.utils.token_counter import count_message_tokens
 
+GEN_PARAMS = (
+    "temperature",
+    "max_tokens",
+    "top_p",
+    "frequency_penalty",
+    "presence_penalty",
+    "stop",
+)
+
+
+def _extract_gen_params(metadata: dict[str, Any] | None) -> dict[str, Any]:
+    """Extract known generation parameters from context metadata."""
+    if not metadata:
+        return {}
+    return {k: metadata[k] for k in GEN_PARAMS if k in metadata and metadata[k] is not None}
+
 
 @dataclass
 class CacheEntry:
@@ -25,6 +41,7 @@ class CacheEntry:
     token_count: int
     timestamp: float = field(default_factory=time.time)
     hit_count: int = 0
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class CacheStage(PipelineStage):
@@ -49,14 +66,14 @@ class CacheStage(PipelineStage):
         return self._redis
 
     def process(self, ctx: OptimizationContext) -> OptimizationContext:
-        # Generate cache key from messages
-        cache_key = self._make_cache_key(ctx.messages)
+        # Generate cache key from messages, model, and generation parameters
+        cache_key = self._make_cache_key(ctx.messages, ctx.model, ctx.metadata)
         prompt_embedding = self._embedding_provider.embed_single(
             self._messages_to_text(ctx.messages)
         )
 
         # Check cache
-        cached = self._lookup_cache(cache_key, prompt_embedding, ctx.model)
+        cached = self._lookup_cache(cache_key, prompt_embedding, ctx.model, ctx.metadata)
         if cached:
             ctx.metadata["cache_hit"] = True
             ctx.metadata["cached_response"] = cached.response
@@ -78,6 +95,7 @@ class CacheStage(PipelineStage):
         if not cache_key or prompt_embedding is None:
             return
 
+        gen_params = _extract_gen_params(ctx.metadata)
         entry = CacheEntry(
             prompt_hash=cache_key,
             prompt_embedding=prompt_embedding,
@@ -85,14 +103,26 @@ class CacheStage(PipelineStage):
             response=response,
             model=ctx.model,
             token_count=count_message_tokens(ctx.original_messages, ctx.model),
+            metadata=gen_params,
         )
 
         self._store_entry(cache_key, entry)
 
-    def _make_cache_key(self, messages: list[dict]) -> str:
-        """Generate deterministic cache key from messages."""
+    def _make_cache_key(
+        self,
+        messages: list[dict],
+        model: str = "",
+        metadata: dict[str, Any] | None = None,
+    ) -> str:
+        """Generate deterministic cache key from messages, model, and generation parameters."""
         # Normalize messages for consistent hashing
         normalized = []
+        if model:
+            normalized.append(f"__model__:{model}")
+        gen_params = _extract_gen_params(metadata)
+        if gen_params:
+            normalized.append(f"__params__:{json.dumps(gen_params, sort_keys=True)}")
+
         for msg in messages:
             content = msg.get("content", "")
             if isinstance(content, str):
@@ -112,16 +142,25 @@ class CacheStage(PipelineStage):
                 parts.append(json.dumps(content, sort_keys=True))
         return "\n".join(parts)
 
-    def _lookup_cache(self, cache_key: str, prompt_embedding: Any, model: str) -> CacheEntry | None:
+    def _lookup_cache(
+        self,
+        cache_key: str,
+        prompt_embedding: Any,
+        model: str,
+        metadata: dict[str, Any] | None = None,
+    ) -> CacheEntry | None:
         """Look up cache entry by exact key or semantic similarity."""
+        req_params = _extract_gen_params(metadata)
+
         # Exact match first
         if cache_key in self._cache:
             entry = self._cache[cache_key]
-            if time.time() - entry.timestamp < self.config.cache_ttl:
-                self._cache.move_to_end(cache_key)
-                return entry
-            else:
-                del self._cache[cache_key]
+            if entry.model == model and _extract_gen_params(entry.metadata) == req_params:
+                if time.time() - entry.timestamp < self.config.cache_ttl:
+                    self._cache.move_to_end(cache_key)
+                    return entry
+                else:
+                    del self._cache[cache_key]
 
         # Check Redis
         redis = self._get_redis()
@@ -129,9 +168,14 @@ class CacheStage(PipelineStage):
             try:
                 data = redis.get(f"tokenopt:cache:{cache_key}")
                 if data:
-                    entry = json.loads(data)
-                    if time.time() - entry["timestamp"] < self.config.cache_ttl:
-                        return CacheEntry(**entry)
+                    entry_dict = json.loads(data)
+                    entry_params = _extract_gen_params(entry_dict.get("metadata"))
+                    if (
+                        entry_dict.get("model") == model
+                        and entry_params == req_params
+                        and time.time() - entry_dict["timestamp"] < self.config.cache_ttl
+                    ):
+                        return CacheEntry(**entry_dict)
             except Exception:
                 pass
 
@@ -139,6 +183,8 @@ class CacheStage(PipelineStage):
         threshold = self.config.cache_similarity_threshold
         for entry in self._cache.values():
             if entry.model != model:
+                continue
+            if _extract_gen_params(entry.metadata) != req_params:
                 continue
             if time.time() - entry.timestamp >= self.config.cache_ttl:
                 continue
