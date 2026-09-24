@@ -21,16 +21,19 @@ Test inventory:
 13. REMOVE on multiple messages removes all of them.
 14. Empty message list produces empty output.
 15. plan metrics recorded on ctx.metrics.
+16. Production pipeline integration: BaseOptimizedClient & _build_pipeline.
 """
 
 from __future__ import annotations
 
 from unittest.mock import patch
 
+from tokenopt.clients.local_client import LocalClient
+from tokenopt.clients.openai_client import OpenAI
 from tokenopt.config import TokenOptConfig
 from tokenopt.pipeline.analyzer import AnalyzerStage
 from tokenopt.pipeline.base import OptimizationContext, OptimizationPipeline
-from tokenopt.pipeline.compressor import compress_message_content
+from tokenopt.pipeline.compressor import CompressorStage, compress_message_content
 from tokenopt.pipeline.planner import (
     CandidatePlan,
     CandidatePlanner,
@@ -324,6 +327,23 @@ class TestP3RemoveCandidate:
 
     def test_p3_remove_metric_recorded(self) -> None:
         """5. P3 REMOVE: remove count metric is incremented."""
+        messages = [
+            {"role": "system", "content": "You are an assistant."},
+            {"role": "user", "content": "Okay!"},
+        ]
+        unit_0 = _make_unit(0, role="system", preservation_class=PreservationClass.P0_AUTHORITY)
+        unit_1 = _make_unit(
+            1, preservation_class=PreservationClass.P3_REMOVABLE, allow_removal=True
+        )
+        pmap = _make_pmap(unit_0, unit_1)
+        ctx = _make_ctx(messages, pmap)
+
+        result = TransformerStage().process(ctx)
+        assert result.metrics["transformer_remove_count"] == 1
+        assert len(result.messages) == 1
+
+    def test_p3_sole_message_preserved_by_turn_non_destruction(self) -> None:
+        """5. P3 REMOVE: sole message is preserved per turn non-destruction rule."""
         messages = [{"role": "user", "content": "Okay!"}]
         unit = _make_unit(
             0, preservation_class=PreservationClass.P3_REMOVABLE, allow_removal=True
@@ -332,8 +352,8 @@ class TestP3RemoveCandidate:
         ctx = _make_ctx(messages, pmap)
 
         result = TransformerStage().process(ctx)
-        assert result.metrics["transformer_remove_count"] == 1
-        assert len(result.messages) == 0
+        assert len(result.messages) == 1
+        assert result.messages[0]["content"] == "Okay!"
 
 
 # ---------------------------------------------------------------------------
@@ -503,7 +523,7 @@ class TestPlannerTransformerIntegration:
 
     def test_analyzer_transformer_pipeline_integration(self) -> None:
         """10. AnalyzerStage sets preservation_map; TransformerStage reads it."""
-        config = TokenOptConfig(enable_compression=False)
+        config = TokenOptConfig()
         messages = [
             {"role": "system", "content": "You are a database specialist on prod-db-01."},
             {"role": "user", "content": "Please   explain this query."},
@@ -738,3 +758,96 @@ class TestMetrics:
         assert result.metrics["transformer_remove_count"] == 1
         # P0 is a protected_unit in the plan → counted as protected
         assert result.metrics["transformer_protected_count"] == 1
+
+
+# ---------------------------------------------------------------------------
+# 16. Production pipeline integration: BaseOptimizedClient & _build_pipeline
+# ---------------------------------------------------------------------------
+
+
+class TestProductionPipelineIntegration:
+    """Proves the REAL production TokenOpt client pipeline uses TransformerStage."""
+
+    def test_production_pipeline_registration(self) -> None:
+        """Test A: BaseOptimizedClient pipeline contains AnalyzerStage and
+        TransformerStage; CompressorStage is NOT present as the transformation stage.
+        """
+        # Test with OpenAI client
+        client_openai = OpenAI(api_key="test-key")
+        openai_stages = client_openai.pipeline.stages
+        openai_names = [s.name for s in openai_stages]
+
+        assert any(isinstance(s, AnalyzerStage) for s in openai_stages)
+        assert any(isinstance(s, TransformerStage) for s in openai_stages)
+        assert not any(isinstance(s, CompressorStage) for s in openai_stages)
+        assert "analyzer" in openai_names
+        assert "transformer" in openai_names
+        assert "compressor" not in openai_names
+
+        # Test with LocalClient
+        client_local = LocalClient(api_key="test-key")
+        local_stages = client_local.pipeline.stages
+        local_names = [s.name for s in local_stages]
+
+        assert any(isinstance(s, AnalyzerStage) for s in local_stages)
+        assert any(isinstance(s, TransformerStage) for s in local_stages)
+        assert not any(isinstance(s, CompressorStage) for s in local_stages)
+        assert "analyzer" in local_names
+        assert "transformer" in local_names
+        assert "compressor" not in local_names
+
+    def test_protected_content_survives_production_path(self) -> None:
+        """Test B: P1 protected content survives production pipeline execution exactly."""
+        client = OpenAI(api_key="test-key")
+        # Code block containing Python code with whitespace and formatting
+        protected_code = (
+            "```python\n"
+            "def process_data(records):\n"
+            "    # Critical invariant: must not be stripped or compressed\n"
+            "    return [r['id'] for r in records if r.get('active')]\n"
+            "```"
+        )
+        messages = [{"role": "user", "content": protected_code}]
+
+        ctx = client.pipeline.run(messages, "gpt-4o")
+
+        assert ctx.messages[0]["content"] == protected_code
+        assert ctx.preservation_map is not None
+        assert ctx.metrics.get("transformer_applied") is True
+        assert ctx.metrics.get("transformer_compress_count") == 0
+        assert ctx.metrics.get("transformer_protected_count") >= 1
+
+    def test_eligible_p2_is_transformed_in_production_path(self) -> None:
+        """Test C: Eligible P2 compressible content is transformed via production pipeline."""
+        client = OpenAI(api_key="test-key")
+        compressible_prose = (
+            "Please   kindly explain    this topic. "
+            "Basically, in my opinion, I believe it is essential."
+        )
+        messages = [{"role": "user", "content": compressible_prose}]
+
+        ctx = client.pipeline.run(messages, "gpt-4o")
+
+        # Transformation occurs: whitespace collapsed, filler removed
+        assert ctx.messages[0]["content"] != compressible_prose
+        assert "kindly" not in ctx.messages[0]["content"].lower()
+        assert "basically" not in ctx.messages[0]["content"].lower()
+        assert ctx.metrics.get("transformer_applied") is True
+        assert ctx.metrics.get("transformer_compress_count") == 1
+
+    def test_compression_disabled_in_production_path(self) -> None:
+        """Test D: enable_compression=False prevents TransformerStage from transforming."""
+        cfg = TokenOptConfig(enable_compression=False)
+        client = OpenAI(api_key="test-key", config=cfg)
+        compressible_prose = (
+            "Please   kindly explain    this topic. "
+            "Basically, in my opinion, I believe it is essential."
+        )
+        messages = [{"role": "user", "content": compressible_prose}]
+
+        ctx = client.pipeline.run(messages, "gpt-4o")
+
+        # When enable_compression=False, transformer is gated off by _should_run_stage
+        assert ctx.messages[0]["content"] == compressible_prose
+        assert "transformer_latency_ms" not in ctx.metrics
+        assert "transformer_applied" not in ctx.metrics

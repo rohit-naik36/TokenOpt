@@ -100,17 +100,29 @@ class TransformerStage(PipelineStage):
                 compress_count += 1
 
             elif candidate.candidate_type == CandidateType.REMOVE:
-                # Omit the message — do not append it to the output.
-                remove_count += 1
+                # Omit the message only if it does not violate provider message-sequence
+                # rules (Turn Non-Destruction rule from preservation contract):
+                # Never delete the sole message, and never leave the conversation with 0 messages.
+                if len(ctx.messages) <= 1:
+                    transformed.append(msg)
+                    protected_count += 1
+                else:
+                    remove_count += 1
 
             else:
                 # Defensive fallback for any unknown future CandidateType.
                 transformed.append(msg)
                 protected_count += 1
 
+        # Turn Non-Destruction: if all messages were removed, fail safe
+        # so provider never receives an empty message list.
+        if not transformed and ctx.messages:
+            transformed = list(ctx.messages)
+
         ctx.messages = transformed
 
         ctx.metrics["transformer_applied"] = True
+        ctx.metrics["compression_applied"] = True
         ctx.metrics["transformer_compress_count"] = compress_count
         ctx.metrics["transformer_remove_count"] = remove_count
         ctx.metrics["transformer_protected_count"] = protected_count

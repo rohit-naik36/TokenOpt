@@ -13,12 +13,12 @@ from tokenopt.observability import MetricsCollector, RequestMetrics, estimate_co
 from tokenopt.pipeline import (
     AnalyzerStage,
     CacheStage,
-    CompressorStage,
     ContextSummarizerStage,
     FewShotSelectorStage,
     OptimizationPipeline,
     RAGOptimizerStage,
     RouterStage,
+    TransformerStage,
 )
 
 
@@ -88,7 +88,7 @@ class BaseOptimizedClient(ABC):
         stages = [
             AnalyzerStage(self.config),
             RouterStage(self.config),
-            CompressorStage(self.config),
+            TransformerStage(self.config),
             ContextSummarizerStage(self.config),
             CacheStage(self.config),
             RAGOptimizerStage(self.config),
@@ -98,12 +98,16 @@ class BaseOptimizedClient(ABC):
             stages = [s for s in stages if s.name != "router"]
             rules = [r for r in self.config.routing_rules if routing_rule_filter(r)]
             if rules:
-                compressor_idx = next(
-                    (i for i, s in enumerate(stages) if s.name == "compressor"),
+                transform_idx = next(
+                    (
+                        i
+                        for i, s in enumerate(stages)
+                        if s.name in ("transformer", "compressor")
+                    ),
                     len(stages),
                 )
                 stages.insert(
-                    compressor_idx,
+                    transform_idx,
                     RouterStage(replace(self.config, routing_rules=rules)),
                 )
         return OptimizationPipeline(stages, self.config)
