@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -84,10 +85,12 @@ class TokenOptConfig:
     summarization_model: str = "gpt-4o-mini"
 
     # RAG Optimization
+    enable_rag: bool = True
     rag_max_chunks: int = 5
     rag_similarity_threshold: float = 0.7
 
     # Few-shot Optimization
+    enable_fewshot: bool = True
     fewshot_max_examples: int = 3
     fewshot_selection_strategy: str = "similarity"
 
@@ -138,3 +141,23 @@ def get_default_config() -> TokenOptConfig:
             ),
         ]
     )
+
+
+def get_prototype_config(**kwargs: Any) -> TokenOptConfig:
+    """Get TokenOptConfig configured for the Prototype v0.1 optimization boundary.
+
+    Enforces the active optimization pipeline:
+    Analyzer -> Router -> Transformer -> Validator -> Cache -> Provider.
+    Downstream context-mutating stages (summarization, RAG, few-shot) are disabled
+    so that ValidatorStage is the final gate for context transformations.
+    """
+    default_cfg = get_default_config()
+    defaults: dict[str, Any] = {
+        "routing_rules": list(default_cfg.routing_rules),
+        "default_model": default_cfg.default_model,
+        "enable_summarization": False,
+        "enable_rag": False,
+        "enable_fewshot": False,
+    }
+    defaults.update(kwargs)
+    return TokenOptConfig(**defaults)
