@@ -3,7 +3,11 @@
 from tokenopt.pipeline.analyzer import AnalyzerStage, ContextAnalyzer
 from tokenopt.pipeline.base import OptimizationContext, OptimizationPipeline, PipelineStage
 from tokenopt.pipeline.cache import CacheStage
-from tokenopt.pipeline.compressor import CompressorStage, ContextSummarizerStage
+from tokenopt.pipeline.compressor import (
+    CompressorStage,
+    ContextSummarizerStage,
+    compress_message_content,
+)
 from tokenopt.pipeline.fewshot import FewShotSelectorStage
 from tokenopt.pipeline.planner import (
     CandidateDecision,
@@ -25,6 +29,7 @@ from tokenopt.pipeline.preservation import (
 )
 from tokenopt.pipeline.rag_optimizer import RAGOptimizerStage
 from tokenopt.pipeline.router import RouterStage
+from tokenopt.pipeline.transformer import TransformerStage
 
 __all__ = [
     "OptimizationContext",
@@ -39,6 +44,8 @@ __all__ = [
     "CandidateType",
     "CompressorStage",
     "ContextSummarizerStage",
+    "compress_message_content",
+    "TransformerStage",
     "CacheStage",
     "RouterStage",
     "RAGOptimizerStage",
