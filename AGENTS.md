@@ -25,14 +25,15 @@ from openai import OpenAI
 from tokenopt import OpenAI
 ```
 
-Optimizations are performed by a configurable pipeline (routing, compression,
-summarization, semantic caching, RAG and few-shot optimization), with built-in
-metrics and structured logging.
+Optimizations are performed by a configurable pipeline (canonical CP1–CP7:
+Analyzer -> Router -> Transformer -> Validator, followed by downstream stages:
+Summarizer, Cache, RAG Optimizer, and FewShot Selector), with built-in
+telemetry metrics, structured logging, and an OpenAI-compatible FastAPI Gateway.
 
 - Language: Python ≥ 3.10
-- Package: `tokenopt` (clients / pipeline / observability / utils)
+- Package: `tokenopt` (clients / pipeline / observability / server / utils)
 - Providers: OpenAI, Anthropic, Ollama, vLLM, llama.cpp, LM Studio
-- Tests: `pytest` · Lint: `ruff` · Types: `mypy`
+- Tests: `pytest` (413 tests, 94% coverage) · Lint: `ruff` · Types: `mypy`
 - All project state lives in `.ai/` — treat it as authoritative memory.
 
 ---

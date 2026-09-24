@@ -1,56 +1,33 @@
 # Next Steps
 
-_Last updated: 2026-08-02 (M15 complete — v0.1.0 released to PyPI; ADB
-backlog next)_
+_Last updated: 2026-09-25 (Repository Stabilization & Architecture Hygiene complete; Prototype v0.2 next)_
 
-## M15 done — v0.1.0 live on PyPI
+## Current State: Stabilization Complete
 
-M15 released v0.1.0: Trusted Publisher (OIDC, Decision 26) configured on
-PyPI for `tokenopt` / `rohit-naik36` / `publish.yml`, tag `v0.1.0` pushed,
-workflow built sdist+wheel, `twine check` passed, uploaded via
-`pypa/gh-action-pypi-publish` — verified live at
-`https://pypi.org/pypi/tokenopt/json`. No API tokens stored. Dependabot
-action PRs merged. README already documents `pip install tokenopt`.
+All 17 stabilization and architecture hygiene phases have been completed and verified on `feature/prototype-v0.1-gateway`:
+- CP1–CP7 canonical pipeline verified and hardened.
+- Prototype v0.1 Gateway safely gated with `ValidatorStage` as the final mutation gate.
+- Metrics, provider token accounting, and cost semantics clarified.
+- Cache key semantics hardened against cross-model and cross-parameter collisions.
+- CI and packaging updated.
+- Full test suite: **413 passed**, 0 failures, 94% coverage.
 
-1. **ADB backlog (post-v0.1.0)** — consume ADB items: High — ADB-03 plugin
-   architecture, ADB-11 internal architecture contracts; Medium — ADB-01,
-   ADB-02, ADB-05, ADB-12, ADB-13.
-2. Post-v0.1.0 roadmap items per ROADMAP Phase 2 (router cost/latency
-   tracking, cache file persistence, pluggable summarizer, real LLMLingua,
-   local streaming, Prometheus exporter).
+## Immediate Next Milestone: Prototype v0.2 — Evidence Harness
 
-## Notes
+The next objective is building the empirical measurement and evaluation harness for Prototype v0.2:
 
-- Prompt library "live" status: prompts are validated by construction
-  (instantiate the workflows they reference); record real-task usage in
-  SESSION_LOG per `.ai/PROMPTS/README.md` maintenance rule.
-- Curation passes are periodic (repository-audit workflow); deletions
-  always follow `.ai/REPOSITORY_RETENTION_POLICY.md`.
+1. **Evaluation Dataset (50 cases)**:
+   - Diverse prompts covering pure prose, technical instructions, code, structured JSON/markdown, and boundary cases.
+   - Ground-truth invariant annotations for exact preservation checks.
 
-## Notes
+2. **Automated Evaluation Runner**:
+   - Compare unoptimized baseline against optimized pipeline through the Prototype Gateway.
+   - Measure token reduction, latency impact, preservation fidelity, and cost savings.
 
-- Author metadata now uses the publisher name **Rohit Naik** (pyproject
-  `authors`, LICENSE copyright) — applied at M7 start.
-- **Dependabot is active**: it opened initial update PRs for
-  `actions/checkout`, `actions/setup-python`, and `actions/upload-artifact`
-  (v4/v5 → v7). Merge after review when convenient; they are not blockers.
-- README documents install-from-git until PyPI publish (M15).
+3. **Empirical Report Generation**:
+   - Generate summary metrics and per-case validation decision distributions.
 
-## Known follow-ups (need approval/decision)
+## Future Milestones
 
-- None blocking — v0.1.0 released to PyPI (Decision 26, user-approved).
-
-## Short term (Phase 2, after M7 per roadmap)
-
-- **Router** — per-model cost/latency tracking, dynamic routing
-- **Cache** — persistence (Redis done, add file-backed), better eviction
-- **Summarizer** — pluggable summarization model
-- **Compressor** — real LLMLingua integration + improved heuristics
-- **Local client** — streaming support (`stream=True` passthrough is stubbed
-  but responses are not streamed through base client)
-- **Observability** — Prometheus exporter option, cost tracking per project/model
-
-## Longer term (post-v1)
-
-- Prompt versioning/registry, A/B testing framework, team config sharing,
-  web UI for experimentation
+- Checkpoint 8 (CP8): Real streaming support (`stream=true`) with incremental preservation validation.
+- Advanced routing and telemetry integrations (Prometheus exporter).
