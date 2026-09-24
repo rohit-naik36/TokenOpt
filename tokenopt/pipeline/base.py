@@ -138,7 +138,7 @@ class OptimizationPipeline:
         if stage_name == "router":
             return self.config.enable_routing
 
-        if stage_name == "compressor":
+        if stage_name in ("compressor", "transformer"):
             return self.config.enable_compression
 
         if stage_name == "summarizer":

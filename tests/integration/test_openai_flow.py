@@ -169,6 +169,6 @@ def test_factory_builds_working_openai_client(
 
     assert isinstance(client, OpenAI)
     response = client.chat.completions.create(
-        messages=[{"role": "user", "content": "Hello"}],
+        messages=[{"role": "user", "content": "Explain the deployment status"}],
     )
     assert response.choices[0].message.content == "mock reply"

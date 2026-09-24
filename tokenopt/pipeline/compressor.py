@@ -15,13 +15,69 @@ from tokenopt.utils.token_counter import (
 )
 
 
+def compress_message_content(
+    msg: dict[str, Any],
+    target_tokens: int,
+    model: str,
+) -> dict[str, Any]:
+    """Apply deterministic heuristic compression to a single message dict.
+
+    This is the shared transformation engine used by both CompressorStage
+    (which applies it uniformly to all messages) and TransformerStage (which
+    applies it only to CandidatePlan-designated COMPRESS candidates).
+
+    Transformations applied:
+    - Normalize excessive whitespace (3+ newlines → 2, 2+ spaces → 1).
+    - Remove common conversational filler phrases.
+    - Truncate to ``target_tokens`` if the individual message exceeds it.
+
+    Non-string ``content`` values are returned unchanged.  The message dict
+    is copied — the original is never mutated.
+    """
+    content = msg.get("content", "")
+
+    if not isinstance(content, str):
+        return msg
+
+    # Normalize excessive whitespace.
+    content = re.sub(r"\n{3,}", "\n\n", content)
+    content = re.sub(r" {2,}", " ", content)
+
+    # Remove common filler phrases.
+    filler_patterns = [
+        r"\b(?:please|kindly|would you|could you)\b",
+        r"\b(?:I think|I believe|in my opinion)\b",
+        r"\b(?:basically|essentially|fundamentally)\b",
+    ]
+
+    for pattern in filler_patterns:
+        content = re.sub(
+            pattern,
+            "",
+            content,
+            flags=re.IGNORECASE,
+        )
+
+    # Truncate if the individual message exceeds the target.
+    msg_tokens = count_tokens(content, model)
+
+    if msg_tokens > target_tokens:
+        content = truncate_to_tokens(
+            content,
+            target_tokens,
+            model,
+        )
+
+    return {**msg, "content": content.strip()}
+
+
 class CompressorStage(PipelineStage):
     """Compress prompts using deterministic, low-risk transformations."""
 
     name = "compressor"
 
     def __init__(self, config: TokenOptConfig | None = None):
-        self.config = config or TokenOptConfig()
+        self.config: TokenOptConfig = config or TokenOptConfig()
 
     def process(self, ctx: OptimizationContext) -> OptimizationContext:
         """Run deterministic MVP compression.
@@ -56,46 +112,8 @@ class CompressorStage(PipelineStage):
         compressed_messages: list[dict[str, Any]] = []
 
         for msg in ctx.messages:
-            content = msg.get("content", "")
-
-            if not isinstance(content, str):
-                compressed_messages.append(msg)
-                continue
-
-            # Remove excessive whitespace.
-            content = re.sub(r"\n{3,}", "\n\n", content)
-            content = re.sub(r" {2,}", " ", content)
-
-            # Remove common filler phrases.
-            filler_patterns = [
-                r"\b(?:please|kindly|would you|could you)\b",
-                r"\b(?:I think|I believe|in my opinion)\b",
-                r"\b(?:basically|essentially|fundamentally)\b",
-            ]
-
-            for pattern in filler_patterns:
-                content = re.sub(
-                    pattern,
-                    "",
-                    content,
-                    flags=re.IGNORECASE,
-                )
-
-            # Truncate if the individual message exceeds the target.
-            msg_tokens = count_tokens(content, ctx.model)
-
-            if msg_tokens > target_tokens:
-                content = truncate_to_tokens(
-                    content,
-                    target_tokens,
-                    ctx.model,
-                )
-
             compressed_messages.append(
-                {
-                    **msg,
-                    "content": content.strip(),
-                }
+                compress_message_content(msg, target_tokens, ctx.model)
             )
 
         ctx.messages = compressed_messages
@@ -112,7 +130,7 @@ class ContextSummarizerStage(PipelineStage):
         config: TokenOptConfig | None = None,
         summarizer_fn: Callable[[list[dict], str], str] | None = None,
     ):
-        self.config = config or TokenOptConfig()
+        self.config: TokenOptConfig = config or TokenOptConfig()
         self.summarizer_fn = summarizer_fn
 
     def process(self, ctx: OptimizationContext) -> OptimizationContext:
