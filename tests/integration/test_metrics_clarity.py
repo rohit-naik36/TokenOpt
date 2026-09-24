@@ -257,3 +257,56 @@ def test_routing_disabled_reports_empty_reason(
     metric = _last(client)
     assert metric.routing_applied is False
     assert metric.routing_reason == ""
+
+
+def test_provider_token_accounting_separated_from_estimated(
+    openai_transport: httpx.MockTransport,
+) -> None:
+    """Provider tokens come from API usage, distinct from TokenOpt local estimates."""
+    client = OpenAI(
+        api_key="test-key",
+        http_client=httpx.Client(transport=openai_transport),
+    )
+
+    client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": "Hello, world!"}],
+    )
+
+    metric = _last(client)
+    # TokenOpt estimates
+    assert metric.original_tokens > 0
+    assert metric.optimized_tokens > 0
+    # Provider reported usage (from mock fixture)
+    assert metric.provider_input_tokens == 10
+    assert metric.provider_output_tokens == 5
+    assert metric.output_tokens == 5
+
+
+def test_cost_semantics_baseline_and_savings(
+    openai_transport: httpx.MockTransport,
+) -> None:
+    """estimated_cost is baseline unoptimized cost;
+    optimized_cost and cost_saved reflect optimization.
+    """
+    client = OpenAI(
+        api_key="test-key",
+        http_client=httpx.Client(transport=openai_transport),
+    )
+
+    long_prompt = "please explain the difference between a router and a cache in detail " * 100
+    client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": long_prompt}],
+    )
+
+    metric = _last(client)
+    assert metric.tokens_saved > 0
+    assert metric.estimated_cost > metric.optimized_cost
+    assert metric.cost_saved > 0.0
+    assert abs(metric.cost_saved - (metric.estimated_cost - metric.optimized_cost)) < 1e-9
+
+    summary = client.get_metrics_summary()
+    assert summary["total_estimated_cost"] > summary["total_optimized_cost"]
+    assert summary["total_cost_saved"] > 0.0
+

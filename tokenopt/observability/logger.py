@@ -30,6 +30,8 @@ class StructuredLogger:
             "original_tokens": metrics.original_tokens,
             "optimized_tokens": metrics.optimized_tokens,
             "output_tokens": metrics.output_tokens,
+            "provider_input_tokens": metrics.provider_input_tokens,
+            "provider_output_tokens": metrics.provider_output_tokens,
             "cache_hit": metrics.cache_hit,
             "compression_applied": metrics.compression_applied,
             "compression_attempted": metrics.compression_attempted,
@@ -44,6 +46,8 @@ class StructuredLogger:
             "pipeline_latency_ms": metrics.pipeline_latency_ms,
             "model_latency_ms": metrics.model_latency_ms,
             "estimated_cost": metrics.estimated_cost,
+            "optimized_cost": metrics.optimized_cost,
+            "cost_saved": metrics.cost_saved,
             "error": metrics.error,
         })
 

@@ -212,11 +212,30 @@ class BaseOptimizedClient(ABC):
             else {"prompt_tokens": 0, "completion_tokens": 0}
         )
 
+        provider_input_tokens = (
+            usage["prompt_tokens"]
+            if response and "prompt_tokens" in usage
+            else None
+        )
+        provider_output_tokens = (
+            usage["completion_tokens"]
+            if response and "completion_tokens" in usage
+            else None
+        )
+
         optimized_tokens = ctx.metrics.get(
             "optimized_token_count",
             ctx.original_token_count
         )
         tokens_saved = ctx.original_token_count - optimized_tokens
+
+        baseline_cost = estimate_cost(
+            model, ctx.original_token_count, usage.get("completion_tokens", 0)
+        )
+        optimized_cost = estimate_cost(
+            model, optimized_tokens, usage.get("completion_tokens", 0)
+        )
+        cost_saved = max(0.0, baseline_cost - optimized_cost)
 
         routing_reason = ctx.metrics.get("routing_rule", "")
         if not routing_reason and "routing_complexity" in ctx.metrics:
@@ -229,6 +248,8 @@ class BaseOptimizedClient(ABC):
             original_tokens=ctx.original_token_count,
             optimized_tokens=optimized_tokens,
             output_tokens=usage.get("completion_tokens", 0),
+            provider_input_tokens=provider_input_tokens,
+            provider_output_tokens=provider_output_tokens,
             cache_hit=cache_hit,
             compression_applied=ctx.metrics.get("compression_applied", False),
             compression_attempted=ctx.metrics.get("compression_applied", False),
@@ -249,9 +270,9 @@ class BaseOptimizedClient(ABC):
             latency_ms=total_latency,
             pipeline_latency_ms=pipeline_latency,
             model_latency_ms=max(0.0, total_latency - pipeline_latency),
-            estimated_cost=estimate_cost(
-                model, ctx.original_token_count, usage.get("completion_tokens", 0)
-            ),
+            estimated_cost=baseline_cost,
+            optimized_cost=optimized_cost,
+            cost_saved=cost_saved,
             validation_decision=ctx.metrics.get("validation_decision", ""),
             rollback_applied=ctx.metrics.get("rollback_applied", False),
             error=error,

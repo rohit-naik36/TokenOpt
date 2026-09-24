@@ -13,6 +13,22 @@ from typing import Any
 class RequestMetrics:
     """Metrics for a single request.
 
+    Token counting semantics:
+    - ``original_tokens`` and ``optimized_tokens``: TokenOpt internal token estimates
+      calculated using the local tokenizer (tiktoken) before and after pipeline stages.
+    - ``output_tokens``: Tokens produced in the completion response (from provider usage).
+    - ``provider_input_tokens``: Prompt tokens reported directly by the provider API
+      (e.g. OpenAI usage.prompt_tokens or Ollama prompt_eval_count), or None if unavailable.
+    - ``provider_output_tokens``: Completion tokens reported directly by the provider API,
+      or None if unavailable.
+
+    Cost semantics:
+    - ``estimated_cost``: Baseline estimated cost in USD of the UNOPTIMIZED request
+      (original input tokens + output tokens).
+    - ``optimized_cost``: Estimated cost in USD of the OPTIMIZED request
+      (optimized input tokens + output tokens).
+    - ``cost_saved``: Estimated cost savings in USD (estimated_cost - optimized_cost).
+
     ``compression_applied`` reports whether the compressor *stage ran*
     (attempted); whether any token reduction actually occurred is reported
     separately by ``compression_effective`` and ``tokens_saved``, because a
@@ -23,6 +39,8 @@ class RequestMetrics:
     original_tokens: int = 0
     optimized_tokens: int = 0
     output_tokens: int = 0
+    provider_input_tokens: int | None = None
+    provider_output_tokens: int | None = None
     cache_hit: bool = False
     compression_applied: bool = False
     compression_attempted: bool = False  # compressor stage executed
@@ -38,7 +56,9 @@ class RequestMetrics:
     latency_ms: float = 0.0
     pipeline_latency_ms: float = 0.0     # TokenOpt middleware overhead
     model_latency_ms: float = 0.0        # inference time (total - overhead)
-    estimated_cost: float = 0.0
+    estimated_cost: float = 0.0          # baseline unoptimized cost
+    optimized_cost: float = 0.0          # post-optimization cost
+    cost_saved: float = 0.0              # estimated_cost - optimized_cost
     validation_decision: str = ""
     rollback_applied: bool = False
     error: str | None = None
@@ -96,6 +116,8 @@ class MetricsCollector:
             ) / total
             avg_latency = sum(m.latency_ms for m in self._metrics) / total
             total_cost = sum(m.estimated_cost for m in self._metrics)
+            total_optimized_cost = sum(m.optimized_cost for m in self._metrics)
+            total_cost_saved = sum(m.cost_saved for m in self._metrics)
 
             return {
                 "total_requests": total,
@@ -108,6 +130,8 @@ class MetricsCollector:
                 ),
                 "avg_latency_ms": avg_latency,
                 "total_estimated_cost": total_cost,
+                "total_optimized_cost": total_optimized_cost,
+                "total_cost_saved": total_cost_saved,
                 "error_rate": self._counters["errors"] / max(1, total),
                 "optimization_usage": {
                     "compression": self._counters["compression_count"],
