@@ -147,5 +147,10 @@ class OptimizationPipeline:
         if stage_name == "cache":
             return self.config.cache_enabled
 
-        # RAG and few-shot currently run when explicitly present.
+        if stage_name == "rag":
+            return getattr(self.config, "enable_rag", True)
+
+        if stage_name == "fewshot":
+            return getattr(self.config, "enable_fewshot", True)
+
         return True

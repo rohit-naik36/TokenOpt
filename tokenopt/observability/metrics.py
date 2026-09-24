@@ -39,6 +39,8 @@ class RequestMetrics:
     pipeline_latency_ms: float = 0.0     # TokenOpt middleware overhead
     model_latency_ms: float = 0.0        # inference time (total - overhead)
     estimated_cost: float = 0.0
+    validation_decision: str = ""
+    rollback_applied: bool = False
     error: str | None = None
 
 

@@ -11,7 +11,7 @@ Usage:
 """
 
 from tokenopt.clients import Anthropic, BaseOptimizedClient, LocalClient, OpenAI
-from tokenopt.config import RoutingRule, TokenOptConfig, get_default_config
+from tokenopt.config import RoutingRule, TokenOptConfig, get_default_config, get_prototype_config
 from tokenopt.factory import create_client, create_client_from_model, detect_provider
 from tokenopt.observability import MetricsCollector, RequestMetrics, estimate_cost
 from tokenopt.utils import count_message_tokens, count_tokens, truncate_to_tokens
@@ -22,6 +22,7 @@ __all__ = [
     "TokenOptConfig",
     "RoutingRule",
     "get_default_config",
+    "get_prototype_config",
     "BaseOptimizedClient",
     "OpenAI",
     "Anthropic",

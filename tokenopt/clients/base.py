@@ -252,6 +252,8 @@ class BaseOptimizedClient(ABC):
             estimated_cost=estimate_cost(
                 model, ctx.original_token_count, usage.get("completion_tokens", 0)
             ),
+            validation_decision=ctx.metrics.get("validation_decision", ""),
+            rollback_applied=ctx.metrics.get("rollback_applied", False),
             error=error,
         )
 
