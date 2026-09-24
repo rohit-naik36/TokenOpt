@@ -85,13 +85,17 @@ class TestGatewayEndpoints:
             ],
             "temperature": 0.5,
             "max_tokens": 200,
+            "top_p": 0.9,
         }
 
         with patch.object(LocalClient, "_create_client", return_value=MagicMock()), \
-             patch.object(LocalClient, "_call_api", return_value=mock_local_response):
+             patch.object(LocalClient, "_call_api", return_value=mock_local_response) as mock_api:
             resp = client.post("/v1/chat/completions", json=payload)
 
         assert resp.status_code == 200
+        assert mock_api.call_args[1]["temperature"] == 0.5
+        assert mock_api.call_args[1]["max_tokens"] == 200
+        assert mock_api.call_args[1]["top_p"] == 0.9
         data = resp.json()
         assert data["object"] == "chat.completion"
         assert data["model"] == "llama3.1"
