@@ -834,17 +834,18 @@ class TestProductionPipelineIntegration:
         assert "transformer" in openai_names
         assert "compressor" not in openai_names
 
-        # Test with LocalClient
-        client_local = LocalClient(api_key="test-key")
-        local_stages = client_local.pipeline.stages
-        local_names = [s.name for s in local_stages]
+        # Test with LocalClient (stub _create_client to avoid requiring optional ollama)
+        with patch.object(LocalClient, "_create_client", return_value=object()):
+            client_local = LocalClient(api_key="test-key")
+            local_stages = client_local.pipeline.stages
+            local_names = [s.name for s in local_stages]
 
-        assert any(isinstance(s, AnalyzerStage) for s in local_stages)
-        assert any(isinstance(s, TransformerStage) for s in local_stages)
-        assert not any(isinstance(s, CompressorStage) for s in local_stages)
-        assert "analyzer" in local_names
-        assert "transformer" in local_names
-        assert "compressor" not in local_names
+            assert any(isinstance(s, AnalyzerStage) for s in local_stages)
+            assert any(isinstance(s, TransformerStage) for s in local_stages)
+            assert not any(isinstance(s, CompressorStage) for s in local_stages)
+            assert "analyzer" in local_names
+            assert "transformer" in local_names
+            assert "compressor" not in local_names
 
     def test_protected_content_survives_production_path(self) -> None:
         """Test B: P1 protected content survives production pipeline execution exactly."""
