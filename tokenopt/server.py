@@ -164,8 +164,10 @@ def create_app(config: TokenOptConfig | None = None) -> FastAPI:
             headers["x-tokenopt-tokens-saved"] = str(metrics.tokens_saved)
             headers["x-tokenopt-reduction-pct"] = f"{metrics.reduction_percentage:.2f}"
             headers["x-tokenopt-pipeline-latency-ms"] = f"{metrics.pipeline_latency_ms:.2f}"
+            headers["x-tokenopt-model-latency-ms"] = f"{metrics.model_latency_ms:.2f}"
+            headers["x-tokenopt-cache-hit"] = str(metrics.cache_hit).lower()
             headers["x-tokenopt-validation-decision"] = (
-                metrics.validation_decision if metrics.validation_decision else "accept"
+                metrics.validation_decision if metrics.validation_decision else "unknown"
             )
             headers["x-tokenopt-rollback-applied"] = str(metrics.rollback_applied).lower()
             headers["x-tokenopt-model"] = metrics.model if metrics.model else req.model

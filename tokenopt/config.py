@@ -155,6 +155,9 @@ def get_prototype_config(**kwargs: Any) -> TokenOptConfig:
     defaults: dict[str, Any] = {
         "routing_rules": list(default_cfg.routing_rules),
         "default_model": default_cfg.default_model,
+        "enable_compression": True,
+        "cache_enabled": False,
+        "enable_routing": False,
         "enable_summarization": False,
         "enable_rag": False,
         "enable_fewshot": False,

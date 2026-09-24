@@ -107,6 +107,9 @@ class TestGatewayEndpoints:
         assert "x-tokenopt-tokens-saved" in resp.headers
         assert "x-tokenopt-reduction-pct" in resp.headers
         assert "x-tokenopt-pipeline-latency-ms" in resp.headers
+        assert "x-tokenopt-model-latency-ms" in resp.headers
+        assert "x-tokenopt-cache-hit" in resp.headers
+        assert resp.headers["x-tokenopt-cache-hit"] == "false"
         assert resp.headers["x-tokenopt-validation-decision"] == "accept"
         assert resp.headers["x-tokenopt-rollback-applied"] == "false"
         assert int(resp.headers["x-tokenopt-original-tokens"]) > 0
@@ -145,16 +148,19 @@ class TestPrototypeSafetyAndGating:
     def test_prototype_config_disables_unvalidated_mutators(self) -> None:
         """get_prototype_config() explicitly disables summarization, RAG, and fewshot."""
         cfg = get_prototype_config()
+        assert cfg.enable_compression is True
+        assert cfg.cache_enabled is False
+        assert cfg.enable_routing is False
         assert cfg.enable_summarization is False
         assert cfg.enable_rag is False
         assert cfg.enable_fewshot is False
-        assert cfg.enable_compression is True
-        assert cfg.cache_enabled is True
-        assert cfg.enable_routing is True
 
     def test_default_config_leaves_stages_enabled(self) -> None:
         """Library-wide default config remains unchanged for backward compatibility."""
         cfg = TokenOptConfig()
+        assert cfg.enable_compression is True
+        assert cfg.cache_enabled is True
+        assert cfg.enable_routing is True
         assert cfg.enable_summarization is True
         assert cfg.enable_rag is True
         assert cfg.enable_fewshot is True
@@ -259,3 +265,26 @@ class TestPrototypeSafetyAndGating:
         assert resp.headers["x-tokenopt-validation-decision"] == "reject"
         assert resp.headers["x-tokenopt-rollback-applied"] == "true"
         assert resp.headers["x-tokenopt-tokens-saved"] == "0"
+
+    def test_missing_validation_decision_defaults_to_unknown(
+        self, mock_local_response: MagicMock
+    ) -> None:
+        """When validation decision is empty, header reports 'unknown' instead of 'accept'."""
+        payload = {
+            "model": "llama3.1",
+            "messages": [{"role": "user", "content": "Hello"}],
+        }
+
+        def empty_validation(ctx: OptimizationContext) -> OptimizationContext:
+            ctx.metrics.pop("validation_decision", None)
+            return ctx
+
+        with patch.object(LocalClient, "_create_client", return_value=MagicMock()), \
+             patch.object(ValidatorStage, "process", side_effect=empty_validation), \
+             patch.object(LocalClient, "_call_api", return_value=mock_local_response):
+            app = create_app()
+            test_client = TestClient(app)
+            resp = test_client.post("/v1/chat/completions", json=payload)
+
+        assert resp.status_code == 200
+        assert resp.headers["x-tokenopt-validation-decision"] == "unknown"

@@ -109,12 +109,15 @@ def run_demo(model: str = "llama3.1", base_url: str | None = None) -> None:
 
     content = client._extract_response_content(response)
 
-    # Invariant preservation check
-    preserved_invariants = [
-        inv for inv in invariants if any(inv in m.get("content", "") for m in messages)
-    ]
-    intact_count = sum(1 for inv in preserved_invariants)
-    intact_pct = (intact_count / len(preserved_invariants) * 100) if preserved_invariants else 100.0
+    # Authoritative validation status from pipeline telemetry
+    validation_decision = (
+        metrics.validation_decision if metrics and metrics.validation_decision else "unknown"
+    )
+    rollback_applied = metrics.rollback_applied if metrics else False
+    if validation_decision == "accept" and not rollback_applied:
+        validation_status = "PASS"
+    else:
+        validation_status = "FAIL"
 
     print("=" * 60)
     print("TOKENOPT PROTOTYPE v0.1")
@@ -132,13 +135,13 @@ def run_demo(model: str = "llama3.1", base_url: str | None = None) -> None:
         print(f"Pipeline latency:     {metrics.pipeline_latency_ms:.2f} ms")
         print(f"Model latency:        {metrics.model_latency_ms:.2f} ms")
         print(f"Total roundtrip:      {total_latency_ms:.2f} ms")
-        print(f"Validation:           {metrics.validation_decision or 'accept'}")
-        print(f"Rollback:             {metrics.rollback_applied}")
+        print(f"Validation decision:  {validation_decision}")
+        print(f"Rollback applied:     {rollback_applied}")
+        print(f"Preservation validation: {validation_status}")
     print()
-    print("Protected invariants:")
+    print("Protected invariants monitored:")
     for inv in invariants:
-        print(f"  - {inv} (preserved)")
-    print(f"Preserved:            {intact_pct:.1f}%")
+        print(f"  - {inv}")
     print()
     print("-" * 60)
     print("LLM RESPONSE")
