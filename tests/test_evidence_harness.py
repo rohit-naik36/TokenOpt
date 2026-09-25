@@ -570,8 +570,12 @@ class TestReporters:
             reader = csv.DictReader(f)
             rows = list(reader)
             assert len(rows) == 2
-            assert "base_in_tokens" in rows[0]
-            assert "cost_saved_proj" in rows[0]
+            assert "provider_baseline_input_tokens" in rows[0]
+            assert "projected_cost_saved_usd" in rows[0]
+            # Also verify local estimate columns present
+            assert "estimated_original_tokens" in rows[0]
+            assert "estimated_optimized_tokens" in rows[0]
+            assert "estimated_tokens_saved" in rows[0]
 
         # Verify Markdown content
         md_content = md_path.read_text(encoding="utf-8")

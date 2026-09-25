@@ -32,7 +32,7 @@ class EvidenceReporter:
             json.dump([rec.to_dict() for rec in self.records], f, indent=2)
 
     def write_csv(self, file_path: str | Path) -> None:
-        """Write tabular summary to CSV."""
+        """Write tabular summary to CSV with explicit measurement basis in headers."""
         path = Path(file_path)
         path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -44,21 +44,31 @@ class EvidenceReporter:
             "model",
             "environment",
             "execution_status",
-            "base_in_tokens",
-            "opt_in_tokens",
-            "tokens_saved",
-            "reduction_pct",
+            # Provider-observed (OBSERVED) — may be N/A
+            "provider_baseline_input_tokens",
+            "provider_tokenopt_input_tokens",
+            "provider_input_tokens_saved",
+            "provider_input_reduction_pct",
+            # Local estimates (DIAGNOSTIC) — always present
+            "estimated_original_tokens",
+            "estimated_optimized_tokens",
+            "estimated_tokens_saved",
+            # Verification (VERIFIED)
             "val_decision",
             "rollback_applied",
             "invariants_passed",
             "invariants_checked",
+            # Task fidelity (VERIFIED)
             "task_fidelity_status",
             "base_task_passed",
             "opt_task_passed",
-            "pipe_lat_ms",
-            "base_lat_ms",
-            "opt_lat_ms",
-            "cost_saved_proj",
+            # Latency (OBSERVED / DIAGNOSTIC)
+            "pipeline_latency_ms",
+            "baseline_total_latency_ms",
+            "tokenopt_total_latency_ms",
+            # Cost (OBSERVED when provider tokens available; NOT_PROVABLE otherwise)
+            "projected_cost_saved_usd",
+            # Generation parameters
             "requested_params",
             "effective_params",
         ]
@@ -73,6 +83,11 @@ class EvidenceReporter:
                 saved = rec.comparison.provider_tokens_saved
                 red_pct = rec.comparison.provider_reduction_pct
 
+                # Local estimates (always present)
+                est_orig = rec.tokenopt.estimated_original_tokens
+                est_opt = rec.tokenopt.estimated_optimized_tokens
+                est_saved = rec.tokenopt.estimated_tokens_saved
+
                 writer.writerow({
                     "run_id": rec.run_id,
                     "case_id": rec.case_id,
@@ -81,33 +96,44 @@ class EvidenceReporter:
                     "model": rec.model,
                     "environment": rec.execution_environment,
                     "execution_status": rec.execution_status.value,
-                    "base_in_tokens": b_in if b_in is not None else "N/A",
-                    "opt_in_tokens": t_in if t_in is not None else "N/A",
-                    "tokens_saved": saved if saved is not None else "N/A",
-                    "reduction_pct": f"{red_pct:.2f}%" if red_pct is not None else "N/A",
+                    # Provider-observed (OBSERVED)
+                    "provider_baseline_input_tokens": b_in if b_in is not None else "N/A",
+                    "provider_tokenopt_input_tokens": t_in if t_in is not None else "N/A",
+                    "provider_input_tokens_saved": saved if saved is not None else "N/A",
+                    "provider_input_reduction_pct": (
+                        f"{red_pct:.2f}%" if red_pct is not None else "N/A"
+                    ),
+                    # Local estimates (DIAGNOSTIC)
+                    "estimated_original_tokens": est_orig,
+                    "estimated_optimized_tokens": est_opt,
+                    "estimated_tokens_saved": est_saved,
+                    # Verification (VERIFIED)
                     "val_decision": rec.preservation.validation_decision,
                     "rollback_applied": rec.preservation.rollback_applied,
                     "invariants_passed": rec.preservation.invariants_passed,
                     "invariants_checked": rec.preservation.invariants_checked,
+                    # Task fidelity (VERIFIED)
                     "task_fidelity_status": rec.task_fidelity.status.value,
                     "base_task_passed": rec.task_fidelity.baseline_passed,
                     "opt_task_passed": rec.task_fidelity.tokenopt_passed,
-                    "pipe_lat_ms": (
+                    # Latency
+                    "pipeline_latency_ms": (
                         f"{rec.tokenopt.pipeline_latency_ms:.2f}"
                         if rec.tokenopt.pipeline_latency_ms is not None
                         else "N/A"
                     ),
-                    "base_lat_ms": (
+                    "baseline_total_latency_ms": (
                         f"{rec.baseline.total_latency_ms:.2f}"
                         if rec.baseline.total_latency_ms is not None
                         else "N/A"
                     ),
-                    "opt_lat_ms": (
+                    "tokenopt_total_latency_ms": (
                         f"{rec.tokenopt.total_latency_ms:.2f}"
                         if rec.tokenopt.total_latency_ms is not None
                         else "N/A"
                     ),
-                    "cost_saved_proj": (
+                    # Cost
+                    "projected_cost_saved_usd": (
                         f"${rec.comparison.projected_cost_saved:.6f}"
                         if rec.comparison.projected_cost_saved is not None
                         else "N/A"
@@ -193,10 +219,10 @@ class EvidenceReporter:
         )
 
         tok_line = (
-            f"| Provider Input Tokens | **Observed** | {base_tok_sum} -> {opt_tok_sum} "
+            f"| Provider-Reported Input Tokens | **Observed** | {base_tok_sum} -> {opt_tok_sum} "
             f"({total_tokens_saved} saved, {agg_reduction_pct}%) | Provider-reported usage |"
             if has_provider_tokens
-            else "| Provider Input Tokens | **Unavailable** | N/A | "
+            else "| Provider-Reported Input Tokens | **Unavailable** | N/A | "
                  "Provider did not return usage metrics |"
         )
 
@@ -247,13 +273,29 @@ class EvidenceReporter:
             f"| Task Fidelity Pass Rate | **Observed** | {task_passed}/{n_eval} "
             f"({n_eval} evaluated, {n_na} N/A) | Deterministic task assertions |",
             "",
+            "### Local Token Estimates (Diagnostic — Not Provider-Observed)",
+            "",
+            "| Metric Dimension | Classification | Value | Notes |",
+            "|---|---|---|---|",
+            f"| Estimated Original Tokens (sum) | **Diagnostic** | "
+            f"{sum(r.tokenopt.estimated_original_tokens for r in self.records)} | "
+            "Local tiktoken count pre-optimization |",
+            f"| Estimated Optimized Tokens (sum) | **Diagnostic** | "
+            f"{sum(r.tokenopt.estimated_optimized_tokens for r in self.records)} | "
+            "Local tiktoken count post-optimization |",
+            f"| Estimated Tokens Saved (sum) | **Diagnostic** | "
+            f"{sum(r.tokenopt.estimated_tokens_saved for r in self.records)} | "
+            "Local estimate only — not provider billing |",
+            "",
             "---",
             "",
             "## Case-by-Case Comparison Table",
             "",
-            "| Case ID | Status | Base In | Opt In | Saved (%) | Val Decision | Rollback | "
+            "| Case ID | Status | Provider Baseline In | Provider TokenOpt In | "
+            "Provider Saved (%) | "
+            "Est. Original | Est. Optimized | Est. Saved | Val Decision | Rollback | "
             "Task Fidelity | Pipe Latency |",
-            "|---|---|---|---|---|---|---|---|---|",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
         ]
 
         for r in self.records:
@@ -262,11 +304,13 @@ class EvidenceReporter:
             saved = r.comparison.provider_tokens_saved
             red_pct = r.comparison.provider_reduction_pct
 
-            in_str = (
-                f"{b_in} -> {t_in}"
-                if b_in is not None and t_in is not None
-                else "N/A"
-            )
+            # Local estimates (always present)
+            est_orig = r.tokenopt.estimated_original_tokens
+            est_opt = r.tokenopt.estimated_optimized_tokens
+            est_saved = r.tokenopt.estimated_tokens_saved
+
+            b_in_str = str(b_in) if b_in is not None else "N/A"
+            t_in_str = str(t_in) if t_in is not None else "N/A"
             saved_str = (
                 f"{saved} ({red_pct:.1f}%)"
                 if saved is not None and red_pct is not None
@@ -284,8 +328,8 @@ class EvidenceReporter:
             )
 
             lines.append(
-                f"| `{r.case_id}` | `{r.execution_status.value}` | {in_str} | "
-                f"{t_in if t_in is not None else 'N/A'} | {saved_str} | "
+                f"| `{r.case_id}` | `{r.execution_status.value}` | {b_in_str} | "
+                f"{t_in_str} | {saved_str} | {est_orig} | {est_opt} | {est_saved} | "
                 f"`{r.preservation.validation_decision}` | `{r.preservation.rollback_applied}` | "
                 f"`{task_str}` | {pipe_lat_str} |"
             )
