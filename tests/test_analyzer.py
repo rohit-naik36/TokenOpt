@@ -15,7 +15,7 @@ from copy import deepcopy
 
 import pytest
 
-from evaluation.cases import get_cases, get_core_cases
+from evaluation.cases import get_core_cases
 from tokenopt.config import TokenOptConfig
 from tokenopt.pipeline.analyzer import (
     AnalyzerStage,
