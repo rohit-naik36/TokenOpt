@@ -224,12 +224,6 @@ CASES: list[EvaluationCase] = [
                     "The agreement requires delivery on 2026-01-15."
                 ),
             },
-            {
-                "role": "assistant",
-                "content": (
-                    "Confirmed. Phase-2 milestone is scheduled for delivery on 2026-01-15."
-                ),
-            },
         ],
         expected_preserved=[
             ExpectedMarker(1, "user", "Phase-2"),
@@ -382,13 +376,8 @@ CASES: list[EvaluationCase] = [
                 "content": (
                     "Please kindly note that we basically need to verify the following.\n\n\n\n\n"
                     "I believe the token is AUTH-TOKEN-XY99.\n\n\n\n"
-                    "    Would you please ensure that enforce_strict_validation=true is set?"
-                ),
-            },
-            {
-                "role": "assistant",
-                "content": (
-                    "Understood. Verifying AUTH-TOKEN-XY99 and enforce_strict_validation=true for production."
+                    "    Would you please ensure that enforce_strict_validation=true "
+                    "is set for production?"
                 ),
             },
         ],
