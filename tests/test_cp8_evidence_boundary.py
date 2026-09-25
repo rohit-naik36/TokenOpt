@@ -658,7 +658,108 @@ class TestCP8ExtractProviderUsageSafe:
         in_t, out_t, tot_t = extract_provider_usage_safe(resp)
         assert in_t == 30
         assert out_t == 10
-        assert tot_t == 40  # Derived
+        assert tot_t is None  # Provider did not supply total_tokens explicitly
+
+
+    def test_explicit_provider_total_populated(self) -> None:
+        """When provider explicitly supplies total_tokens, it must be preserved."""
+        resp = SimpleNamespace(
+            usage=SimpleNamespace(prompt_tokens=40, completion_tokens=15, total_tokens=55)
+        )
+        in_t, out_t, tot_t = extract_provider_usage_safe(resp)
+        assert in_t == 40
+        assert out_t == 15
+        assert tot_t == 55
+
+    def test_missing_provider_total_with_input_output_is_none(self) -> None:
+        """Missing provider total + input/output present → provider_total_tokens is None."""
+        # OpenAI shape: prompt_tokens + completion_tokens but no total_tokens
+        resp_openai = SimpleNamespace(
+            usage=SimpleNamespace(prompt_tokens=30, completion_tokens=10)
+        )
+        in_t, out_t, tot_t = extract_provider_usage_safe(resp_openai)
+        assert in_t == 30
+        assert out_t == 10
+        assert tot_t is None
+
+        # Anthropic shape: input_tokens + output_tokens but no total_tokens
+        resp_anthropic = SimpleNamespace(
+            usage=SimpleNamespace(input_tokens=30, output_tokens=10)
+        )
+        in_t2, out_t2, tot_t2 = extract_provider_usage_safe(resp_anthropic)
+        assert in_t2 == 30
+        assert out_t2 == 10
+        assert tot_t2 is None
+
+    def test_ollama_missing_total_eval_count_is_none(self) -> None:
+        """Ollama-style usage with prompt_eval_count/eval_count but no total_eval_count → None."""
+        resp_ollama = {"prompt_eval_count": 80, "eval_count": 35}
+        in_t, out_t, tot_t = extract_provider_usage_safe(resp_ollama, has_input_messages=True)
+        assert in_t == 80
+        assert out_t == 35
+        assert tot_t is None
+
+    def test_provider_input_reduction_based_only_on_provider_input(self) -> None:
+        """Provider input reduction must be based only on provider_input_tokens."""
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        from tokenopt.clients.base import BaseOptimizedClient
+        from tokenopt.config import get_prototype_config
+        from tokenopt.evaluation.harness import EvidenceHarness
+
+        class DummyClient(BaseOptimizedClient):
+            def __init__(self):
+                super().__init__(config=get_prototype_config())
+
+            def _create_client(self):
+                return MagicMock()
+
+            def _call_api(self, messages, model, **kwargs):
+                prompt_len = sum(len(str(m.get("content", "")).split()) for m in messages)
+                return SimpleNamespace(
+                    id="test",
+                    choices=[
+                        SimpleNamespace(
+                            message=SimpleNamespace(content="test", role="assistant")
+                        )
+                    ],
+                    usage=SimpleNamespace(
+                        prompt_tokens=prompt_len,
+                        completion_tokens=10,
+                        total_tokens=prompt_len + 10,
+                    ),
+                )
+
+            def _extract_response_content(self, response):
+                return response.choices[0].message.content
+
+            def _extract_usage(self, response):
+                return {
+                    "prompt_tokens": response.usage.prompt_tokens,
+                    "completion_tokens": response.usage.completion_tokens,
+                    "total_tokens": response.usage.total_tokens,
+                }
+
+        client = DummyClient()
+        harness = EvidenceHarness(client=client, model="gpt-4o-mini", provider_name="openai")
+
+        case = SimpleNamespace(
+            id="test", category="test",
+            messages=[{"role": "user", "content": "Hello world"}],
+            expected_preserved=[],
+        )
+        records = harness.run_all([case], run_id="test")
+        rec = records[0]
+
+        b_in = rec.baseline.provider_input_tokens
+        t_in = rec.tokenopt.provider_input_tokens
+        saved = rec.comparison.provider_tokens_saved
+
+        assert saved is not None
+        assert saved == b_in - t_in
+        # The reduction formula uses provider_input_tokens (not estimated tokens,
+        # not provider_total_tokens). Verified by equality above.
 
 
 if __name__ == "__main__":

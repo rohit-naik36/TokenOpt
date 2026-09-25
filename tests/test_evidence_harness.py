@@ -180,7 +180,7 @@ class TestUsageExtraction:
         in_t, out_t, tot_t = extract_provider_usage_safe(resp)
         assert in_t == 30
         assert out_t == 10
-        assert tot_t == 40
+        assert tot_t is None  # Provider did not supply total_tokens explicitly
 
     def test_extract_usage_missing_returns_none(self) -> None:
         resp = SimpleNamespace(usage=None)
@@ -252,7 +252,7 @@ class TestUsageExtraction:
         in_tp, out_tp, tot_tp = extract_provider_usage_safe(resp_positive, has_input_messages=True)
         assert in_tp == 80
         assert out_tp == 35
-        assert tot_tp == 115
+        assert tot_tp is None  # Provider did not supply total_eval_count explicitly
 
 
 class TestBaselineAdapter:

@@ -90,14 +90,13 @@ def extract_provider_usage_safe(
     if has_input and prompt_tokens == 0:
         prompt_tokens = None
 
-    # Derive total_tokens if not directly provided
+    # Provider-total distinction: total_tokens must be explicitly supplied by the provider.
+    # Do NOT derive total_tokens from prompt_tokens + completion_tokens.
     if prompt_tokens is None:
-        # Prompt tokens unknown; total tokens cannot be fully determined
+        # Prompt tokens unknown; total tokens cannot be determined from provider data
         total_tokens = None
-    elif total_tokens is None:
-        if completion_tokens is not None:
-            total_tokens = prompt_tokens + completion_tokens
     elif has_input and total_tokens == 0:
+        # Untrustworthy zero total when input exists
         total_tokens = None
 
     return prompt_tokens, completion_tokens, total_tokens
