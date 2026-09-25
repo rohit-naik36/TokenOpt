@@ -32,3 +32,6 @@ Thumbs.db
 # Environment & local secrets
 .env
 *.env
+
+# Evaluation run evidence artifacts (preserve canonical baseline.json)
+evaluation/results/evidence_*
