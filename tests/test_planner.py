@@ -30,7 +30,7 @@ from copy import deepcopy
 
 import pytest
 
-from evaluation.cases import get_cases
+from evaluation.cases import get_cases, get_core_cases
 from tokenopt.pipeline.analyzer import ContextAnalyzer
 from tokenopt.pipeline.planner import (
     CandidatePlan,
@@ -676,7 +676,7 @@ class TestCorpusIntegration:
         """
         analyzer = ContextAnalyzer()
         planner = CandidatePlanner()
-        cases = get_cases()
+        cases = get_core_cases()
 
         assert len(cases) == 12
 

@@ -53,6 +53,80 @@ class EvaluationCase:
     description: str = ""
 
 
+
+# -------------------------------------------------------------------------
+# Workload-sensitivity scaling helpers
+# The fixed task and preservation markers are identical across all three
+# sizes; only repetitive conversational history volume changes.
+# -------------------------------------------------------------------------
+_SCALING_SYSTEM_CONTENT = (
+    "You are an enterprise configuration validator tracking deployment "
+    "parameters. Preserve binding deployment constraints, identifiers, "
+    "security settings, and approved maintenance windows."
+)
+
+_SCALING_HISTORY_CYCLE: tuple[tuple[str, str], ...] = (
+    ("user", "Thanks, I wanted to confirm the deployment status before we proceed."),
+    ("assistant", "Understood. The deployment review is still in progress and the configuration remains under review."),
+    ("user", "Okay, understood. Please keep the deployment context available while we continue."),
+    ("assistant", "Acknowledged. I will retain the existing deployment context for the next step."),
+    ("user", "Thanks for the update. Nothing has changed in the general deployment status."),
+    ("assistant", "Noted. The status remains unchanged and the review can continue from the existing context."),
+    ("user", "That makes sense. Please continue with the same deployment context."),
+    ("assistant", "Understood. The same deployment context remains active for the next verification step."),
+)
+
+_SCALING_FIXED_TASK = (
+    "Important deployment decisions:\n"
+    "- The production deployment is approved only when the configured authentication token "
+    "and strict validation setting are preserved.\n"
+    "- The target cluster and security policy must remain associated with the approved "
+    "maintenance window.\n"
+    "- The rollback plan remains available if any binding deployment constraint is violated.\n\n"
+    "Critical deployment parameters:\n"
+    "AUTH-TOKEN-XY99\n"
+    "enforce_strict_validation=true\n"
+    "production\n"
+    "CLUSTER-ID-7744\n"
+    "MW-2026-042\n"
+    "SECURITY-POLICY-ALPHA\n"
+    "BACKUP-WINDOW-0300-0500\n\n"
+    "CRITICAL VERIFICATION REQUIRED: Please verify that AUTH-TOKEN-XY99 is the correct token, "
+    "that enforce_strict_validation=true is set for production, and that CLUSTER-ID-7744 with "
+    "SECURITY-POLICY-ALPHA is authorized for production deployment under MW-2026-042 during "
+    "BACKUP-WINDOW-0300-0500."
+)
+
+_SCALING_MARKERS = (
+    "AUTH-TOKEN-XY99",
+    "enforce_strict_validation=true",
+    "production",
+    "CLUSTER-ID-7744",
+    "MW-2026-042",
+    "SECURITY-POLICY-ALPHA",
+    "BACKUP-WINDOW-0300-0500",
+)
+
+
+def _build_scaling_messages(repetitions: int) -> list[dict[str, Any]]:
+    messages: list[dict[str, Any]] = [
+        {"role": "system", "content": _SCALING_SYSTEM_CONTENT}
+    ]
+    for i in range(repetitions):
+        role, content = _SCALING_HISTORY_CYCLE[i % len(_SCALING_HISTORY_CYCLE)]
+        messages.append({"role": role, "content": content})
+    messages.append({"role": "user", "content": _SCALING_FIXED_TASK})
+    return messages
+
+
+def _build_scaling_markers(repetitions: int) -> list[ExpectedMarker]:
+    final_message_index = repetitions + 1
+    return [
+        ExpectedMarker(final_message_index, "user", marker)
+        for marker in _SCALING_MARKERS
+    ]
+
+
 CASES: list[EvaluationCase] = [
     # -------------------------------------------------------------------------
     # 1. simple_conversation
@@ -446,6 +520,44 @@ CASES: list[EvaluationCase] = [
             ExpectedMarker(1, "user", "FROM orders WHERE status = 'SHIPPED';"),
         ],
     ),
+    # -------------------------------------------------------------------------
+    # 13-15. repetitive_context_scaling
+    # Controlled workload scaling: same task and critical information,
+    # with only repetitive conversational history volume changing.
+    # -------------------------------------------------------------------------
+    EvaluationCase(
+        id="case_13_repetitive_500",
+        category="repetitive_context_scaling",
+        description="Repetitive conversational history targeting approximately 500 tokens.",
+        messages=_build_scaling_messages(
+            14,
+        ),
+        expected_preserved=_build_scaling_markers(
+            14,
+        ),
+    ),
+    EvaluationCase(
+        id="case_14_repetitive_2000",
+        category="repetitive_context_scaling",
+        description="Repetitive conversational history targeting approximately 2,000 tokens.",
+        messages=_build_scaling_messages(
+            91,
+        ),
+        expected_preserved=_build_scaling_markers(
+            91,
+        ),
+    ),
+    EvaluationCase(
+        id="case_15_repetitive_8000",
+        category="repetitive_context_scaling",
+        description="Repetitive conversational history targeting approximately 8,000 tokens.",
+        messages=_build_scaling_messages(
+            397,
+        ),
+        expected_preserved=_build_scaling_markers(
+            397,
+        ),
+    ),
 ]
 
 
@@ -460,3 +572,11 @@ def get_case_by_id(case_id: str) -> EvaluationCase | None:
         if case.id == case_id:
             return case
     return None
+
+def get_core_cases() -> list[EvaluationCase]:
+    """Return the original 12-case regression corpus."""
+    return [
+        case
+        for case in CASES
+        if case.category != "repetitive_context_scaling"
+    ]

@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from evaluation.cases import get_cases
+from evaluation.cases import get_cases, get_core_cases
 from tokenopt.clients.base import BaseOptimizedClient
 from tokenopt.config import get_prototype_config
 from tokenopt.evaluation.adapters import (
@@ -598,7 +598,7 @@ class TestFull12CaseMockExecution:
             provider_name="mock",
         )
 
-        cases = get_cases()
+        cases = get_core_cases()
         assert len(cases) == 12
 
         records = harness.run_all(cases, run_id="run-12-test")

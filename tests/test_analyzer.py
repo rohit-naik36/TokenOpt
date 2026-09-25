@@ -15,7 +15,7 @@ from copy import deepcopy
 
 import pytest
 
-from evaluation.cases import get_cases
+from evaluation.cases import get_cases, get_core_cases
 from tokenopt.config import TokenOptConfig
 from tokenopt.pipeline.analyzer import (
     AnalyzerStage,
@@ -543,7 +543,7 @@ class TestEvaluationCorpusInIsolation:
     """Run ContextAnalyzer against all 12 evaluation corpus cases in isolation."""
 
     def test_all_12_cases_generate_valid_preservation_maps(self):
-        cases = get_cases()
+        cases = get_core_cases()
         assert len(cases) == 12
         analyzer = ContextAnalyzer()
 
