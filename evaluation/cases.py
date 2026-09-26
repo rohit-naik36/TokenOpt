@@ -3,6 +3,10 @@
 This module defines exactly 12 representative evaluation cases across distinct
 prompt categories to benchmark token reduction, preservation of critical
 information, truncation damage, and deterministic behavior.
+
+Workload-sensitivity extensions:
+- W1 (cases 13-15): repetitive_context_scaling - scaling via conversational history
+- W2 (cases 16-18): system_instruction_scaling - scaling via system/instruction context
 """
 
 from __future__ import annotations
@@ -53,9 +57,8 @@ class EvaluationCase:
     description: str = ""
 
 
-
 # -------------------------------------------------------------------------
-# Workload-sensitivity scaling helpers
+# Workload-sensitivity scaling helpers (W1)
 # The fixed task and preservation markers are identical across all three
 # sizes; only repetitive conversational history volume changes.
 # -------------------------------------------------------------------------
@@ -127,6 +130,268 @@ def _build_scaling_markers(repetitions: int) -> list[ExpectedMarker]:
     ]
 
 
+# -------------------------------------------------------------------------
+# Workload-sensitivity scaling helpers (W2)
+# The fixed task and preservation markers are identical across all three
+# sizes; only system/instruction context volume changes.
+# Independent variable: system/instruction context length.
+# -------------------------------------------------------------------------
+# W2 Scenario: Enterprise Security Policy Compliance Validator
+# Critical markers represent binding security identifiers, policy versions,
+# regulatory references, and approved configuration values.
+_W2_SYSTEM_BASE = (
+    "You are an enterprise security policy compliance validator. "
+    "Your role is to verify that deployment configurations adhere to "
+    "approved security policies, regulatory frameworks, and binding "
+    "operational constraints. Preserve all critical identifiers, policy "
+    "versions, regulatory references, and approved configuration values "
+    "exactly as stated."
+)
+
+# Policy documentation blocks that scale the system context
+_W2_POLICY_BLOCKS: tuple[str, ...] = (
+    # Block 1: Core security policy framework (~400 tokens)
+    (
+        "\n\n## SECURITY POLICY FRAMEWORK - POL-SEC-2026-001 v3.2\n"
+        "This policy governs all production deployment activities across "
+        "the enterprise infrastructure. Compliance is mandatory and "
+        "continuously audited.\n\n"
+        "### 1.1 Authentication & Authorization Requirements\n"
+        "All production systems MUST enforce mutual TLS (mTLS) with "
+        "certificate rotation every 90 days. The approved certificate "
+        "authority is ENT-CA-ROOT-2026. Client certificates must include "
+        "the OU=Production, O=Enterprise-Security extension.\n\n"
+        "### 1.2 Network Segmentation Policy\n"
+        "Production workloads MUST reside in the SEC-ZONE-PROD network "
+        "segment (10.44.0.0/16). East-west traffic between tiers is "
+        "controlled by SEC-FW-POLICY-ALPHA-v4. Ingress is restricted to "
+        "LB-EXT-PROD-01 through LB-EXT-PROD-04 load balancers only.\n\n"
+        "### 1.3 Secrets Management Protocol\n"
+        "All secrets MUST be stored in VAULT-PROD-CLUSTER under the "
+        "path secret/prod/{service}/{environment}. Dynamic secrets with "
+        "TTL of 1 hour are required for database credentials. Static "
+        "secrets (API keys, certificates) rotate quarterly per "
+        "ROT-SCHED-2026-Q3.\n\n"
+        "### 1.4 Audit & Observability Mandate\n"
+        "All administrative actions MUST generate audit events to "
+        "SIEM-LOG-AGGREGATOR with event schema AUDIT-SCHEMA-v2. "
+        "Retention is 7 years per REG-COMPLIANCE-SOX-2026. Real-time "
+        "alerting on SEC-ALERT-RULESET-CRITICAL is mandatory."
+    ),
+    # Block 2: Regulatory compliance matrix (~450 tokens)
+    (
+        "\n\n## REGULATORY COMPLIANCE MATRIX - REG-MATRIX-2026 v1.4\n"
+        "Mapping of security controls to regulatory requirements.\n\n"
+        "### 2.1 SOX 2026 Controls (REG-SOX-2026)\n"
+        "Control SOX-AC-01: Access control reviews quarterly. "
+        "Control SOX-CM-03: Change management approval chain requires "
+        "SEC-MGR-APPROVAL and CISO-SIGNATURE for production changes. "
+        "Control SOX-AU-05: Audit log integrity verified via HMAC-SHA256 "
+        "with key AUDIT-HMAC-KEY-2026.\n\n"
+        "### 2.2 GDPR Article 32 Controls (REG-GDPR-2026)\n"
+        "Control GDPR-DP-01: Data protection impact assessment (DPIA) "
+        "required for new processing activities. DPIA reference "
+        "DPIA-PROD-DEPLOY-2026-0887. Control GDPR-DS-03: Data subject "
+        "requests processed within 30 days via DS-PORTAL-ENT.\n\n"
+        "### 2.3 PCI DSS v4.0 Controls (REG-PCI-2026)\n"
+        "Control PCI-REQ-03: Cardholder data protection via AES-256-GCM "
+        "encryption with key PCI-ENC-KEY-ROT-2026. Control PCI-REQ-10: "
+        "Audit trails for all access to cardholder data environment. "
+        "Control PCI-REQ-12: Annual policy review per POL-REVIEW-PCI-ANNUAL."
+    ),
+    # Block 3: Approved configuration baselines (~500 tokens)
+    (
+        "\n\n## APPROVED CONFIGURATION BASELINES - CFG-BASELINE-PROD v5.1\n"
+        "Immutable configuration values for production deployments.\n\n"
+        "### 3.1 Kubernetes Security Baseline (K8S-SEC-BASE-v5.1)\n"
+        "apiVersion: security.istio.io/v1beta1\n"
+        "kind: PeerAuthentication\n"
+        "metadata:\n"
+        "  name: default\n"
+        "  namespace: prod-ns-{service}\n"
+        "spec:\n"
+        "  mtls:\n"
+        "    mode: STRICT\n"
+        "---\n"
+        "apiVersion: networking.k8s.io/v1\n"
+        "kind: NetworkPolicy\n"
+        "metadata:\n"
+        "  name: deny-all-ingress\n"
+        "  namespace: prod-ns-{service}\n"
+        "spec:\n"
+        "  podSelector: {}\n"
+        "  policyTypes: [Ingress]\n"
+        "  ingress:\n"
+        "  - from:\n"
+        "    - namespaceSelector:\n"
+        "        matchLabels:\n"
+        "          name: ingress-nginx\n"
+        "    ports:\n"
+        "    - protocol: TCP\n"
+        "      port: 8443\n\n"
+        "### 3.2 Database Security Configuration (DB-SEC-CFG-v3.0)\n"
+        "postgresql.conf overrides:\n"
+        "ssl = on\n"
+        "ssl_cert_file = '/etc/ssl/certs/ENT-CA-ROOT-2026.crt'\n"
+        "ssl_key_file = '/etc/ssl/private/ENT-CA-ROOT-2026.key'\n"
+        "ssl_ca_file = '/etc/ssl/certs/ENT-CA-ROOT-2026-ca.crt'\n"
+        "password_encryption = scram-sha-256\n"
+        "log_connections = on\n"
+        "log_disconnections = on\n"
+        "log_statement = 'ddl'\n"
+        "pgaudit.log = 'all, -misc'\n"
+        "pgaudit.log_catalog = off\n\n"
+        "### 3.3 Container Runtime Security (CONT-SEC-RUNTIME-v2.3)\n"
+        "runtime: crun\n"
+        "seccomp_profile: /etc/seccomp/prod-profile.json\n"
+        "apparmor_profile: prod-apparmor-profile\n"
+        "capabilities: drop=ALL, add=CAP_NET_BIND_SERVICE\n"
+        "read_only_root_fs: true\n"
+        "run_as_non_root: true\n"
+        "run_as_user: 10000\n"
+        "fs_group: 10000"
+    ),
+    # Block 4: Incident response & change procedures (~480 tokens)
+    (
+        "\n\n## INCIDENT RESPONSE & CHANGE PROCEDURES - PROC-IR-CHANGE v2.7\n"
+        "Binding operational procedures for production incidents and changes.\n\n"
+        "### 4.1 Incident Response Playbook (IR-PLAYBOOK-PROD-v2.7)\n"
+        "SEV-1 Declaration: Requires ONCALL-SEC-LEAD + CISO notification "
+        "within 15 minutes via PAGERDUTY-ESCALATION-POLICY-PROD. "
+        "War room: SLACK-CHANNEL-#prod-sev1-warroom. "
+        "Communication: STATUS-PAGE-ENT-UPDATES every 30 minutes.\n\n"
+        "### 4.2 Change Management Workflow (CM-WORKFLOW-PROD-v3.1)\n"
+        "All production changes require RFC submission via "
+        "JIRA-SM-PJECT-PROD-CHANGE. Approval chain: "
+        "TECH-LEAD-APPROVAL -> SEC-MGR-APPROVAL -> CAB-APPROVAL. "
+        "Emergency changes (EC) bypass CAB but require POST-EC-REVIEW "
+        "within 48 hours. Rollback plan MANDATORY for all changes.\n\n"
+        "### 4.3 Deployment Validation Checklist (DEP-VAL-CHECKLIST-v1.9)\n"
+        "Pre-deployment: SEC-SCAN-PASS, DEP-SMOKE-TEST-PASS, "
+        "CONFIG-DRIFT-CHECK-PASS. Post-deployment: HEALTH-CHECK-PASS, "
+        "METRICS-BASELINE-VERIFY, AUDIT-LOG-VERIFY. "
+        "Sign-off: DEPLOY-ENGINEER + SEC-OPS-LEAD."
+    ),
+    # Block 5: Threat model & risk register (~520 tokens)
+    (
+        "\n\n## THREAT MODEL & RISK REGISTER - THREAT-REG-PROD v4.0\n"
+        "Current threat landscape and risk acceptance decisions.\n\n"
+        "### 5.1 Identified Threat Vectors (TV-PROD-2026)\n"
+        "TV-001: Credential theft via phishing - MITIGATED by "
+        "MFA-ENFORCE-POLICY v2.1 (FIDO2 required for prod access). "
+        "TV-002: Supply chain compromise - MITIGATED by "
+        "SBOM-VERIFY-POLICY (Syft+Grype scan on all images). "
+        "TV-003: Insider threat - MONITORED via UEBA-ENGINE-PROD "
+        "with RULE-PACK-INSIDER-v3. TV-004: DDoS on ingress - "
+        "MITIGATED by CLOUD-ARMOR-PROD-TIER with RULE-SET-DDoS-v4.\n\n"
+        "### 5.2 Accepted Risks (RISK-ACC-REG-2026)\n"
+        "RISK-ACC-001: Legacy service LEGACY-API-v1 lacks mTLS - "
+        "ACCEPTED with compensating control NET-SEG-LEGACY-ZONE, "
+        "expires 2026-12-31, owner PLATFORM-TEAM-LEAD. "
+        "RISK-ACC-002: Third-party SaaS SAAS-VENDOR-X does not support "
+        "SCIM provisioning - ACCEPTED with manual quarterly access "
+        "review, owner IDENTITY-TEAM-LEAD.\n\n"
+        "### 5.3 Key Risk Indicators (KRI-PROD-2026)\n"
+        "KRI-01: Failed auth rate > 5%/5min -> ALERT-SEC-OPS. "
+        "KRI-02: Config drift detected -> ALERT-PLATFORM-TEAM. "
+        "KRI-03: Certificate expiry < 30 days -> ALERT-PKI-TEAM. "
+        "KRI-04: Unapproved change detected -> ALERT-CAB-CHAIR."
+    ),
+    # Block 6: Vendor & supply chain security (~550 tokens)
+    (
+        "\n\n## VENDOR & SUPPLY CHAIN SECURITY - VENDOR-SEC-PROD v1.8\n"
+        "Third-party risk management and software supply chain controls.\n\n"
+        "### 6.1 Approved Vendor Registry (VENDOR-REG-PROD-2026)\n"
+        "VENDOR-001: CLOUD-PROVIDER-AWS - Contract AWS-ENT-AGMT-2026, "
+        "SOC2-Type2 current, PCI-AOC current, renewal 2027-03-15. "
+        "VENDOR-002: MONITORING-DATADOG - Contract DD-ENT-AGMT-2025, "
+        "SOC2-Type2 current, renewal 2026-11-30. "
+        "VENDOR-003: SECRETS-HASHICORP - Contract HC-ENT-AGMT-2026, "
+        "SOC2-Type2 current, FIPS-140-2 validated, renewal 2027-06-01. "
+        "VENDOR-004: CI-CD-GITHUB - Contract GH-ENT-AGMT-2026, "
+        "SOC2-Type2 current, SLSA-Level3, renewal 2027-01-20.\n\n"
+        "### 6.2 Software Supply Chain Controls (SSC-POLICY-PROD-v1.8)\n"
+        "All container images MUST be built via BUILD-PIPELINE-PROD "
+        "with SLSA-Level3 provenance. Base images from REGISTRY-APPROVED-"
+        "BASE (distroless, wolfi, chainguard only). Dependency scanning "
+        "via DEP-SCAN-TRIVY v0.48+ with POLICY-DEP-CRITICAL-BLOCK. "
+        "SBOM generation mandatory (SPDX 2.3 format) stored in "
+        "SBOM-REPOSITORY-PROD. Admission control via POLICY-SIGSTORE-"
+        "VERIFY with ROOT-CA-SIGSTORE-ENT.\n\n"
+        "### 6.3 Open Source Governance (OSS-GOV-PROD-v1.2)\n"
+        "License allowlist: Apache-2.0, MIT, BSD-3-Clause, ISC. "
+        "License denylist: GPL-3.0, AGPL-3.0, SSPL-1.0. "
+        "Vulnerability SLA: CRITICAL 48h, HIGH 7d, MEDIUM 30d, "
+        "LOW 90d per VULN-SLA-PROD-2026. Exception process via "
+        "OSS-EXCEPTION-REQUEST-JIRA with SEC-ARCH-REVIEW."
+    ),
+)
+
+_W2_FIXED_TASK = (
+    "\n\n## COMPLIANCE VERIFICATION TASK\n"
+    "Verify the following production deployment configuration for "
+    "service PAYMENT-GATEWAY-SVC against the binding policies above.\n\n"
+    "DEPLOYMENT SPECIFICATION:\n"
+    "- Service: PAYMENT-GATEWAY-SVC\n"
+    "- Namespace: prod-ns-payment-gateway\n"
+    "- Image: registry.internal/payment-gateway:v2.4.1-sha.abc123\n"
+    "- Replicas: 6 (min 4, max 12 via HPA)\n"
+    "- Resources: CPU 2000m/4000m, Memory 4Gi/8Gi\n"
+    "- Ingress: LB-EXT-PROD-02, TLS termination, mTLS backend\n"
+    "- Database: PostgreSQL 16 on DB-PROD-CLUSTER-01, scram-sha-256\n"
+    "- Secrets: VAULT-PROD-CLUSTER path secret/prod/payment-gateway/prod\n"
+    "- Monitoring: DATADOG-APM, PROMETHEUS-SCRAPE, SIEM-LOG-AGGREGATOR\n\n"
+    "CRITICAL VERIFICATION REQUIRED: Confirm that the deployment uses "
+    "ENT-CA-ROOT-2026 for mTLS, enforces STRICT mode PeerAuthentication, "
+    "references POL-SEC-2026-001 v3.2, complies with REG-SOX-2026 "
+    "SOX-AC-01 and SOX-CM-03, uses VAULT-PROD-CLUSTER for secrets, "
+    "and has ROLLBACK-PLAN-MANDATORY per CM-WORKFLOW-PROD-v3.1. "
+    "Verify DPIA reference DPIA-PROD-DEPLOY-2026-0887 is documented. "
+    "Confirm SEV-1 escalation via PAGERDUTY-ESCALATION-POLICY-PROD "
+    "and SLACK-CHANNEL-#prod-sev1-warroom."
+)
+
+_W2_CRITICAL_MARKERS = (
+    "ENT-CA-ROOT-2026",
+    "POL-SEC-2026-001 v3.2",
+    "SEC-ZONE-PROD",
+    "VAULT-PROD-CLUSTER",
+    "REG-SOX-2026",
+    "SOX-AC-01",
+    "SOX-CM-03",
+    "DPIA-PROD-DEPLOY-2026-0887",
+    "PAGERDUTY-ESCALATION-POLICY-PROD",
+    "SLACK-CHANNEL-#prod-sev1-warroom",
+    "ROLLBACK-PLAN-MANDATORY",
+    "PAYMENT-GATEWAY-SVC",
+    "prod-ns-payment-gateway",
+    "DB-PROD-CLUSTER-01",
+    "LB-EXT-PROD-02",
+)
+
+
+def _build_w2_messages(policy_block_count: int) -> list[dict[str, Any]]:
+    """Build W2 messages with specified number of policy blocks in system context."""
+    system_content = _W2_SYSTEM_BASE
+    for i in range(policy_block_count):
+        system_content += _W2_POLICY_BLOCKS[i % len(_W2_POLICY_BLOCKS)]
+    return [
+        {"role": "system", "content": system_content},
+        {"role": "user", "content": _W2_FIXED_TASK},
+    ]
+
+
+def _build_w2_markers() -> list[ExpectedMarker]:
+    """Build W2 expected markers - all in the final user message (index 1)."""
+    return [
+        ExpectedMarker(1, "user", marker)
+        for marker in _W2_CRITICAL_MARKERS
+    ]
+
+
+# -------------------------------------------------------------------------
+# Evaluation Cases
+# -------------------------------------------------------------------------
 CASES: list[EvaluationCase] = [
     # -------------------------------------------------------------------------
     # 1. simple_conversation
@@ -521,7 +786,7 @@ CASES: list[EvaluationCase] = [
         ],
     ),
     # -------------------------------------------------------------------------
-    # 13-15. repetitive_context_scaling
+    # 13-15. repetitive_context_scaling (W1)
     # Controlled workload scaling: same task and critical information,
     # with only repetitive conversational history volume changing.
     # -------------------------------------------------------------------------
@@ -558,6 +823,33 @@ CASES: list[EvaluationCase] = [
             397,
         ),
     ),
+    # -------------------------------------------------------------------------
+    # 16-18. system_instruction_scaling (W2)
+    # Controlled workload scaling: same task and critical information,
+    # with only system/instruction context volume changing.
+    # Independent variable: system/instruction context length.
+    # -------------------------------------------------------------------------
+    EvaluationCase(
+        id="case_16_system_500",
+        category="system_instruction_scaling",
+        description="System/instruction context scaling targeting approximately 500 tokens.",
+        messages=_build_w2_messages(0),
+        expected_preserved=_build_w2_markers(),
+    ),
+    EvaluationCase(
+        id="case_17_system_2000",
+        category="system_instruction_scaling",
+        description="System/instruction context scaling targeting approximately 2,000 tokens.",
+        messages=_build_w2_messages(5),
+        expected_preserved=_build_w2_markers(),
+    ),
+    EvaluationCase(
+        id="case_18_system_8000",
+        category="system_instruction_scaling",
+        description="System/instruction context scaling targeting approximately 8,000 tokens.",
+        messages=_build_w2_messages(22),
+        expected_preserved=_build_w2_markers(),
+    ),
 ]
 
 
@@ -573,10 +865,11 @@ def get_case_by_id(case_id: str) -> EvaluationCase | None:
             return case
     return None
 
+
 def get_core_cases() -> list[EvaluationCase]:
     """Return the original 12-case regression corpus."""
     return [
         case
         for case in CASES
-        if case.category != "repetitive_context_scaling"
+        if case.category not in ("repetitive_context_scaling", "system_instruction_scaling")
     ]
