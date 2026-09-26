@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from tokenopt.config import RoutingRule, TokenOptConfig
-from tokenopt.optimizer import CanonicalOptimizerAdapter
+from tokenopt.execution import CanonicalOptimizerAdapter
 from tokenopt.pipeline.preservation import PreservationClass, TransformationEligibility
 
 # Re-export for compatibility

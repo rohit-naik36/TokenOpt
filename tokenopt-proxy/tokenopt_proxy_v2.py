@@ -6,6 +6,7 @@ Integrates: real embeddings, circuit breaker providers, PostgreSQL audit, Redis 
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import json
 import logging
 import os
@@ -39,9 +40,11 @@ from provider_client_v2 import ProviderConfig, ProviderError, ProviderRouter
 # Import canonical TokenOpt optimizer (replaces tokenopt_optimizer)
 from tokenopt.compat import (
     DegradedFidelityValidator,
-    PromptOptimizer,
     TokenOptConfig,
 )
+from tokenopt.execution import CanonicalOptimizerAdapter, OptimizationCapacityExceededError
+
+PromptOptimizer = CanonicalOptimizerAdapter
 
 # Optional dependencies (checked early so constants are available everywhere)
 try:
@@ -138,6 +141,7 @@ class AppConfig:
     # Performance
     MAX_CONCURRENT_REQUESTS = max(_env_int("MAX_CONCURRENT_REQUESTS", 100), 1)
     REQUEST_TIMEOUT = _env_float("REQUEST_TIMEOUT", 60.0)
+    MAX_OPTIMIZATION_WORKERS = max(_env_int("MAX_OPTIMIZATION_WORKERS", 4), 1)
 
     # Pricing (cost per token, used for savings estimates)
     MODEL_PRICING = {
@@ -358,7 +362,11 @@ def build_optimizer(model: str = "gpt-4"):
     config.cache_enabled = False
     config.enable_routing = False
 
-    optimizer = PromptOptimizer(config=config)
+    optimizer = PromptOptimizer(
+        config=config,
+        executor=services._optimization_executor,
+        semaphore=services._optimization_semaphore,
+    )
     # Wire the proxy's fidelity validator for response-level validation
     optimizer._core.config.fidelity_threshold = services.config.FIDELITY_THRESHOLD
     optimizer._core.config.enable_llm_judge = False  # Disable LLM judge in canonical core
@@ -378,6 +386,11 @@ class ServiceManager:
         self.cache: DistributedCache | None = None
         self.event_stream: EventStreamer | None = None
         self._semaphore = asyncio.Semaphore(self.config.MAX_CONCURRENT_REQUESTS)
+        # Dedicated executor for optimization work with bounded concurrency
+        self._optimization_executor: concurrent.futures.ThreadPoolExecutor | None = None
+        # Bounded semaphore tracking actual optimization worker occupancy.
+        # Released only when the worker finishes, not when the HTTP request ends.
+        self._optimization_semaphore: asyncio.Semaphore | None = None
         self._initialized = False
 
     async def initialize(self):
@@ -494,6 +507,14 @@ class ServiceManager:
         await self.event_stream.initialize()
         logger.info("âœ… Event streamer initialized")
 
+        # 6. Optimization executor and bounded admission
+        self._optimization_executor = concurrent.futures.ThreadPoolExecutor(
+            max_workers=self.config.MAX_OPTIMIZATION_WORKERS,
+            thread_name_prefix="tokenopt-opt-"
+        )
+        self._optimization_semaphore = asyncio.Semaphore(self.config.MAX_OPTIMIZATION_WORKERS)
+        logger.info(f"âœ… Optimization executor initialized with {self.config.MAX_OPTIMIZATION_WORKERS} workers")
+
         self._initialized = True
         logger.info("ðŸš€ TokenOpt v2.0 fully initialized")
 
@@ -509,6 +530,9 @@ class ServiceManager:
             await self.cache.close()
         if self.event_stream:
             await self.event_stream.close()
+        if self._optimization_executor:
+            self._optimization_executor.shutdown(wait=True)
+            self._optimization_executor = None
 
         logger.info("ðŸ‘‹ TokenOpt v2.0 shutdown complete")
 
@@ -870,6 +894,12 @@ async def chat_completions(
         except ProviderError as e:
             logger.error(f"Provider error: {e}")
             raise HTTPException(status_code=502, detail=str(e)) from e
+        except OptimizationCapacityExceededError as e:
+            logger.warning("Optimization capacity exceeded: %s", e)
+            raise HTTPException(
+                status_code=503,
+                detail="Optimization capacity exhausted. Please retry later.",
+            ) from e
         except Exception as e:
             logger.error(f"Unexpected error: {e}", exc_info=True)
             raise HTTPException(status_code=500, detail="Internal server error") from e
@@ -930,7 +960,14 @@ async def validate_prompt(
     """Preview optimization without API call."""
     optimizer = build_optimizer()
     messages = [ChatMessage(role="user", content=prompt)]
-    result = await optimizer.optimize(messages)
+    try:
+        result = await optimizer.optimize(messages)
+    except OptimizationCapacityExceededError as e:
+        logger.warning("Optimization capacity exceeded: %s", e)
+        raise HTTPException(
+            status_code=503,
+            detail="Optimization capacity exhausted. Please retry later.",
+        ) from e
 
     return {
         "original": prompt,
