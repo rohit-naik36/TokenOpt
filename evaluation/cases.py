@@ -7,6 +7,7 @@ information, truncation damage, and deterministic behavior.
 Workload-sensitivity extensions:
 - W1 (cases 13-15): repetitive_context_scaling - scaling via conversational history
 - W2 (cases 16-18): system_instruction_scaling - scaling via system/instruction context
+- W3 (cases 19-21): agent_tool_history_scaling - scaling via agent/tool execution history
 """
 
 from __future__ import annotations
@@ -389,6 +390,353 @@ def _build_w2_markers() -> list[ExpectedMarker]:
     ]
 
 
+# -------------------------------------------------------------------------
+# Workload-sensitivity scaling helpers (W3)
+# The fixed task and preservation markers are identical across all three
+# sizes; only agent/tool execution history volume changes.
+# Independent variable: accumulated agent/tool history length.
+# -------------------------------------------------------------------------
+# W3 Scenario: Enterprise Production Incident Investigation
+# Critical markers represent binding incident identifiers, service names,
+# deployment IDs, approved change tickets, error codes, and remediation constraints.
+_W3_SYSTEM_CONTENT = (
+    "You are an enterprise production incident investigator. "
+    "Your role is to analyze incident timelines, tool outputs, and "
+    "operational data to determine root cause and verify remediation. "
+    "Preserve all incident identifiers, service names, deployment IDs, "
+    "change tickets, error codes, and binding operational constraints "
+    "exactly as stated in the final task."
+)
+
+# Agent/Tool history blocks that scale the context
+# Each block represents a realistic investigation step with tool calls and results
+_W3_HISTORY_BLOCKS: tuple[list[dict[str, Any]], ...] = (
+    # Block 1: Initial triage (~150 tokens)
+    [
+        {"role": "user", "content": "We have a SEV-1 incident INC-2026-0442 affecting "
+         "PAYMENT-GATEWAY-SVC in production. Start investigation immediately."},
+        {"role": "assistant", "content": "Acknowledged. Starting investigation for "
+         "INC-2026-0442 on PAYMENT-GATEWAY-SVC. First, I will check the current "
+         "deployment status and recent changes."},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: deployment_lookup({"service": "PAYMENT-GATEWAY-SVC", '
+            '"environment": "production"})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"service": "PAYMENT-GATEWAY-SVC", '
+            '"namespace": "prod-ns-payment-gateway", '
+            '"status": "degraded", "replicas": 6, "ready": 2, '
+            '"image": "registry.internal/payment-gateway:v2.4.1-sha.abc123", '
+            '"deployment_id": "DEPLOY-2026-0887", '
+            '"last_updated": "2026-09-20T14:22:00Z"}'
+        )},
+    ],
+    # Block 2: Service health and metrics (~200 tokens)
+    [
+        {"role": "assistant", "content": "Deployment shows only 2/6 replicas ready. "
+         "Checking service health endpoints and recent metrics."},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: health_check({"service": "PAYMENT-GATEWAY-SVC", '
+            '"namespace": "prod-ns-payment-gateway"})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"endpoint": "/health", "status": "unhealthy", '
+            '"latency_p99_ms": 15420, "error_rate": 0.42, '
+            '"last_success": "2026-09-20T14:15:00Z", '
+            '"details": "Downstream dependency PAYMENT-PROCESSOR-SVC '
+            'returning 503"}'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: metrics_query({"service": "PAYMENT-GATEWAY-SVC", '
+            '"metric": "http_request_duration_seconds", "window": "15m"})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"p50": 1200, "p90": 8500, "p99": 15420, '
+            '"error_count": 1247, "throughput_rps": 45.2, '
+            '"trend": "degrading since 2026-09-20T14:10:00Z"}'
+        )},
+    ],
+    # Block 3: Dependency investigation (~250 tokens)
+    [
+        {"role": "assistant", "content": "PAYMENT-GATEWAY-SVC depends on PAYMENT-PROCESSOR-SVC "
+         "which is returning 503. Investigating downstream service."},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: deployment_lookup({"service": "PAYMENT-PROCESSOR-SVC", '
+            '"environment": "production"})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"service": "PAYMENT-PROCESSOR-SVC", '
+            '"namespace": "prod-ns-payment-processor", '
+            '"status": "running", "replicas": 8, "ready": 8, '
+            '"image": "registry.internal/payment-processor:v1.8.3-sha.def456", '
+            '"deployment_id": "DEPLOY-2026-0885", '
+            '"last_updated": "2026-09-19T10:30:00Z"}'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: health_check({"service": "PAYMENT-PROCESSOR-SVC", '
+            '"namespace": "prod-ns-payment-processor"})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"endpoint": "/health", "status": "healthy", '
+            '"latency_p99_ms": 45, "error_rate": 0.001, '
+            '"details": "All endpoints responding normally"}'
+        )},
+        {"role": "assistant", "content": "Downstream service appears healthy. "
+         "Checking network connectivity and service mesh configuration."},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: connectivity_test({"source": "PAYMENT-GATEWAY-SVC", '
+            '"target": "PAYMENT-PROCESSOR-SVC", "port": 8443})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"reachable": true, "latency_ms": 12, '
+            '"mtls": "verified", "certificate": "ENT-CA-ROOT-2026"}'
+        )},
+    ],
+    # Block 4: Log analysis and error patterns (~300 tokens)
+    [
+        {"role": "assistant", "content": "Network connectivity is fine. "
+         "Searching logs for error patterns around the incident start time."},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: log_search({"service": "PAYMENT-GATEWAY-SVC", '
+            '"query": "ERROR OR 503 OR timeout", '
+            '"since": "2026-09-20T14:00:00Z", '
+            '"until": "2026-09-20T14:30:00Z"})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"matches": 342, "top_errors": ['
+            '{"pattern": "circuit_breaker_open", "count": 187, '
+            '"first_seen": "2026-09-20T14:10:05Z"}, '
+            '{"pattern": "timeout_connecting_to_payment_processor", '
+            '"count": 112, "first_seen": "2026-09-20T14:10:12Z"}, '
+            '{"pattern": "retry_exhausted", "count": 43, '
+            '"first_seen": "2026-09-20T14:10:15Z"}], '
+            '"sample": "2026-09-20T14:10:15.234Z ERROR '
+            'circuit_breaker_open: Circuit breaker OPEN for '
+            'payment-processor-client after 5 consecutive failures. '
+            'ERROR_CODE: CB-OPEN-001"}'
+        )},
+        {"role": "assistant", "content": "Circuit breaker CB-OPEN-001 triggered at "
+         "14:10:05Z. Checking change tickets around that time."},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: change_ticket_lookup({"service": "PAYMENT-GATEWAY-SVC", '
+            '"since": "2026-09-20T13:00:00Z", '
+            '"until": "2026-09-20T15:00:00Z"})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"tickets": [{"id": "CHG-2026-0987", '
+            '"type": "config_change", '
+            '"description": "Update circuit breaker threshold for '
+            'payment-processor-client from 5 to 3", '
+            '"author": "platform-engineer-3", "approved_by": "sec-mgr-lead", '
+            '"status": "deployed", "deployed_at": "2026-09-20T14:05:00Z", '
+            '"risk_level": "low"}, {"id": "CHG-2026-0988", '
+            '"type": "deployment", '
+            '"description": "Deploy PAYMENT-GATEWAY-SVC v2.4.1 with updated '
+            'retry policy", "author": "release-engineer-1", '
+            '"approved_by": "tech-lead-payments", "status": "deployed", '
+            '"deployed_at": "2026-09-20T14:22:00Z", "risk_level": "medium"}]}'
+        )},
+    ],
+    # Block 5: Configuration analysis (~250 tokens)
+    [
+        {"role": "assistant", "content": "Found two changes deployed around incident time. "
+         "CHG-2026-0987 lowered circuit breaker threshold from 5 to 3 at 14:05. "
+         "CHG-2026-0988 deployed v2.4.1 at 14:22. "
+         "Analyzing circuit breaker configuration."},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: config_lookup({"service": "PAYMENT-GATEWAY-SVC", '
+            '"key": "circuit_breaker.payment-processor-client"})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"key": "circuit_breaker.payment-processor-client", '
+            '"value": {"failure_threshold": 3, "timeout_seconds": 30, '
+            '"half_open_requests": 3}, "last_changed": "2026-09-20T14:05:00Z", '
+            '"changed_by": "platform-engineer-3", '
+            '"change_ticket": "CHG-2026-0987"}'
+        )},
+        {"role": "assistant", "content": "Circuit breaker threshold was lowered to 3 failures. "
+         "Checking if this is appropriate for current traffic patterns."},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: metrics_query({"service": "PAYMENT-GATEWAY-SVC", '
+            '"metric": "payment_processor_client_failures_total", '
+            '"window": "30m"})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"failure_spike_at": "2026-09-20T14:10:00Z", '
+            '"peak_failures_per_minute": 85, '
+            '"baseline_failures_per_minute": 2.1, '
+            '"root_cause_hypothesis": "Transient network blip at 14:10 '
+            'triggered circuit breaker with new lower threshold"}'
+        )},
+    ],
+    # Block 6: Remediation and verification (~200 tokens)
+    [
+        {"role": "assistant", "content": "Root cause identified: CHG-2026-0987 "
+         "lowered circuit breaker threshold to 3, making it overly sensitive. "
+         "A transient network blip at 14:10 triggered the breaker. "
+         "Need to revert threshold and verify recovery."},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: config_update({"service": "PAYMENT-GATEWAY-SVC", '
+            '"key": "circuit_breaker.payment-processor-client", '
+            '"value": {"failure_threshold": 10, "timeout_seconds": 60, '
+            '"half_open_requests": 5}, "change_ticket": "CHG-2026-0990"})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"status": "updated", '
+            '"key": "circuit_breaker.payment-processor-client", '
+            '"new_value": {"failure_threshold": 10, "timeout_seconds": 60, '
+            '"half_open_requests": 5}, "updated_at": "2026-09-20T14:35:00Z", '
+            '"change_ticket": "CHG-2026-0990"}'
+        )},
+        {"role": "assistant", "content": "Configuration updated. Waiting for circuit breaker "
+         "to transition to half-open and verifying service recovery."},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: health_check({"service": "PAYMENT-GATEWAY-SVC", '
+            '"namespace": "prod-ns-payment-gateway"})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"endpoint": "/health", "status": "healthy", '
+            '"latency_p99_ms": 180, "error_rate": 0.002, '
+            '"details": "All endpoints responding normally, circuit breaker CLOSED"}'
+        )},
+    ],
+    # Block 7: Post-incident validation (~180 tokens)
+    [
+        {"role": "assistant", "content": "Service recovered. Running post-incident validation "
+         "checks per runbook."},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: metrics_query({"service": "PAYMENT-GATEWAY-SVC", '
+            '"metric": "http_request_duration_seconds", "window": "10m"})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"p50": 95, "p90": 210, "p99": 420, '
+            '"error_count": 3, "throughput_rps": 245.8, "trend": "stable"}'
+        )},
+        {"role": "assistant", "content": "Metrics normalized. Error rate 0.002%, "
+         "latency p99 420ms, throughput 245 rps. All indicators healthy."},
+        {"role": "assistant", "content": "INCIDENT SUMMARY: Root cause was CHG-2026-0987 "
+         "lowering circuit breaker threshold from 5 to 3. Transient network blip "
+         "triggered breaker. Remediated via CHG-2026-0990 restoring threshold "
+         "to 10. Service PAYMENT-GATEWAY-SVC fully recovered. No data loss. "
+         "Post-incident review scheduled per SEC-POLICY-2026."},
+    ],
+    # Block 8: Additional historical context - prior similar incidents (~220 tokens)
+    [
+        {"role": "user", "content": "Before closing, check if there have been "
+         "similar circuit breaker incidents in the past 90 days."},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: incident_lookup({"service": "PAYMENT-GATEWAY-SVC", '
+            '"error_code": "CB-OPEN-001", "days": 90})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"incidents": [{"id": "INC-2026-0312", '
+            '"date": "2026-07-15", "root_cause": "Circuit breaker threshold '
+            'too low after config change CHG-2026-0654", "resolution": '
+            '"Threshold restored to 10", "duration_minutes": 28}, {"id": '
+            '"INC-2026-0389", "date": "2026-08-03", "root_cause": "Network '
+            'partition triggered CB-OPEN-001", "resolution": "Network restored, '
+            'breaker auto-closed", "duration_minutes": 12}], "pattern": '
+            '"Recurring circuit breaker sensitivity issues after config changes"}'
+        )},
+        {"role": "assistant", "content": "Found two prior incidents with similar pattern. "
+         "INC-2026-0312 and INC-2026-0389 both involved CB-OPEN-001. This "
+         "suggests a systemic issue with circuit breaker threshold management."},
+        {"role": "assistant", "content": "RECOMMENDATION: Implement automated validation "
+         "for circuit breaker threshold changes. Require load testing before "
+         "deploying threshold reductions. Add alerting for rapid CB state "
+         "transitions."},
+    ],
+    # Block 9: Change management audit trail (~180 tokens)
+    [
+        {"role": "user", "content": "Pull the full audit trail for CHG-2026-0987 and CHG-2026-0990 "
+         "for compliance review."},
+        {"role": "assistant", "content": (
+            'TOOL_CALL: change_ticket_audit({"ticket_ids": ["CHG-2026-0987", '
+            '"CHG-2026-0990"]})'
+        )},
+        {"role": "assistant", "content": (
+            'TOOL_RESULT: {"CHG-2026-0987": {"created": "2026-09-20T10:00:00Z", '
+            '"author": "platform-engineer-3", "reviewers": ["sec-mgr-lead"], '
+            '"approvals": ["sec-mgr-lead:2026-09-20T13:45:00Z"], "deployment": '
+            '{"started": "2026-09-20T14:05:00Z", "completed": "2026-09-20T14:05:30Z", '
+            '"deployed_by": "platform-engineer-3"}, "rollback_plan": "Revert '
+            'config map to previous version"}, "CHG-2026-0990": {"created": '
+            '"2026-09-20T14:25:00Z", "author": "platform-engineer-3", '
+            '"reviewers": ["tech-lead-payments", "sec-mgr-lead"], "approvals": '
+            '["tech-lead-payments:2026-09-20T14:30:00Z", '
+            '"sec-mgr-lead:2026-09-20T14:32:00Z"], "deployment": {"started": '
+            '"2026-09-20T14:35:00Z", "completed": "2026-09-20T14:35:15Z", '
+            '"deployed_by": "platform-engineer-3"}, "rollback_plan": "Revert '
+            'config map to threshold 3"}}'
+        )},
+        {"role": "assistant", "content": "Audit trail complete. Both changes followed "
+         "approval process. CHG-2026-0987 had single reviewer approval "
+         "(sec-mgr-lead). CHG-2026-0990 had dual approval "
+         "(tech-lead-payments + sec-mgr-lead) as emergency change."},
+    ],
+)
+
+# Fixed final task - identical across all three cases
+_W3_FIXED_TASK = (
+    "\n\n## ROOT CAUSE ANALYSIS AND REMEDIATION VERIFICATION TASK\n"
+    "Based on the investigation above, provide the final root cause analysis and "
+    "remediation verification for incident INC-2026-0442.\n\n"
+    "CRITICAL REQUIREMENTS - THESE MUST BE ADDRESSED:\n"
+    "1. Incident ID: INC-2026-0442\n"
+    "2. Affected Service: PAYMENT-GATEWAY-SVC\n"
+    "3. Production Namespace: prod-ns-payment-gateway\n"
+    "4. Root Cause Change: CHG-2026-0987 (circuit breaker threshold 5 -> 3)\n"
+    "5. Remediation Change: CHG-2026-0990 (threshold restored to 10)\n"
+    "6. Critical Error Code: CB-OPEN-001\n"
+    "7. Downstream Dependency: PAYMENT-PROCESSOR-SVC\n"
+    "8. Circuit Breaker Config Key: circuit_breaker.payment-processor-client\n"
+    "9. Production Environment: production\n"
+    "10. Security Policy: SEC-POLICY-2026 (post-incident review required)\n"
+    "11. Deployment ID (faulty): DEPLOY-2026-0887\n"
+    "12. Deployment ID (remediation): CHG-2026-0990 deployment\n"
+    "13. Do NOT recommend lowering circuit breaker threshold below 5\n"
+    "14. Do NOT skip post-incident review per SEC-POLICY-2026\n"
+    "15. Confirm service PAYMENT-GATEWAY-SVC is fully recovered\n\n"
+    "Provide your final assessment."
+)
+
+_W3_CRITICAL_MARKERS = (
+    "INC-2026-0442",
+    "PAYMENT-GATEWAY-SVC",
+    "prod-ns-payment-gateway",
+    "CHG-2026-0987",
+    "CHG-2026-0990",
+    "CB-OPEN-001",
+    "PAYMENT-PROCESSOR-SVC",
+    "circuit_breaker.payment-processor-client",
+    "production",
+    "SEC-POLICY-2026",
+    "DEPLOY-2026-0887",
+    "DEPLOY-2026-0885",
+    "threshold",
+    "recovered",
+    "remediation",
+)
+
+
+def _build_w3_messages(history_block_count: int) -> list[dict[str, Any]]:
+    """Build W3 messages with specified number of history blocks."""
+    messages: list[dict[str, Any]] = [
+        {"role": "system", "content": _W3_SYSTEM_CONTENT}
+    ]
+    for i in range(history_block_count):
+        messages.extend(_W3_HISTORY_BLOCKS[i % len(_W3_HISTORY_BLOCKS)])
+    messages.append({"role": "user", "content": _W3_FIXED_TASK})
+    return messages
+
+
+def _build_w3_markers(history_block_count: int) -> list[ExpectedMarker]:
+    """Build W3 expected markers - all in the final user message."""
+    final_message_index = 1 + sum(len(block) for block in _W3_HISTORY_BLOCKS[:history_block_count])
+    return [
+        ExpectedMarker(final_message_index, "user", marker)
+        for marker in _W3_CRITICAL_MARKERS
+    ]
 # -------------------------------------------------------------------------
 # Evaluation Cases
 # -------------------------------------------------------------------------
@@ -850,6 +1198,60 @@ CASES: list[EvaluationCase] = [
         messages=_build_w2_messages(22),
         expected_preserved=_build_w2_markers(),
     ),
+    # -------------------------------------------------------------------------
+
+    # 19-21. agent_tool_history_scaling (W3)
+
+    # Controlled workload scaling: same task and critical information,
+
+    # with only agent/tool execution history volume changing.
+
+    # Independent variable: accumulated agent/tool history length.
+
+    # -------------------------------------------------------------------------
+
+    EvaluationCase(
+
+        id="case_19_agent_500",
+
+        category="agent_tool_history_scaling",
+
+        description="Agent/tool execution history scaling targeting approximately 500 tokens.",
+
+        messages=_build_w3_messages(1),
+
+        expected_preserved=_build_w3_markers(1),
+
+    ),
+
+    EvaluationCase(
+
+        id="case_20_agent_2000",
+
+    category="agent_tool_history_scaling",
+
+    description="Agent/tool execution history scaling targeting approximately 2,000 tokens.",
+
+        messages=_build_w3_messages(5),
+
+        expected_preserved=_build_w3_markers(5),
+
+    ),
+
+    EvaluationCase(
+
+        id="case_21_agent_8000",
+
+    category="agent_tool_history_scaling",
+
+    description="Agent/tool execution history scaling targeting approximately 8,000 tokens.",
+
+        messages=_build_w3_messages(22),
+
+        expected_preserved=_build_w3_markers(22),
+
+    ),
+
 ]
 
 
@@ -871,5 +1273,10 @@ def get_core_cases() -> list[EvaluationCase]:
     return [
         case
         for case in CASES
-        if case.category not in ("repetitive_context_scaling", "system_instruction_scaling")
+        if case.category not in (
+            "repetitive_context_scaling",
+            "system_instruction_scaling",
+            "agent_tool_history_scaling",
+        )
     ]
+
