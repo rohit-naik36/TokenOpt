@@ -11,15 +11,12 @@ These tests verify that:
 """
 
 import asyncio
-import os
 import threading
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 import tokenopt_proxy_v2 as proxy
+
 from tokenopt.execution import CanonicalOptimizerAdapter, OptimizationCapacityExceededError
-from tokenopt.execution import CanonicalOptimizerAdapter as OptimizerAdapterClass
 
 
 class _MockSemaphore:
@@ -155,7 +152,7 @@ async def test_canonical_adapter_releases_semaphore_on_completion(mock_semaphore
 
     # Start optimization
     task = asyncio.create_task(adapter.optimize([{"role": "user", "content": "test"}]))
-    
+
     # Wait for semaphore to be acquired
     await asyncio.sleep(0.05)
     assert mock_semaphore.acquire_count == 1
@@ -202,7 +199,7 @@ async def test_canonical_adapter_releases_semaphore_on_cancellation(mock_semapho
 
     # Start optimization
     task = asyncio.create_task(adapter.optimize([{"role": "user", "content": "test"}]))
-    
+
     # Wait for semaphore to be acquired
     await asyncio.sleep(0.05)
     assert mock_semaphore.acquire_count == 1
@@ -257,7 +254,7 @@ async def test_canonical_adapter_capacity_exceeded(mock_semaphore):
     # Start two optimizations (max workers = 2)
     task1 = asyncio.create_task(adapter.optimize([{"role": "user", "content": "test1"}]))
     task2 = asyncio.create_task(adapter.optimize([{"role": "user", "content": "test2"}]))
-    
+
     await asyncio.sleep(0.05)
     assert mock_semaphore.acquire_count == 2
 
@@ -299,20 +296,21 @@ async def test_canonical_adapter_semaphore_released_on_exception(mock_semaphore)
 @pytest.mark.asyncio
 async def test_proxy_integration_overload_returns_503(setup_env):
     """Test that proxy returns 503 when optimization capacity is exhausted.
-    
+
     This is tested at the adapter level in other tests. Here we just verify
     the capacity exceeded error is properly converted to 503.
     """
-    from tokenopt.execution import OptimizationCapacityExceededError
     from fastapi.testclient import TestClient
-    
+
+    from tokenopt.execution import OptimizationCapacityExceededError
+
     # Test that the exception is properly handled by the endpoint
-    with TestClient(proxy.app, raise_server_exceptions=False) as client:
+    with TestClient(proxy.app, raise_server_exceptions=False):
         # We can't easily test the full integration without a running event loop
         # in the test client thread, but we can verify the exception class exists
         # and would be caught by the exception handler
         assert issubclass(OptimizationCapacityExceededError, Exception)
-        
+
         # The actual integration is tested at the adapter level above
         pass
 
@@ -339,7 +337,167 @@ def test_default_max_workers(monkeypatch):
     monkeypatch.delenv("MAX_OPTIMIZATION_WORKERS", raising=False)
     # Create a fresh AppConfig without the test env var
     import importlib
+
     import tokenopt_proxy_v2 as fresh_proxy
     importlib.reload(fresh_proxy)
     # The default should be 4
     assert fresh_proxy.AppConfig.MAX_OPTIMIZATION_WORKERS == 4
+
+
+# ---------------------------------------------------------------------------
+# Regression test for ChatMessage normalization fix
+# ---------------------------------------------------------------------------
+
+class _ChatMessage:
+    """Proxy's Pydantic ChatMessage model (simulated)."""
+    def __init__(self, role: str, content: str, name: str | None = None):
+        self.role = role
+        self.content = content
+        self.name = name
+
+
+@pytest.mark.asyncio
+async def test_canonical_adapter_accepts_chatmessage_objects(mock_semaphore):
+    """Test that CanonicalOptimizerAdapter accepts proxy ChatMessage objects.
+
+    This is a regression test for the fix where the adapter tried to call
+    .get() on Pydantic ChatMessage objects which don't have a .get() method.
+    """
+    adapter = CanonicalOptimizerAdapter(
+        config=None,
+        executor=None,
+        semaphore=mock_semaphore,
+    )
+
+    # Mock _optimize_sync to return immediately
+    def fast_optimize(messages, model):
+        # Verify normalization happened correctly
+        assert isinstance(messages, list)
+        assert all(isinstance(m, dict) for m in messages)
+        assert all("role" in m and "content" in m for m in messages)
+        # Check ChatMessage object was normalized correctly
+        assert messages[0]["role"] == "system"
+        assert messages[0]["content"] == "You are a test assistant."
+        assert messages[1]["role"] == "user"
+        assert messages[1]["content"] == "Test message content"
+        return {
+            "optimized_prompt": "test",
+            "optimized_tokens": 10,
+            "original_tokens": 20,
+            "techniques": [],
+            "validation_decision": "accept",
+            "rollback_applied": False,
+            "rollback_reason": None,
+            "transformer_metrics": {},
+            "validator_metrics": {},
+            "pipeline_latency_ms": 0.0,
+        }
+
+    adapter._optimize_sync = fast_optimize
+
+    # Create ChatMessage objects like the proxy does
+    chat_messages = [
+        _ChatMessage(role="system", content="You are a test assistant."),
+        _ChatMessage(role="user", content="Test message content"),
+    ]
+
+    # Call optimize - should accept ChatMessage objects without AttributeError
+    result = await adapter.optimize(chat_messages)
+
+    # Give time for release to be processed on event loop
+    await asyncio.sleep(0.05)
+
+    assert mock_semaphore.acquire_count == 1
+    assert mock_semaphore.release_count == 1
+    assert result["fidelity_passed"] is True
+
+
+@pytest.mark.asyncio
+async def test_canonical_adapter_accepts_both_dict_and_chatmessage(mock_semaphore):
+    """Test that adapter accepts mixed dict and ChatMessage objects."""
+    adapter = CanonicalOptimizerAdapter(
+        config=None,
+        executor=None,
+        semaphore=mock_semaphore,
+    )
+
+    def fast_optimize(messages, model):
+        assert isinstance(messages, list)
+        assert all(isinstance(m, dict) for m in messages)
+        # First is dict, second was ChatMessage - both should be normalized
+        assert messages[0]["role"] == "system"
+        assert messages[0]["content"] == "system prompt"
+        assert messages[1]["role"] == "user"
+        assert messages[1]["content"] == "user prompt"
+        return {
+            "optimized_prompt": "test",
+            "optimized_tokens": 10,
+            "original_tokens": 20,
+            "techniques": [],
+            "validation_decision": "accept",
+            "rollback_applied": False,
+            "rollback_reason": None,
+            "transformer_metrics": {},
+            "validator_metrics": {},
+            "pipeline_latency_ms": 0.0,
+        }
+
+    adapter._optimize_sync = fast_optimize
+
+    # Mix of dict and ChatMessage
+    messages = [
+        {"role": "system", "content": "system prompt"},
+        _ChatMessage(role="user", content="user prompt"),
+    ]
+
+    result = await adapter.optimize(messages)
+
+    await asyncio.sleep(0.05)
+
+    assert mock_semaphore.acquire_count == 1
+    assert mock_semaphore.release_count == 1
+    assert result["fidelity_passed"] is True
+
+
+@pytest.mark.asyncio
+async def test_canonical_adapter_default_role_and_content(mock_semaphore):
+    """Test that default role='user' and content='' are used when missing."""
+    adapter = CanonicalOptimizerAdapter(
+        config=None,
+        executor=None,
+        semaphore=mock_semaphore,
+    )
+
+    def fast_optimize(messages, model):
+        # ChatMessage without role/content should get defaults
+        assert messages[0]["role"] == "user"
+        assert messages[0]["content"] == ""
+        return {
+            "optimized_prompt": "test",
+            "optimized_tokens": 10,
+            "original_tokens": 20,
+            "techniques": [],
+            "validation_decision": "accept",
+            "rollback_applied": False,
+            "rollback_reason": None,
+            "transformer_metrics": {},
+            "validator_metrics": {},
+            "pipeline_latency_ms": 0.0,
+        }
+
+    adapter._optimize_sync = fast_optimize
+
+    # ChatMessage without role/content (edge case)
+    class MinimalMessage:
+        pass
+
+    msg = MinimalMessage()
+    # No role or content attributes
+
+    result = await adapter.optimize([msg])
+
+    await asyncio.sleep(0.05)
+
+    assert mock_semaphore.acquire_count == 1
+    assert mock_semaphore.release_count == 1
+    assert result["fidelity_passed"] is True

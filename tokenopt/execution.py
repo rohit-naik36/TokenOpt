@@ -38,6 +38,22 @@ class CanonicalOptimizerAdapter:
         self._executor = executor
         self._semaphore = semaphore
 
+    @staticmethod
+    def _normalize_message(m: Any) -> dict[str, str]:
+        """Normalize a message to a dictionary with role and content.
+
+        Accepts:
+        - dict-like objects with .get() method
+        - Pydantic ChatMessage objects with .role and .content attributes
+        """
+        if hasattr(m, "get"):
+            # dict-like object
+            return {"role": m.get("role", "user"), "content": m.get("content", "")}
+        # Pydantic model or object with attributes
+        role = getattr(m, "role", "user")
+        content = getattr(m, "content", "")
+        return {"role": role, "content": content}
+
     async def optimize(
         self,
         messages: list[dict[str, Any]],
@@ -68,10 +84,7 @@ class CanonicalOptimizerAdapter:
         def _worker() -> dict[str, Any]:
             """Wrapper that releases the semaphore on the event loop when done."""
             try:
-                normalized_messages = [
-                    {"role": m.get("role", "user"), "content": m.get("content", "")}
-                    for m in messages
-                ]
+                normalized_messages = [self._normalize_message(m) for m in messages]
                 return self._optimize_sync(normalized_messages, model)
             finally:
                 # Release the capacity slot on the event loop from the worker thread.
