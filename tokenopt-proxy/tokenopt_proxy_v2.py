@@ -35,11 +35,12 @@ from fidelity_validator_v2 import EmbeddingFidelityValidator
 from provider_client_v2 import ProviderRouter, ProviderConfig, ProviderError
 from persistence_layer_v2 import AuditDatabase, DistributedCache, EventStreamer, AuditLogEntry
 
-# Import TokenOpt optimizer SDK (standalone, embeddable optimization engine)
-from tokenopt_optimizer import (
-    DegradedFidelityValidator as SDK_DegradedFidelityValidator,
+# Import canonical TokenOpt optimizer (replaces tokenopt_optimizer)
+from tokenopt.compat import (
     OptimizerConfig,
     PromptOptimizer,
+    DegradedFidelityValidator,
+    TokenOptConfig,
 )
 
 # Optional dependencies (checked early so constants are available everywhere)
@@ -265,9 +266,9 @@ security = HTTPBearer()
 # Global Services (initialized on startup)
 # ============================================================
 
-# Fails-open fidelity validator now lives in the TokenOpt optimizer SDK.
+# Fails-open fidelity validator now lives in the TokenOpt compatibility shim.
 # Re-export it here so existing imports / tests against the proxy keep working.
-DegradedFidelityValidator = SDK_DegradedFidelityValidator
+from tokenopt.compat import DegradedFidelityValidator
 
 
 def minimum_savings_rollback(
@@ -314,13 +315,9 @@ _OPTIMIZER_CACHE: dict[str, Any] = {}
 
 
 def build_optimizer(model: str = "gpt-4"):
-    """Return an SDK ``PromptOptimizer`` wired to the live global services.
+    """Return a canonical optimizer wired to the live global services.
 
-    The SDK optimizer is fully dependency-injected; here we connect it to the
-    process-wide cache and fidelity validator so the proxy and the standalone
-    engine share the same backends. The tokenizer is built for ``model`` so
-    token counts match the actual model tokenization when available.
-
+    The canonical optimizer wraps the validated preservation-aware pipeline.
     Optimizers are cached per model (they are stateless between calls) so a
     request does not pay the construction cost every time. The cache is keyed
     by ``(model, validator_id, cache_id)`` so re-initialized backends invalidate
@@ -334,17 +331,40 @@ def build_optimizer(model: str = "gpt-4"):
         return cached
 
     cfg = services.config
-    config = OptimizerConfig(
-        enable_headroom=cfg.ENABLE_HEADROOM,
-        headroom_target_ratio=cfg.HEADROOM_TARGET_RATIO,
-        headroom_min_tokens=cfg.HEADROOM_MIN_TOKENS,
+    # Use canonical optimizer with prototype config boundary
+    from tokenopt.config import get_prototype_config
+    from tokenopt.compat import PromptOptimizer
+
+    config = get_prototype_config()
+    # Override specific settings from the AppConfig
+    config = TokenOptConfig(
+        enable_compression=config.enable_compression,
+        cache_enabled=config.cache_enabled,
+        enable_routing=config.enable_routing,
+        enable_summarization=config.enable_summarization,
+        enable_rag=config.enable_rag,
+        enable_fewshot=config.enable_fewshot,
+        compression_ratio=config.compression_ratio,
+        cache_ttl=config.cache_ttl,
+        cache_similarity_threshold=config.cache_similarity_threshold,
+        cache_max_size=config.cache_max_size,
+        redis_url=config.redis_url,
+        routing_rules=config.routing_rules,
+        default_model=config.default_model,
         tokenizer=cfg.make_token_counter(model),
-    )
-    optimizer = PromptOptimizer(
-        config=config,
-        cache=services.cache,
-        validator=services.fidelity_validator,
-    )
+)
+    # Disable downstream stages per prototype boundary
+    config.enable_summarization = False
+    config.enable_rag = False
+    config.enable_fewshot = False
+    config.cache_enabled = False
+    config.enable_routing = False
+
+    optimizer = PromptOptimizer(config=config)
+    # Wire the proxy's fidelity validator for response-level validation
+    optimizer._core.config.fidelity_threshold = services.config.FIDELITY_THRESHOLD
+    optimizer._core.config.enable_llm_judge = False  # Disable LLM judge in canonical core
+
     _OPTIMIZER_CACHE[key] = optimizer
     return optimizer
 

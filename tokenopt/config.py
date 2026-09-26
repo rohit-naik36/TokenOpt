@@ -97,6 +97,9 @@ class TokenOptConfig:
     # Observability
     observability_enabled: bool = True
     metrics_callback: Callable[[RequestMetrics], None] | None = None
+    
+    # Tokenizer
+    tokenizer: Callable[[str], int] | None = None
 
     def __post_init__(self) -> None:
         if not 0 < self.compression_ratio <= 1:
