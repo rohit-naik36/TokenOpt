@@ -5,32 +5,53 @@ the canonical core underneath. This allows tokenopt-proxy to migrate
 without changing its import structure.
 """
 
-from tokenopt.config import TokenOptConfig, RoutingRule
-from tokenopt.pipeline.preservation import PreservationClass, TransformationEligibility
+from dataclasses import dataclass
 from typing import Any
 
-from tokenopt.optimizer import CanonicalOptimizer, CanonicalOptimizerAdapter
+from tokenopt.config import RoutingRule, TokenOptConfig
+from tokenopt.optimizer import CanonicalOptimizerAdapter
+from tokenopt.pipeline.preservation import PreservationClass, TransformationEligibility
 
 # Re-export for compatibility
 OptimizerConfig = TokenOptConfig
-PromptOptimizer = CanonicalOptimizerAdapter
 
-# Provide a DegradedFidelityValidator compatible with tokenopt_optimizer's interface
+
+# Local FidelityScore dataclass matching tokenopt_optimizer.FidelityScore
+# This avoids any runtime dependency on the legacy tokenopt_optimizer package.
+@dataclass
+class FidelityScore:
+    """Comprehensive fidelity assessment of an optimized prompt."""
+
+    overall: float
+    semantic_similarity: float
+    structural_similarity: float
+    llm_judge_score: float | None
+    passed: bool
+    details: dict[str, Any]
+
+
+# Lazy import to avoid circular dependency
+def _get_prompt_optimizer() -> type:
+    return CanonicalOptimizerAdapter
+
+
+PromptOptimizer = _get_prompt_optimizer()
+
+
 class DegradedFidelityValidator:
     """Fails-open fidelity validator compatible with tokenopt_optimizer's interface."""
-    
+
     def __init__(self) -> None:
         self._validation_count = 0
-    
+
     async def validate(
         self,
         original_prompt: str = "",
         optimized_prompt: str = "",
         baseline_response: str | None = None,
         optimized_response: str | None = None,
-    ) -> Any:
+    ) -> FidelityScore:
         self._validation_count += 1
-        from tokenopt_optimizer import FidelityScore
         return FidelityScore(
             overall=1.0,
             semantic_similarity=1.0,
@@ -39,7 +60,7 @@ class DegradedFidelityValidator:
             passed=True,
             details={"engine": "degraded_passthrough"},
         )
-    
+
     def get_stats(self) -> dict[str, Any]:
         return {
             "engine": "degraded_passthrough",
@@ -47,15 +68,12 @@ class DegradedFidelityValidator:
             "note": "No embedding backend configured; fidelity always passes (fails open)",
         }
 
-# Re-export for compatibility
-OptimizerConfig = TokenOptConfig
-PromptOptimizer = CanonicalOptimizerAdapter
-DegradedFidelityValidator = DegradedFidelityValidator
 
 __all__ = [
     "PromptOptimizer",
     "OptimizerConfig",
     "DegradedFidelityValidator",
+    "FidelityScore",
     "TokenOptConfig",
     "RoutingRule",
     "PreservationClass",

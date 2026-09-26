@@ -5,23 +5,24 @@ Integrates: real embeddings, circuit breaker providers, PostgreSQL audit, Redis 
 
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException, Request, Depends, BackgroundTasks
-from fastapi.responses import StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
-from contextlib import asynccontextmanager
 import asyncio
 import json
+import logging
+import os
 import secrets
 import time
-import os
 import uuid
-import jwt
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
-import logging
 from functools import lru_cache
+from typing import Any
+
+import jwt
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel, Field
 
 # Optional real tokenizer (falls back to the SDK heuristic when unavailable)
 try:
@@ -32,14 +33,13 @@ except ImportError:
 
 # Import v2 components
 from fidelity_validator_v2 import EmbeddingFidelityValidator
-from provider_client_v2 import ProviderRouter, ProviderConfig, ProviderError
-from persistence_layer_v2 import AuditDatabase, DistributedCache, EventStreamer, AuditLogEntry
+from persistence_layer_v2 import AuditDatabase, AuditLogEntry, DistributedCache, EventStreamer
+from provider_client_v2 import ProviderConfig, ProviderError, ProviderRouter
 
 # Import canonical TokenOpt optimizer (replaces tokenopt_optimizer)
 from tokenopt.compat import (
-    OptimizerConfig,
-    PromptOptimizer,
     DegradedFidelityValidator,
+    PromptOptimizer,
     TokenOptConfig,
 )
 
@@ -52,8 +52,8 @@ except ImportError:
 
 try:
     import headroom
-    from headroom import compress as headroom_compress
     from headroom import CompressConfig as HeadroomConfig
+    from headroom import compress as headroom_compress
     HEADROOM_AVAILABLE = True
 except ImportError:
     headroom = None
@@ -198,30 +198,30 @@ class AppConfig:
 class ChatMessage(BaseModel):
     role: str
     content: str
-    name: Optional[str] = None
+    name: str | None = None
 
 class ChatCompletionRequest(BaseModel):
     model: str = Field(..., min_length=1, description="Model name, e.g. gpt-4")
-    messages: List[ChatMessage] = Field(
+    messages: list[ChatMessage] = Field(
         ..., min_length=1, description="Chat messages (max 1 system + rest user/assistant)"
     )
-    temperature: Optional[float] = Field(0.7, ge=0.0, le=2.0)
-    max_tokens: Optional[int] = Field(None, ge=1)
-    top_p: Optional[float] = Field(1.0, ge=0.0, le=1.0)
-    frequency_penalty: Optional[float] = Field(0.0, ge=-2.0, le=2.0)
-    presence_penalty: Optional[float] = Field(0.0, ge=-2.0, le=2.0)
-    stream: Optional[bool] = False
-    user: Optional[str] = None
+    temperature: float | None = Field(0.7, ge=0.0, le=2.0)
+    max_tokens: int | None = Field(None, ge=1)
+    top_p: float | None = Field(1.0, ge=0.0, le=1.0)
+    frequency_penalty: float | None = Field(0.0, ge=-2.0, le=2.0)
+    presence_penalty: float | None = Field(0.0, ge=-2.0, le=2.0)
+    stream: bool | None = False
+    user: str | None = None
     # TokenOpt extensions
-    optimization_level: Optional[str] = Field("standard", pattern="^(standard|aggressive|conservative)$")
-    skip_optimization: Optional[bool] = False
-    fidelity_threshold: Optional[float] = Field(None, ge=0.0, le=1.0)
-    preferred_provider: Optional[str] = None
+    optimization_level: str | None = Field("standard", pattern="^(standard|aggressive|conservative)$")
+    skip_optimization: bool | None = False
+    fidelity_threshold: float | None = Field(None, ge=0.0, le=1.0)
+    preferred_provider: str | None = None
 
 class EmbeddingRequest(BaseModel):
-    input: str | List[str]
+    input: str | list[str]
     model: str = "text-embedding-3-small"
-    encoding_format: Optional[str] = "float"
+    encoding_format: str | None = "float"
 
 # ============================================================
 # FastAPI Application
@@ -246,7 +246,7 @@ _cors_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if 
 if _cors_origins:
     # Explicitly configured origins. No wildcard unless the env var is literally "*".
     _cors_allowed = _cors_origins
-    _cors_credentials = not ("*" in _cors_origins)
+    _cors_credentials = "*" not in _cors_origins
 else:
     # Default to local development origins; never wildcard-open CORS by default.
     _cors_allowed = _cors_default
@@ -267,12 +267,11 @@ security = HTTPBearer()
 # ============================================================
 
 # Fails-open fidelity validator now lives in the TokenOpt compatibility shim.
-# Re-export it here so existing imports / tests against the proxy keep working.
-from tokenopt.compat import DegradedFidelityValidator
+# Re-exported at top of file (line 42) so existing imports / tests against the proxy keep working.
 
 
 def minimum_savings_rollback(
-    opt_result: Dict[str, Any],
+    opt_result: dict[str, Any],
     min_savings_pct: float,
     original_prompt: str,
 ) -> bool:
@@ -333,7 +332,6 @@ def build_optimizer(model: str = "gpt-4"):
     cfg = services.config
     # Use canonical optimizer with prototype config boundary
     from tokenopt.config import get_prototype_config
-    from tokenopt.compat import PromptOptimizer
 
     config = get_prototype_config()
     # Override specific settings from the AppConfig
@@ -374,11 +372,11 @@ class ServiceManager:
 
     def __init__(self):
         self.config = AppConfig()
-        self.fidelity_validator: Optional[EmbeddingFidelityValidator] = None
-        self.provider_router: Optional[ProviderRouter] = None
-        self.audit_db: Optional[AuditDatabase] = None
-        self.cache: Optional[DistributedCache] = None
-        self.event_stream: Optional[EventStreamer] = None
+        self.fidelity_validator: EmbeddingFidelityValidator | None = None
+        self.provider_router: ProviderRouter | None = None
+        self.audit_db: AuditDatabase | None = None
+        self.cache: DistributedCache | None = None
+        self.event_stream: EventStreamer | None = None
         self._semaphore = asyncio.Semaphore(self.config.MAX_CONCURRENT_REQUESTS)
         self._initialized = False
 
@@ -521,7 +519,7 @@ services = ServiceManager()
 # Authentication
 # ============================================================
 
-async def authenticate(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
+async def authenticate(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict[str, Any]:
     """JWT-based authentication."""
     secret = services.config.JWT_SECRET
     if not secret:
@@ -593,7 +591,7 @@ async def chat_completions(
     request: ChatCompletionRequest,
     background_tasks: BackgroundTasks,
     http_request: Request,
-    tenant: Dict = Depends(authenticate)
+    tenant: dict = Depends(authenticate)
 ):
     """
     Production chat completions with full optimization pipeline.
@@ -878,7 +876,7 @@ async def chat_completions(
 
 @app.get("/v1/tokenopt/stats")
 async def get_stats(
-    tenant: Dict = Depends(authenticate),
+    tenant: dict = Depends(authenticate),
     hours: int = 24
 ):
     """Get comprehensive platform statistics."""
@@ -910,7 +908,7 @@ async def get_stats(
 
 @app.get("/v1/tokenopt/rollbacks")
 async def get_rollbacks(
-    tenant: Dict = Depends(authenticate),
+    tenant: dict = Depends(authenticate),
     limit: int = 100
 ):
     """Get recent rollbacks for investigation."""
@@ -927,7 +925,7 @@ async def get_rollbacks(
 @app.post("/v1/tokenopt/validate")
 async def validate_prompt(
     prompt: str,
-    tenant: Dict = Depends(authenticate)
+    tenant: dict = Depends(authenticate)
 ):
     """Preview optimization without API call."""
     optimizer = build_optimizer()

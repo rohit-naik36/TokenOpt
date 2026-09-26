@@ -2,18 +2,20 @@
 preservation-aware pipeline.
 
 This module provides a clean interface to the validated preservation-aware
-pipeline (Analyzer → PreservationMap → Planner → Transformer → Validator)
+pipeline (Analyzer -> PreservationMap -> Planner -> Transformer -> Validator)
 without changing the underlying validated behavior.
 """
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from tokenopt.config import TokenOptConfig
 from tokenopt.pipeline import OptimizationPipeline
 from tokenopt.pipeline.base import OptimizationContext
+from tokenopt.utils.token_counter import count_message_tokens
 
 
 @dataclass(frozen=True)
@@ -23,6 +25,7 @@ class OptimizationResult:
     Contains only information the canonical optimizer legitimately owns.
     Provider-authoritative token counts must come from the evidence layer.
     """
+
     optimized_messages: list[dict[str, Any]]
     original_token_count: int
     optimized_token_count: int
@@ -36,35 +39,25 @@ class OptimizationResult:
 
 class CanonicalOptimizer:
     """Canonical optimization interface - thin adapter around the validated
-    preservation-aware pipeline (Analyzer → Planner → Transformer → Validator).
+    preservation-aware pipeline (Analyzer -> Planner -> Transformer -> Validator).
 
     This is a thin synchronous adapter around the existing validated
     preservation-aware pipeline. It does NOT change the validated behavior.
     """
 
-    def __init__(self, config: TokenOptConfig | None = None):
+    def __init__(self, config: TokenOptConfig | None = None) -> None:
         self.config = config or TokenOptConfig()
-        # Use the prototype config boundary: Analyzer → Transformer → Validator
+        # Use the prototype config boundary: Analyzer -> Transformer -> Validator
         # (Router, Cache, Summarizer, RAG, FewShot disabled per prototype boundary)
         self._pipeline = self._build_pipeline()
 
-    def _build_pipeline(self) -> "OptimizationPipeline":
+    def _build_pipeline(self) -> OptimizationPipeline:
         """Build the canonical pipeline per prototype boundary."""
-        from tokenopt.pipeline import (
-            AnalyzerStage,
-            TransformerStage,
-            ValidatorStage,
-        )
-        from tokenopt.pipeline.base import OptimizationPipeline
+        from tokenopt.pipeline import OptimizationPipeline
+        from tokenopt.pipeline.analyzer import AnalyzerStage
+        from tokenopt.pipeline.transformer import TransformerStage
+        from tokenopt.pipeline.validator import ValidatorStage
 
-        # Use prototype config boundary: disable Router, Cache, Summarizer, RAG, FewShot
-        config = self.config
-        stages = [
-            AnalyzerStage(config=self.config),
-            # RouterStage disabled per prototype boundary
-            TransformerStage(config=self.config),
-            ValidatorStage(config=self.config),
-        ]
         stages = [
             AnalyzerStage(config=self.config),
             TransformerStage(config=self.config),
@@ -77,7 +70,7 @@ class CanonicalOptimizer:
         messages: list[dict[str, Any]],
         model: str,
         config: TokenOptConfig | None = None,
-    ) -> "OptimizationResult":
+    ) -> OptimizationResult:
         """Run the canonical optimization pipeline.
 
         This is a synchronous method - the canonical core remains synchronous.
@@ -92,12 +85,8 @@ class CanonicalOptimizer:
             OptimizationResult with optimization outcome and metadata
         """
         config = config or self.config
-        pipeline = self._build_pipeline()
 
         # Create optimization context
-        from tokenopt.pipeline.base import OptimizationContext
-        from tokenopt.utils.token_counter import count_message_tokens
-
         ctx = OptimizationContext(
             messages=messages,
             model=model,
@@ -108,14 +97,8 @@ class CanonicalOptimizer:
         # Run the canonical pipeline
         ctx = self._run_pipeline(ctx)
 
-        # Compute final token count
-        from tokenopt.utils.token_counter import count_message_tokens
-        final_token_count = count_message_tokens(ctx.messages, model=ctx.model)
-
         # Determine validation outcome
         validation_decision = ctx.metrics.get("validation_decision", "accept")
-        rollback_applied = ctx.metrics.get("rollback_applied", False)
-        rollback_reason = ctx.metrics.get("rollback_reason")
 
         # Collect transformer metrics
         transformer_metrics = {
@@ -130,7 +113,6 @@ class CanonicalOptimizer:
         }
 
         # Validator metrics
-        validation_decision = ctx.metrics.get("validation_decision", "accept")
         validator_metrics = {
             "validation_decision": validation_decision,
             "rollback_applied": ctx.metrics.get("rollback_applied", False),
@@ -140,13 +122,10 @@ class CanonicalOptimizer:
             "invariants_failed": ctx.metrics.get("validation_invariants_failed", 0),
         }
 
-        original_token_count = ctx.original_token_count
-        optimized_token_count = count_message_tokens(ctx.messages, model=model)
-
         return OptimizationResult(
             optimized_messages=ctx.messages,
             original_token_count=ctx.original_token_count,
-            optimized_token_count=count_message_tokens(ctx.messages, model=model),
+            optimized_token_count=count_message_tokens(ctx.messages, model=ctx.model),
             validation_decision=ctx.metrics.get("validation_decision", "accept"),
             rollback_applied=ctx.metrics.get("rollback_applied", False),
             rollback_reason=ctx.metrics.get("rollback_reason"),
@@ -155,11 +134,8 @@ class CanonicalOptimizer:
             pipeline_latency_ms=ctx.metrics.get("pipeline_latency_ms", 0.0),
         )
 
-    def _run_pipeline(self, ctx: "OptimizationContext") -> "OptimizationContext":
+    def _run_pipeline(self, ctx: OptimizationContext) -> OptimizationContext:
         """Run the pipeline with fail-open stage execution."""
-        from copy import deepcopy
-        from time import perf_counter
-
         for stage in self._pipeline.stages:
             if not self._should_run_stage(stage):
                 continue
@@ -178,7 +154,7 @@ class CanonicalOptimizer:
 
         return ctx
 
-    def _should_run_stage(self, stage) -> bool:
+    def _should_run_stage(self, stage: Any) -> bool:
         """Return whether a stage is enabled by configuration."""
         stage_name = stage.name
         config = self.config
@@ -210,8 +186,7 @@ class CanonicalOptimizerAdapter:
     without introducing async into the canonical core.
     """
 
-    def __init__(self, config: "TokenOptConfig" | None = None):
-        from tokenopt.optimizer import CanonicalOptimizer
+    def __init__(self, config: TokenOptConfig | None = None) -> None:
         self._core = CanonicalOptimizer(config)
         self.config = config or TokenOptConfig()
 
@@ -229,17 +204,11 @@ class CanonicalOptimizerAdapter:
         to avoid blocking the event loop.
         """
         import asyncio
-        import hashlib
-
-        # Build cache key
-        full_prompt = "\n".join(f"{m['role']}: {m['content']}" for m in messages)
-        cache_key = f"{optimization_level}:{hashlib.sha256(full_prompt.encode()).hexdigest()}"
 
         # Check cache
         # Note: cache integration happens at proxy layer; canonical core doesn't cache
 
         # Run canonical optimization in thread pool
-        import asyncio
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
             None,
@@ -264,7 +233,6 @@ class CanonicalOptimizerAdapter:
         """Synchronous optimization for thread pool execution."""
         from tokenopt.pipeline.base import OptimizationContext
         from tokenopt.utils.token_counter import count_message_tokens
-        from copy import deepcopy
 
         config = self._core.config
         ctx = OptimizationContext(
@@ -273,15 +241,12 @@ class CanonicalOptimizerAdapter:
             config=config,
             model_explicit=True,
         )
-        ctx = self._run_pipeline(ctx)
-
-        final_token_count = count_message_tokens(ctx.messages, model=model)
+        ctx = self._core._run_pipeline(ctx)
 
         return {
             "optimized_prompt": "\n".join(f"{m['role']}: {m['content']}" for m in ctx.messages),
             "optimized_tokens": count_message_tokens(ctx.messages, model=model),
             "original_tokens": ctx.original_token_count,
-            "optimized_tokens": count_message_tokens(ctx.messages, model=model),
             "techniques": [],  # populated by transformer metrics
             "validation_decision": ctx.metrics.get("validation_decision", "accept"),
             "rollback_applied": ctx.metrics.get("rollback_applied", False),
@@ -298,36 +263,3 @@ class CanonicalOptimizerAdapter:
             },
             "pipeline_latency_ms": ctx.metrics.get("pipeline_latency_ms", 0.0),
         }
-
-
-# Backward compatibility shim for tokenopt-proxy
-# The proxy currently imports from tokenopt_optimizer:
-#   from tokenopt_optimizer import PromptOptimizer, OptimizerConfig, DegradedFidelityValidator
-# We provide a compatibility shim that uses the canonical core.
-
-# In tokenopt/compat.py (new file):
-"""
-Compatibility shim for tokenopt_optimizer consumers.
-
-This module provides the same interface as tokenopt_optimizer but uses
-the canonical core underneath.
-"""
-from tokenopt.optimizer import CanonicalOptimizer, CanonicalOptimizerAdapter
-from tokenopt.config import TokenOptConfig
-from tokenopt.config import RoutingRule
-from tokenopt.pipeline.preservation import PreservationClass, TransformationEligibility
-
-# Re-export for compatibility
-OptimizerConfig = TokenOptConfig
-PromptOptimizer = CanonicalOptimizerAdapter
-DegradedFidelityValidator = None  # Not used - canonical core has its own validator
-
-__all__ = [
-    "PromptOptimizer",
-    "OptimizerConfig",
-    "DegradedFidelityValidator",
-    "TokenOptConfig",
-    "RoutingRule",
-    "PreservationClass",
-    "TransformationEligibility",
-]

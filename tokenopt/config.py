@@ -97,7 +97,7 @@ class TokenOptConfig:
     # Observability
     observability_enabled: bool = True
     metrics_callback: Callable[[RequestMetrics], None] | None = None
-    
+
     # Tokenizer
     tokenizer: Callable[[str], int] | None = None
 
