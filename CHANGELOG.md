@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Transformer: removes certified note/request phrases ("It is important to
+  note that", "please note that", "I was wondering if you could"), applies
+  exact shorter rewrites ("in order to" → "to", "due to the fact that" →
+  "because", …), and drops whole-sentence greetings, well-wishing and thanks.
+  All edits skip protected spans and must keep every invariant.
+- Transformer: a sentence that verbatim-repeats an earlier one is removed even
+  when it contains an invariant; the identical first occurrence keeps it.
+- Transformer: pruning a sentence no longer merges paragraphs; its line break
+  is carried to the previous kept sentence.
+
 ### Fixed
 
 - Transformer: exact-duplicate sentences are now detected before inline filler
