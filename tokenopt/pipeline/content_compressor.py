@@ -24,12 +24,13 @@ logger = logging.getLogger(__name__)
 # Headroom import (optional — fail-open if unavailable or broken)
 # ---------------------------------------------------------------------------
 
-_headroom_compress: Any = None
-
 try:
     from headroom import compress as _headroom_compress  # type: ignore[import]
-except Exception:
-    _headroom_compress = None
+
+    _HEADROOM_AVAILABLE = True
+except Exception:  # noqa: BLE001
+    _headroom_compress: Any = None
+    _HEADROOM_AVAILABLE = False
 
 
 # ---------------------------------------------------------------------------
@@ -101,7 +102,7 @@ class ContentCompressorStage(PipelineStage):
 
     def __init__(self, config: TokenOptConfig | None = None) -> None:
         super().__init__(config)
-        self._use_headroom = _headroom_compress is not None
+        self._use_headroom = _HEADROOM_AVAILABLE
 
     # ------------------------------------------------------------------
     # PipelineStage interface
