@@ -25,6 +25,7 @@ Usage
 """
 
 from .compressor import SemanticCompressorV2
+from .content_compressor import CompressorConfig, CompressionResult, ContentCompressor
 from .fidelity import (
     DegradedFidelityValidator,
     FidelityScore,
@@ -35,6 +36,9 @@ from .optimizer import CacheBackend, OptimizerConfig, PromptOptimizer
 
 __all__ = [
     "CacheBackend",
+    "CompressorConfig",
+    "CompressionResult",
+    "ContentCompressor",
     "DegradedFidelityValidator",
     "FidelityScore",
     "FidelityValidator",

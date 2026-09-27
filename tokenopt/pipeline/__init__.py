@@ -1,6 +1,7 @@
 """Pipeline stages for TokenOpt optimization."""
 
 from tokenopt.pipeline.analyzer import AnalyzerStage, ContextAnalyzer
+from tokenopt.pipeline.content_compressor import ContentCompressorStage
 from tokenopt.pipeline.base import OptimizationContext, OptimizationPipeline, PipelineStage
 from tokenopt.pipeline.cache import CacheStage
 from tokenopt.pipeline.compressor import (
@@ -39,6 +40,7 @@ from tokenopt.pipeline.validator import (
 
 __all__ = [
     "OptimizationContext",
+    "ContentCompressorStage",
     "OptimizationPipeline",
     "PipelineStage",
     "AnalyzerStage",

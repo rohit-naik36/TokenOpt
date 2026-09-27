@@ -135,6 +135,9 @@ class OptimizationPipeline:
 
         stage_name = stage.name
 
+        if stage_name == "content_compressor":
+            return getattr(self.config, "content_compression_enabled", False)
+
         if stage_name == "router":
             return self.config.enable_routing
 

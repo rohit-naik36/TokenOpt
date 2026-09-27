@@ -13,6 +13,7 @@ from tokenopt.observability import MetricsCollector, RequestMetrics, estimate_co
 from tokenopt.pipeline import (
     AnalyzerStage,
     CacheStage,
+    ContentCompressorStage,
     ContextSummarizerStage,
     FewShotSelectorStage,
     OptimizationPipeline,
@@ -88,6 +89,7 @@ class BaseOptimizedClient(ABC):
         """
         stages = [
             AnalyzerStage(self.config),
+            ContentCompressorStage(self.config),
             RouterStage(self.config),
             TransformerStage(self.config),
             ValidatorStage(self.config),

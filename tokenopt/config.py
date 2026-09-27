@@ -94,6 +94,9 @@ class TokenOptConfig:
     fewshot_max_examples: int = 3
     fewshot_selection_strategy: str = "similarity"
 
+    # Content Compression (headroom integration)
+    content_compression_enabled: bool = False
+
     # Observability
     observability_enabled: bool = True
     metrics_callback: Callable[[RequestMetrics], None] | None = None
