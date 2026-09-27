@@ -22,7 +22,7 @@ asyncpg>=0.28.0
 # Redis distributed cache:
 redis>=4.5.0
 # Kafka event streaming:
-aiokafka>=0.8.0
+aiokafka>=0.14.0
 
 # Optional: local embedding model (falls back to OpenAI embeddings if absent)
 sentence-transformers>=2.2.0
