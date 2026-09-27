@@ -966,7 +966,7 @@ class TestCP7Eligibility:
 
         res = TransformerStage().process(ctx)
         assert res.messages[0]["content"] != raw
-        assert "provide the summary" in res.messages[0]["content"]
+        assert "provide the summary" in res.messages[0]["content"].lower()
         assert "could you please" not in res.messages[0]["content"].lower()
         assert "thank you" not in res.messages[0]["content"].lower()
 
@@ -1183,17 +1183,13 @@ class TestCP7DuplicateSentences:
         assert out.count("Reviewing system status now.") == 1
         assert "All checks completed successfully." in out
 
-    def test_duplicate_with_invariant_is_not_removed(self) -> None:
-        """Duplicate sentences containing invariants must not be removed."""
-        raw = (
-            "Target cluster is cluster-omega-99. "
-            "Target cluster is cluster-omega-99."
-        )
+    @staticmethod
+    def _transform_with_invariant(raw: str, marker: str) -> str:
         messages = [{"role": "user", "content": raw}]
         inv = PreservedInvariant(
             category=EntityCategory.IDENTIFIER,
             invariant_type=InvariantType.LEXICAL,
-            marker="cluster-omega-99",
+            marker=marker,
             message_index=0,
             role="user",
         )
@@ -1203,12 +1199,85 @@ class TestCP7DuplicateSentences:
             allow_compression=True,
             invariants=(inv,),
         )
-        ctx = _make_ctx(messages, _make_pmap(unit))
+        res = TransformerStage().process(_make_ctx(messages, _make_pmap(unit)))
+        return str(res.messages[0]["content"])
 
-        res = TransformerStage().process(ctx)
-        out = res.messages[0]["content"]
-        # Because it contains an invariant, it is not pruned
+    def test_verbatim_duplicate_with_invariant_keeps_first_occurrence(self) -> None:
+        """A verbatim repeat is removed; the identical first occurrence keeps the invariant."""
+        raw = "Target cluster is cluster-omega-99. Target cluster is cluster-omega-99."
+        out = self._transform_with_invariant(raw, "cluster-omega-99")
+        assert out.count("Target cluster is cluster-omega-99.") == 1
+
+    def test_non_verbatim_sentences_sharing_invariant_are_kept(self) -> None:
+        """Different sentences mentioning the same invariant are not duplicates."""
+        raw = "Target cluster is cluster-omega-99. Restart cluster-omega-99 tonight."
+        out = self._transform_with_invariant(raw, "cluster-omega-99")
         assert out.count("cluster-omega-99") == 2
+
+    @staticmethod
+    def _transform(raw: str) -> str:
+        messages = [{"role": "user", "content": raw}]
+        unit = _make_unit(
+            0,
+            preservation_class=PreservationClass.P2_COMPRESSIBLE,
+            allow_compression=True,
+        )
+        res = TransformerStage().process(_make_ctx(messages, _make_pmap(unit)))
+        return str(res.messages[0]["content"])
+
+    def test_duplicates_starting_with_filler_are_removed(self) -> None:
+        """Duplicates are found even when a leading filler word is later stripped."""
+        raw = (
+            "Please note that this document is confidential and internal. "
+            "Section one applies to all contractors. "
+            "Please note that this document is confidential and internal."
+        )
+        out = self._transform(raw)
+        assert out.lower().count("this document is confidential and internal.") == 1
+        assert "Section one applies to all contractors." in out
+
+    def test_repeated_boilerplate_paragraph_is_removed(self) -> None:
+        """A verbatim repeated paragraph keeps only its first occurrence, even with directives."""
+        boiler = (
+            "Please note that this document is confidential. "
+            "Kindly ensure that you do not distribute this document."
+        )
+        raw = (
+            f"{boiler}\n\nSection 4.1 Scope. It applies to all contractors.\n\n"
+            f"{boiler}\n\nSection 4.2 Notice. Termination requires written notice.\n\n{boiler}"
+        )
+        out = self._transform(raw)
+        assert out.lower().count("this document is confidential.") == 1
+        assert out.count("do not distribute this document.") == 1
+        assert "It applies to all contractors." in out
+        assert "Termination requires written notice." in out
+
+    def test_short_duplicate_sentences_are_kept(self) -> None:
+        """Very short repeats are distinct answers, not redundancy."""
+        out = self._transform("Is the build approved? Yes. Is the release deployed? Yes.")
+        assert out.count("Yes.") == 2
+
+
+class TestCP7SentenceStart:
+    """Sentence starts stay well-formed after leading filler is stripped."""
+
+    @staticmethod
+    def _transform(raw: str) -> str:
+        return TestCP7DuplicateSentences._transform(raw)
+
+    def test_capitalization_restored_after_leading_filler(self) -> None:
+        out = self._transform(
+            "Status is green. Could you help me answer this question about the policy?"
+        )
+        assert "Status is green. Help me answer this question about the policy?" in out
+
+    def test_dangling_comma_removed_after_leading_filler(self) -> None:
+        out = self._transform("Basically, the build is green on every branch.")
+        assert out.startswith("The build is green on every branch.")
+
+    def test_lowercase_sentence_start_is_not_capitalized(self) -> None:
+        out = self._transform("- please restart the ingest worker now")
+        assert out.startswith("- restart the ingest worker now")
 
 
 class TestCP7Fallback:
@@ -1279,3 +1348,61 @@ class TestCP7EndToEndPipeline:
             checked = ctx.metrics.get("validation_invariants_checked", 0)
             passed = ctx.metrics.get("validation_invariants_passed", 0)
             assert checked == passed, f"Case {case.id} lost invariants: {passed}/{checked}"
+
+
+class TestCP7VerboseReduction:
+    """Certified wordy-phrase rewrites and whole-sentence pleasantry removal."""
+
+    @staticmethod
+    def _transform(raw: str) -> str:
+        return TestCP7DuplicateSentences._transform(raw)
+
+    def test_wordy_phrases_are_rewritten(self) -> None:
+        out = self._transform(
+            "We paused the rollout due to the fact that latency rose. "
+            "Add a canary in order to catch it earlier."
+        )
+        assert "because latency rose" in out
+        assert "Add a canary to catch it earlier." in out
+        assert "in order to" not in out
+        assert "due to the fact that" not in out
+
+    def test_rewrite_at_sentence_start_keeps_capitalization(self) -> None:
+        out = self._transform("In order to ship, the suite has to be green.")
+        assert out.startswith("To ship, the suite has to be green.")
+
+    def test_note_phrases_are_removed(self) -> None:
+        out = self._transform(
+            "It is important to note that the contents may change without notice."
+        )
+        assert out.startswith("The contents may change without notice.")
+
+    def test_greeting_and_thanks_sentences_are_removed(self) -> None:
+        out = self._transform(
+            "Hi there! I hope you're doing really well today. "
+            "Summarize the incident report for the on-call team. "
+            "Thanks so much in advance, I really appreciate it!"
+        )
+        assert out == "Summarize the incident report for the on-call team."
+
+    def test_greeting_with_content_is_kept(self) -> None:
+        out = self._transform("Hi team, the nightly export failed again.")
+        assert "the nightly export failed again." in out
+
+    def test_rewrite_never_breaks_an_invariant(self) -> None:
+        raw = "Controls apply in order to satisfy SOX-404 in order to pass audit."
+        out = TestCP7DuplicateSentences._transform_with_invariant(
+            raw, "in order to satisfy SOX-404"
+        )
+        assert "in order to satisfy SOX-404" in out
+
+    def test_paragraph_break_survives_pruned_closing_sentence(self) -> None:
+        """Removing a trailing pleasantry must not merge the request into the pasted text."""
+        out = self._transform(
+            "Summarize the notes below for the team. Thanks so much!\n\n"
+            "Notes: the migration finished on schedule."
+        )
+        assert out == (
+            "Summarize the notes below for the team.\n\n"
+            "Notes: the migration finished on schedule."
+        )

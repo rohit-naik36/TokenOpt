@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Transformer: removes certified note/request phrases ("It is important to
+  note that", "please note that", "I was wondering if you could"), applies
+  exact shorter rewrites ("in order to" → "to", "due to the fact that" →
+  "because", …), and drops whole-sentence greetings, well-wishing and thanks.
+  All edits skip protected spans and must keep every invariant.
+- Transformer: a sentence that verbatim-repeats an earlier one is removed even
+  when it contains an invariant; the identical first occurrence keeps it.
+- Transformer: pruning a sentence no longer merges paragraphs; its line break
+  is carried to the previous kept sentence.
+
+### Fixed
+
+- Transformer: exact-duplicate sentences are now detected before inline filler
+  is stripped. Previously, stripping a leading "Please"/"Kindly" left a
+  lowercase sentence start that the boundary scanner could not split on, so
+  repeated sentences and boilerplate paragraphs were never deduplicated.
+- Transformer: sentence starts are tidied after leading filler removal
+  (capitalization restored, dangling comma dropped).
+- Transformer: duplicates shorter than three words (e.g. "Yes.") are no longer
+  removed, since short repeats are usually distinct answers.
+
 ## [0.1.0] - 2026-08-01
 
 ### Added

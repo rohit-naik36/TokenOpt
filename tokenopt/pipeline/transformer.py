@@ -40,11 +40,33 @@ from tokenopt.utils.token_counter import count_message_tokens
 # Catalogs and Regex Patterns
 # =============================================================================
 
+# Order matters: longer phrases must be removed before the shorter filler
+# words they contain ("please note that" before "please").
 CERTIFIED_INLINE_FILLER_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(
+        r"\b(?:it is important to note that|it should be noted that|"
+        r"please note that|kindly note that)\b\s*",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:i was (?:just )?wondering if you (?:could|would|can)|"
+        r"i would (?:really )?appreciate it if you (?:could|would))\b\s*",
+        re.IGNORECASE,
+    ),
     re.compile(r"\b(?:as a matter of fact|at the end of the day)\b\s*", re.IGNORECASE),
     re.compile(r"\b(?:could you|would you)\b\s*", re.IGNORECASE),
     re.compile(r"\b(?:basically|essentially|fundamentally)\b\s*", re.IGNORECASE),
     re.compile(r"\b(?:please|kindly)\b\s*", re.IGNORECASE),
+)
+
+# Wordy phrases with an exact shorter equivalent (same meaning in any context).
+CERTIFIED_INLINE_REWRITES: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"\bin order to\b", re.IGNORECASE), "to"),
+    (re.compile(r"\bdue to the fact that\b", re.IGNORECASE), "because"),
+    (re.compile(r"\bin spite of the fact that\b", re.IGNORECASE), "although"),
+    (re.compile(r"\bin the event that\b", re.IGNORECASE), "if"),
+    (re.compile(r"\bat this point in time\b", re.IGNORECASE), "now"),
+    (re.compile(r"\bfor the purpose of\b", re.IGNORECASE), "for"),
 )
 
 DIRECTIVE_KEYWORDS_PATTERN: re.Pattern[str] = re.compile(
@@ -64,7 +86,30 @@ CERTIFIED_REDUNDANT_SENTENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
         r"^(?:understood|acknowledged|confirmed|noted|i will do that)[.!]?$",
         re.IGNORECASE,
     ),
+    # Pure greetings ("Hi there!", "Hi, hello, good morning!").
+    re.compile(
+        r"^(?:(?:hi|hello|hey|good (?:morning|afternoon|evening))"
+        r"(?: there| team| all| everyone)?[\s,.!]*)+$",
+        re.IGNORECASE,
+    ),
+    # Well-wishing ("I hope you're doing really well today.").
+    re.compile(
+        r"^(?:i )?hope (?:you(?:'re| are) (?:doing |having )?(?:really |very )?"
+        r"(?:well|good|great|fine|a (?:great|good|nice) day)(?: today)?|"
+        r"this (?:message|email) finds you well)[.!]?$",
+        re.IGNORECASE,
+    ),
+    # Thanks, optionally with an appreciation clause
+    # ("Thanks so much in advance, I really appreciate it!").
+    re.compile(
+        r"^(?:(?:thanks|thank you)(?: so much| very much| a lot| a ton)?(?: in advance)?|"
+        r"i (?:really |truly )?appreciate (?:it|your help|the help))"
+        r"(?:[,!.]\s*i (?:really |truly )?appreciate (?:it|your help|the help))?[.!]?$",
+        re.IGNORECASE,
+    ),
 )
+
+MIN_DUPLICATE_SENTENCE_WORDS = 3
 
 
 # =============================================================================
@@ -148,24 +193,68 @@ def _normalize_whitespace(text: str, invariants: list[str]) -> str:
     return normalized
 
 
+def _apply_certified_edit(
+    text: str,
+    invariants: list[str],
+    pattern: re.Pattern[str],
+    replacement: str,
+) -> str:
+    """Replace matches of a certified pattern outside protected spans, keeping invariants."""
+    protected_spans = _find_protected_spans(text, invariants)
+    for m in reversed(list(pattern.finditer(text))):
+        m_start, m_end = m.start(), m.end()
+        overlaps = any(
+            not (m_end <= p_start or m_start >= p_end)
+            for p_start, p_end in protected_spans
+        )
+        if overlaps:
+            continue
+        repl = replacement
+        if repl and m.group(0)[:1].isupper():
+            repl = repl[0].upper() + repl[1:]
+        candidate = text[:m_start] + repl + text[m_end:]
+        if candidate.strip() and all(inv in candidate for inv in invariants):
+            text = candidate
+    return text
+
+
 def _strip_inline_filler(text: str, invariants: list[str]) -> str:
-    """Remove certified inline conversational filler words where safe."""
+    """Remove certified inline filler and apply certified rewrites where safe."""
     for pattern in CERTIFIED_INLINE_FILLER_PATTERNS:
-        protected_spans = _find_protected_spans(text, invariants)
-        matches = list(pattern.finditer(text))
-        for m in reversed(matches):
-            m_start, m_end = m.start(), m.end()
-            overlaps = any(
-                not (m_end <= p_start or m_start >= p_end)
-                for p_start, p_end in protected_spans
-            )
-            if not overlaps:
-                candidate = text[:m_start] + text[m_end:]
-                if candidate.strip() and all(inv in candidate for inv in invariants):
-                    text = candidate
+        text = _apply_certified_edit(text, invariants, pattern, "")
+    for pattern, replacement in CERTIFIED_INLINE_REWRITES:
+        text = _apply_certified_edit(text, invariants, pattern, replacement)
 
     text = re.sub(r"[ \t]{2,}", " ", text)
     return text
+
+
+def _restore_sentence_start(original: str, stripped: str, invariants: list[str]) -> str:
+    """Tidy a sentence whose leading filler was removed.
+
+    Removing a leading "Please"/"Could you" leaves a lowercase start (and
+    sometimes a dangling comma); restore the original sentence-initial form.
+    """
+    if stripped == original:
+        return stripped
+    body = stripped.lstrip()
+    leading_ws = stripped[: len(stripped) - len(body)]
+    original_body = original.lstrip()
+    if body[:1] in (",", ";", ":") and original_body[:1] not in (",", ";", ":"):
+        body = body[1:].lstrip()
+    if original_body[:1].isupper() and body[:1].islower():
+        capitalized = body[0].upper() + body[1:]
+        # Never alter the casing of an invariant that starts the sentence.
+        if all(inv in capitalized for inv in invariants):
+            body = capitalized
+    return leading_ws + body
+
+
+def _strip_sentence_filler(sentence: str, invariants: list[str]) -> str:
+    """Strip certified inline filler from one sentence, preserving its invariants."""
+    local_invariants = [inv for inv in invariants if inv and inv in sentence]
+    stripped = _strip_inline_filler(sentence, local_invariants)
+    return _restore_sentence_start(sentence, stripped, local_invariants)
 
 
 def _split_sentences(text: str, invariants: list[str]) -> list[tuple[str, str]]:
@@ -213,6 +302,12 @@ def _split_sentences(text: str, invariants: list[str]) -> list[tuple[str, str]]:
     return sentences
 
 
+def _carry_line_break(kept: list[tuple[str, str]], dropped_delim: str) -> None:
+    """Keep a paragraph/line break when the sentence that carried it is pruned."""
+    if kept and "\n" in dropped_delim and "\n" not in kept[-1][1]:
+        kept[-1] = (kept[-1][0], dropped_delim)
+
+
 def _prune_sentences(
     sentence_pairs: list[tuple[str, str]],
     invariants: list[str],
@@ -227,12 +322,14 @@ def _prune_sentences(
         if not s_clean:
             continue
 
-        # 1. Exact duplicate sentence detection
-        if s_clean in seen_exact:
-            has_inv = any(inv in sent for inv in invariants)
-            if not has_inv:
-                pruned_count += 1
-                continue
+        # 1. Exact duplicate sentence detection. Very short repeats ("Yes.",
+        # "Done.") are often distinct answers rather than redundancy.
+        # A verbatim repeat is removed even when it carries an invariant: the
+        # first, identical occurrence is kept, so every invariant survives.
+        if s_clean in seen_exact and len(s_clean.split()) >= MIN_DUPLICATE_SENTENCE_WORDS:
+            _carry_line_break(kept, delim)
+            pruned_count += 1
+            continue
         seen_exact.add(s_clean)
 
         # 2. Invariant check: if sentence contains invariant, strictly preserve
@@ -247,6 +344,7 @@ def _prune_sentences(
 
         # 4. Certified redundant filler sentence check
         if any(p.match(s_clean) for p in CERTIFIED_REDUNDANT_SENTENCE_PATTERNS):
+            _carry_line_break(kept, delim)
             pruned_count += 1
             continue
 
@@ -420,18 +518,24 @@ class TransformerStage(PipelineStage):
         # 1. Whitespace normalization
         normalized = _normalize_whitespace(content, expected_invariants)
 
-        # 2. Inline filler stripping
-        filler_stripped = _strip_inline_filler(normalized, expected_invariants)
-
-        # 3. Sentence segmentation and pruning
-        sentence_pairs = _split_sentences(filler_stripped, expected_invariants)
+        # 2. Sentence segmentation and pruning run before filler stripping:
+        # stripping a leading "Please"/"Kindly" leaves a lowercase sentence
+        # start, which the boundary scanner cannot split on, so repeated
+        # sentences were glued to their neighbours and never deduplicated.
+        sentence_pairs = _split_sentences(normalized, expected_invariants)
         kept_pairs, pruned_count = _prune_sentences(sentence_pairs, expected_invariants)
 
+        # 3. Inline filler stripping, per surviving sentence
         if not kept_pairs:
-            candidate_content = filler_stripped.strip() or content.strip()
+            candidate_content = (
+                _strip_inline_filler(normalized, expected_invariants).strip() or content.strip()
+            )
             pruned_count = 0
         else:
-            candidate_content = "".join(sent + delim for sent, delim in kept_pairs).strip()
+            candidate_content = "".join(
+                _strip_sentence_filler(sent, expected_invariants) + delim
+                for sent, delim in kept_pairs
+            ).strip()
 
         # 4. Local preflight assertion
         if not self._local_preflight(content, candidate_content, expected_invariants):
