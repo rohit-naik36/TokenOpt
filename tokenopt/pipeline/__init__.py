@@ -2,13 +2,13 @@
 
 from tokenopt.pipeline.analyzer import AnalyzerStage, ContextAnalyzer
 from tokenopt.pipeline.base import OptimizationContext, OptimizationPipeline, PipelineStage
-from tokenopt.pipeline.content_compressor import ContentCompressorStage
 from tokenopt.pipeline.cache import CacheStage
 from tokenopt.pipeline.compressor import (
     CompressorStage,
     ContextSummarizerStage,
     compress_message_content,
 )
+from tokenopt.pipeline.content_compressor import ContentCompressorStage
 from tokenopt.pipeline.fewshot import FewShotSelectorStage
 from tokenopt.pipeline.planner import (
     CandidateDecision,
