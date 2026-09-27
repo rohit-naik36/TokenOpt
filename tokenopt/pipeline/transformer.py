@@ -66,6 +66,8 @@ CERTIFIED_REDUNDANT_SENTENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
     ),
 )
 
+MIN_DUPLICATE_SENTENCE_WORDS = 3
+
 
 # =============================================================================
 # Helper Functions for CP7 Prose Transformation
@@ -168,6 +170,34 @@ def _strip_inline_filler(text: str, invariants: list[str]) -> str:
     return text
 
 
+def _restore_sentence_start(original: str, stripped: str, invariants: list[str]) -> str:
+    """Tidy a sentence whose leading filler was removed.
+
+    Removing a leading "Please"/"Could you" leaves a lowercase start (and
+    sometimes a dangling comma); restore the original sentence-initial form.
+    """
+    if stripped == original:
+        return stripped
+    body = stripped.lstrip()
+    leading_ws = stripped[: len(stripped) - len(body)]
+    original_body = original.lstrip()
+    if body[:1] in (",", ";", ":") and original_body[:1] not in (",", ";", ":"):
+        body = body[1:].lstrip()
+    if original_body[:1].isupper() and body[:1].islower():
+        capitalized = body[0].upper() + body[1:]
+        # Never alter the casing of an invariant that starts the sentence.
+        if all(inv in capitalized for inv in invariants):
+            body = capitalized
+    return leading_ws + body
+
+
+def _strip_sentence_filler(sentence: str, invariants: list[str]) -> str:
+    """Strip certified inline filler from one sentence, preserving its invariants."""
+    local_invariants = [inv for inv in invariants if inv and inv in sentence]
+    stripped = _strip_inline_filler(sentence, local_invariants)
+    return _restore_sentence_start(sentence, stripped, local_invariants)
+
+
 def _split_sentences(text: str, invariants: list[str]) -> list[tuple[str, str]]:
     """Conservative two-phase sentence boundary scanner returning (sentence, delimiter) pairs."""
     protected_spans = _find_protected_spans(text, invariants)
@@ -227,8 +257,9 @@ def _prune_sentences(
         if not s_clean:
             continue
 
-        # 1. Exact duplicate sentence detection
-        if s_clean in seen_exact:
+        # 1. Exact duplicate sentence detection. Very short repeats ("Yes.",
+        # "Done.") are often distinct answers rather than redundancy.
+        if s_clean in seen_exact and len(s_clean.split()) >= MIN_DUPLICATE_SENTENCE_WORDS:
             has_inv = any(inv in sent for inv in invariants)
             if not has_inv:
                 pruned_count += 1
@@ -420,18 +451,24 @@ class TransformerStage(PipelineStage):
         # 1. Whitespace normalization
         normalized = _normalize_whitespace(content, expected_invariants)
 
-        # 2. Inline filler stripping
-        filler_stripped = _strip_inline_filler(normalized, expected_invariants)
-
-        # 3. Sentence segmentation and pruning
-        sentence_pairs = _split_sentences(filler_stripped, expected_invariants)
+        # 2. Sentence segmentation and pruning run before filler stripping:
+        # stripping a leading "Please"/"Kindly" leaves a lowercase sentence
+        # start, which the boundary scanner cannot split on, so repeated
+        # sentences were glued to their neighbours and never deduplicated.
+        sentence_pairs = _split_sentences(normalized, expected_invariants)
         kept_pairs, pruned_count = _prune_sentences(sentence_pairs, expected_invariants)
 
+        # 3. Inline filler stripping, per surviving sentence
         if not kept_pairs:
-            candidate_content = filler_stripped.strip() or content.strip()
+            candidate_content = (
+                _strip_inline_filler(normalized, expected_invariants).strip() or content.strip()
+            )
             pruned_count = 0
         else:
-            candidate_content = "".join(sent + delim for sent, delim in kept_pairs).strip()
+            candidate_content = "".join(
+                _strip_sentence_filler(sent, expected_invariants) + delim
+                for sent, delim in kept_pairs
+            ).strip()
 
         # 4. Local preflight assertion
         if not self._local_preflight(content, candidate_content, expected_invariants):

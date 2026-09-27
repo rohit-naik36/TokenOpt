@@ -966,7 +966,7 @@ class TestCP7Eligibility:
 
         res = TransformerStage().process(ctx)
         assert res.messages[0]["content"] != raw
-        assert "provide the summary" in res.messages[0]["content"]
+        assert "provide the summary" in res.messages[0]["content"].lower()
         assert "could you please" not in res.messages[0]["content"].lower()
         assert "thank you" not in res.messages[0]["content"].lower()
 
@@ -1209,6 +1209,69 @@ class TestCP7DuplicateSentences:
         out = res.messages[0]["content"]
         # Because it contains an invariant, it is not pruned
         assert out.count("cluster-omega-99") == 2
+
+    @staticmethod
+    def _transform(raw: str) -> str:
+        messages = [{"role": "user", "content": raw}]
+        unit = _make_unit(
+            0,
+            preservation_class=PreservationClass.P2_COMPRESSIBLE,
+            allow_compression=True,
+        )
+        res = TransformerStage().process(_make_ctx(messages, _make_pmap(unit)))
+        return str(res.messages[0]["content"])
+
+    def test_duplicates_starting_with_filler_are_removed(self) -> None:
+        """Duplicates are found even when a leading filler word is later stripped."""
+        raw = (
+            "Please note that this document is confidential and internal. "
+            "Section one applies to all contractors. "
+            "Please note that this document is confidential and internal."
+        )
+        out = self._transform(raw)
+        assert out.count("this document is confidential and internal.") == 1
+        assert "Section one applies to all contractors." in out
+
+    def test_repeated_boilerplate_paragraph_is_removed(self) -> None:
+        """A verbatim repeated paragraph keeps only its first occurrence, even with directives."""
+        boiler = (
+            "Please note that this document is confidential. "
+            "Kindly ensure that you do not distribute this document."
+        )
+        raw = (
+            f"{boiler}\n\nSection 4.1 Scope. It applies to all contractors.\n\n"
+            f"{boiler}\n\nSection 4.2 Notice. Termination requires written notice.\n\n{boiler}"
+        )
+        out = self._transform(raw)
+        assert out.count("this document is confidential.") == 1
+        assert out.count("do not distribute this document.") == 1
+        assert "It applies to all contractors." in out
+        assert "Termination requires written notice." in out
+
+    def test_short_duplicate_sentences_are_kept(self) -> None:
+        """Very short repeats are distinct answers, not redundancy."""
+        out = self._transform("Is the build approved? Yes. Is the release deployed? Yes.")
+        assert out.count("Yes.") == 2
+
+
+class TestCP7SentenceStart:
+    """Sentence starts stay well-formed after leading filler is stripped."""
+
+    @staticmethod
+    def _transform(raw: str) -> str:
+        return TestCP7DuplicateSentences._transform(raw)
+
+    def test_capitalization_restored_after_leading_filler(self) -> None:
+        out = self._transform("Hi! Could you help me answer this question about the policy?")
+        assert "Hi! Help me answer this question about the policy?" in out
+
+    def test_dangling_comma_removed_after_leading_filler(self) -> None:
+        out = self._transform("Basically, the build is green on every branch.")
+        assert out.startswith("The build is green on every branch.")
+
+    def test_lowercase_sentence_start_is_not_capitalized(self) -> None:
+        out = self._transform("- please restart the ingest worker now")
+        assert out.startswith("- restart the ingest worker now")
 
 
 class TestCP7Fallback:
