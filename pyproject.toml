@@ -80,7 +80,7 @@ disallow_untyped_defs = true
 # require installing heavy optional dependencies (redis, llmlingua, ST,
 # ollama).
 [[tool.mypy.overrides]]
-module = ["redis.*", "llmlingua.*", "sentence_transformers.*", "ollama.*", "fastapi.*", "uvicorn.*"]
+module = ["redis.*", "llmlingua.*", "sentence_transformers.*", "ollama.*", "fastapi.*", "uvicorn.*", "headroom.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

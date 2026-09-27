@@ -25,11 +25,11 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 try:
-    from headroom import compress as _headroom_compress  # type: ignore[import]
+    from headroom import compress as _headroom_compress
 
     _HEADROOM_AVAILABLE = True
 except Exception:  # noqa: BLE001
-    _headroom_compress: Any = None
+    _headroom_compress = None
     _HEADROOM_AVAILABLE = False
 
 
