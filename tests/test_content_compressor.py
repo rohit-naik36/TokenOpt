@@ -3,11 +3,8 @@
 from __future__ import annotations
 
 import json
-from copy import deepcopy
 from typing import Any
 from unittest.mock import patch
-
-import pytest
 
 from tokenopt.config import TokenOptConfig
 from tokenopt.pipeline.base import OptimizationContext
