@@ -299,14 +299,25 @@ def print_traj_summary(summary: dict[str, Any]) -> None:
             print(f"    {count:>5}  {reason[:70]}")
 
 
-def run_trajectory_mode(trajs_dir: Path, limit: int | None, out: Path) -> None:
+def run_trajectory_mode(
+    trajs_dir: Path, limit: int | None, out: Path, with_content_compressor: bool = False
+) -> None:
     """Replay every .traj under a directory and report."""
     files = sorted(trajs_dir.glob("*.traj"))
     if limit is not None:
         files = files[:limit]
     if not files:
         raise SystemExit(f"No .traj files found under {trajs_dir}")
-    optimizer = CanonicalOptimizer(get_prototype_config())
+    cfg = get_prototype_config()
+    if with_content_compressor:
+        cfg.content_compression_enabled = True  # type: ignore[attr-defined]
+        from tokenopt.pipeline import content_compressor
+
+        print(
+            "ContentCompressorStage: ON, backend="
+            + ("headroom" if content_compressor._HEADROOM_AVAILABLE else "fallback")
+        )
+    optimizer = CanonicalOptimizer(cfg)
     runs = [replay_trajectory(f, optimizer) for f in files]
     summary = summarize_trajectories(runs)
     print_traj_summary(summary)
@@ -402,6 +413,11 @@ def main() -> None:
         help="Trajectory mode: report cache-eligible prefix and expected discount instead.",
     )
     ap.add_argument(
+        "--with-content-compressor",
+        action="store_true",
+        help="Trajectory mode: wire ContentCompressorStage after the Analyzer.",
+    )
+    ap.add_argument(
         "--out",
         type=Path,
         default=None,
@@ -415,7 +431,9 @@ def main() -> None:
             run_cache_planner_mode(args.trajs, args.limit, out)
             return
         out = args.out or REPO_ROOT / "evaluation" / "results" / "swebench_trajs_replay.json"
-        run_trajectory_mode(args.trajs, args.limit, out)
+        run_trajectory_mode(
+            args.trajs, args.limit, out, with_content_compressor=args.with_content_compressor
+        )
         return
 
     out = args.out or REPO_ROOT / "evaluation" / "results" / "swebench_replay.json"

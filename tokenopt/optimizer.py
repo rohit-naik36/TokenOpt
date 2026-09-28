@@ -52,17 +52,25 @@ class CanonicalOptimizer:
         self._pipeline = self._build_pipeline()
 
     def _build_pipeline(self) -> OptimizationPipeline:
-        """Build the canonical pipeline per prototype boundary."""
+        """Build the canonical pipeline per prototype boundary.
+
+        When ``content_compression_enabled`` is set on the config (opt-in,
+        default off), the ContentCompressorStage runs after the Analyzer to
+        compress tool-result and large assistant messages (headroom backend,
+        pure-Python JSON-array-sampler fallback). It fails open.
+        """
         from tokenopt.pipeline import OptimizationPipeline
         from tokenopt.pipeline.analyzer import AnalyzerStage
         from tokenopt.pipeline.transformer import TransformerStage
         from tokenopt.pipeline.validator import ValidatorStage
 
-        stages = [
-            AnalyzerStage(config=self.config),
-            TransformerStage(config=self.config),
-            ValidatorStage(config=self.config),
-        ]
+        stages: list[Any] = [AnalyzerStage(config=self.config)]
+        if getattr(self.config, "content_compression_enabled", False):
+            from tokenopt.pipeline.content_compressor import ContentCompressorStage
+
+            stages.append(ContentCompressorStage(config=self.config))
+        stages.append(TransformerStage(config=self.config))
+        stages.append(ValidatorStage(config=self.config))
         return OptimizationPipeline(stages, config=self.config)
 
     def optimize(
