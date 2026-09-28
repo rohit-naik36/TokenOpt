@@ -18,7 +18,7 @@ headroom-ai>=0.33.0
 # are not installed). Install only if you use the corresponding backend:
 # ------------------------------------------------------------------
 # PostgreSQL audit store:
-asyncpg>=0.28.0
+asyncpg>=0.31.0
 # Redis distributed cache:
 redis>=4.5.0
 # Kafka event streaming:
