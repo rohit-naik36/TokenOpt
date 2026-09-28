@@ -9,7 +9,7 @@ without changing the underlying validated behavior.
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from tokenopt.config import TokenOptConfig
@@ -35,6 +35,9 @@ class OptimizationResult:
     transformer_metrics: dict[str, Any]
     validator_metrics: dict[str, Any]
     pipeline_latency_ms: float
+    # Full pipeline metrics (content-compressor, cache-planner, reverts, …) for
+    # observability and offline analysis. Not authoritative for token counts.
+    stage_metrics: dict[str, Any] = field(default_factory=dict)
 
 
 class CanonicalOptimizer:
@@ -52,17 +55,25 @@ class CanonicalOptimizer:
         self._pipeline = self._build_pipeline()
 
     def _build_pipeline(self) -> OptimizationPipeline:
-        """Build the canonical pipeline per prototype boundary."""
+        """Build the canonical pipeline per prototype boundary.
+
+        When ``content_compression_enabled`` is set on the config (opt-in,
+        default off), the ContentCompressorStage runs after the Analyzer to
+        compress tool-result and large assistant messages (headroom backend,
+        pure-Python JSON-array-sampler fallback). It fails open.
+        """
         from tokenopt.pipeline import OptimizationPipeline
         from tokenopt.pipeline.analyzer import AnalyzerStage
         from tokenopt.pipeline.transformer import TransformerStage
         from tokenopt.pipeline.validator import ValidatorStage
 
-        stages = [
-            AnalyzerStage(config=self.config),
-            TransformerStage(config=self.config),
-            ValidatorStage(config=self.config),
-        ]
+        stages: list[Any] = [AnalyzerStage(config=self.config)]
+        if getattr(self.config, "content_compression_enabled", False):
+            from tokenopt.pipeline.content_compressor import ContentCompressorStage
+
+            stages.append(ContentCompressorStage(config=self.config))
+        stages.append(TransformerStage(config=self.config))
+        stages.append(ValidatorStage(config=self.config))
         return OptimizationPipeline(stages, config=self.config)
 
     def optimize(
@@ -132,6 +143,7 @@ class CanonicalOptimizer:
             transformer_metrics=transformer_metrics,
             validator_metrics=validator_metrics,
             pipeline_latency_ms=ctx.metrics.get("pipeline_latency_ms", 0.0),
+            stage_metrics=dict(ctx.metrics),
         )
 
     def _run_pipeline(self, ctx: OptimizationContext) -> OptimizationContext:

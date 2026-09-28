@@ -37,6 +37,7 @@ Z. Pipeline integration verifies Validator is positioned immediately after Trans
 
 from __future__ import annotations
 
+import json
 from copy import deepcopy
 from typing import Any
 from unittest.mock import patch
@@ -875,3 +876,333 @@ class TestEndToEndPipelineWithValidator:
         assert ctx.metrics.get("rollback_applied") is True
         assert ctx.messages == messages
         assert ctx.metrics.get("tokens_saved") == 0
+
+
+class TestValidatorPerMessageRevert:
+    """Per-message revert: unchanged messages are skipped, one failure is isolated."""
+
+    def test_unchanged_malformed_json_does_not_rollback(self) -> None:
+        """An unchanged message misdetected as JSON must not trigger any rollback."""
+        malformed = '{"broken": '
+        orig_msgs = [
+            {"role": "user", "content": malformed},
+            {"role": "user", "content": "Please kindly summarize the quarterly report."},
+        ]
+        cand_msgs = [
+            {"role": "user", "content": malformed},
+            {"role": "user", "content": "Summarize the quarterly report."},
+        ]
+        pmap = PreservationMap(
+            units=(
+                _make_unit(0, structural_type=StructuralType.JSON),
+                _make_unit(
+                    1,
+                    preservation_class=PreservationClass.P2_COMPRESSIBLE,
+                    structural_type=StructuralType.PROSE,
+                ),
+            ),
+            invariants=(),
+        )
+        ctx = _make_ctx(orig_msgs, preservation_map=pmap)
+        ctx.messages = cand_msgs
+
+        result_ctx = ValidatorStage().process(ctx)
+
+        assert result_ctx.metrics["validation_decision"] == ValidationDecision.ACCEPT.value
+        assert result_ctx.metrics["rollback_applied"] is False
+        assert result_ctx.messages[0]["content"] == malformed
+        assert result_ctx.messages[1]["content"] == "Summarize the quarterly report."
+
+    def test_one_failed_message_keeps_savings_on_others(self) -> None:
+        """A single broken message is reverted; the other compressed messages survive."""
+        orig_msgs = [
+            {"role": "user", "content": "Please kindly summarize part one of the document."},
+            {"role": "user", "content": '{"valid": true, "id": 7}'},
+            {"role": "user", "content": "Please kindly summarize part three of the document."},
+        ]
+        cand_msgs = [
+            {"role": "user", "content": "Summarize part one of the document."},
+            {"role": "user", "content": '{"valid": true, "id":'},
+            {"role": "user", "content": "Summarize part three of the document."},
+        ]
+        pmap = PreservationMap(
+            units=(
+                _make_unit(
+                    0,
+                    preservation_class=PreservationClass.P2_COMPRESSIBLE,
+                    structural_type=StructuralType.PROSE,
+                ),
+                _make_unit(1, structural_type=StructuralType.JSON),
+                _make_unit(
+                    2,
+                    preservation_class=PreservationClass.P2_COMPRESSIBLE,
+                    structural_type=StructuralType.PROSE,
+                ),
+            ),
+            invariants=(),
+        )
+        ctx = _make_ctx(orig_msgs, preservation_map=pmap)
+        ctx.messages = cand_msgs
+
+        result_ctx = ValidatorStage().process(ctx)
+
+        assert result_ctx.metrics["validation_decision"] == ValidationDecision.ACCEPT.value
+        assert result_ctx.metrics["rollback_applied"] is False
+        assert result_ctx.metrics["partial_revert_applied"] is True
+        assert result_ctx.metrics["reverted_message_count"] == 1
+        assert result_ctx.metrics["reverted_out_indices"] == [1]
+        assert result_ctx.messages[1]["content"] == '{"valid": true, "id": 7}'
+        assert result_ctx.messages[0]["content"] == "Summarize part one of the document."
+        assert result_ctx.messages[2]["content"] == "Summarize part three of the document."
+
+
+# =============================================================================
+# Format Change Structural Exemption Tests
+# =============================================================================
+
+class TestFormatChangeStructuralExemption:
+    """Verifies that ctx.metadata['content_format_changed'] exempts ONLY structural
+    syntax checks for marked messages, while all other invariants remain active."""
+
+    def test_json_structural_check_skipped_when_format_changed(self) -> None:
+        """When in content_format_changed, JSON syntax failure does not trigger violation."""
+        orig_msgs = [{"role": "tool", "content": '[{"id": 1, "val": "a"}]'}]
+        cand_msgs = [{"role": "tool", "content": '```json\n[{"id": 1, "val":\n```'}]
+        unit = _make_unit(0, role="tool", structural_type=StructuralType.JSON)
+        pmap = PreservationMap(units=(unit,))
+
+        ctx = _make_ctx(orig_msgs, preservation_map=pmap)
+        ctx.messages = cand_msgs
+        ctx.metadata["content_format_changed"] = {0}
+
+        result_ctx = ValidatorStage().process(ctx)
+        assert result_ctx.metrics["validation_decision"] == ValidationDecision.ACCEPT.value
+        assert result_ctx.metrics["rollback_applied"] is False
+
+    def test_json_structural_check_enforced_when_not_format_changed(self) -> None:
+        """When NOT in content_format_changed, invalid JSON triggers rejection + rollback."""
+        orig_msgs = [{"role": "tool", "content": '[{"id": 1, "val": "a"}]'}]
+        cand_msgs = [{"role": "tool", "content": '```json\n[{"id": 1, "val":\n```'}]
+        unit = _make_unit(0, role="tool", structural_type=StructuralType.JSON)
+        pmap = PreservationMap(units=(unit,))
+
+        ctx = _make_ctx(orig_msgs, preservation_map=pmap)
+        ctx.messages = cand_msgs
+        # content_format_changed NOT set
+
+        result_ctx = ValidatorStage().process(ctx)
+        assert result_ctx.metrics["validation_decision"] == ValidationDecision.REJECT.value
+        assert result_ctx.metrics["rollback_applied"] is True
+
+    def test_python_structural_check_skipped_when_format_changed(self) -> None:
+        """When message is in content_format_changed, Python syntax failure is skipped."""
+        orig_msgs = [{"role": "user", "content": "```python\ndef f():\n    return 1\n```"}]
+        cand_msgs = [{"role": "user", "content": "def f() -> invalid python syntax !@#"}]
+        unit = _make_unit(0, role="user", structural_type=StructuralType.CODE_PYTHON)
+        pmap = PreservationMap(units=(unit,))
+
+        ctx = _make_ctx(orig_msgs, preservation_map=pmap)
+        ctx.messages = cand_msgs
+        ctx.metadata["content_format_changed"] = {0}
+
+        result_ctx = ValidatorStage().process(ctx)
+        assert result_ctx.metrics["validation_decision"] == ValidationDecision.ACCEPT.value
+        assert result_ctx.metrics["rollback_applied"] is False
+
+    def test_python_structural_check_enforced_when_not_format_changed(self) -> None:
+        """When NOT in content_format_changed, invalid Python triggers rejection + rollback."""
+        orig_msgs = [{"role": "user", "content": "```python\ndef f():\n    return 1\n```"}]
+        cand_msgs = [{"role": "user", "content": "def f() -> invalid python syntax !@#"}]
+        unit = _make_unit(0, role="user", structural_type=StructuralType.CODE_PYTHON)
+        pmap = PreservationMap(units=(unit,))
+
+        ctx = _make_ctx(orig_msgs, preservation_map=pmap)
+        ctx.messages = cand_msgs
+
+        result_ctx = ValidatorStage().process(ctx)
+        assert result_ctx.metrics["validation_decision"] == ValidationDecision.REJECT.value
+        assert result_ctx.metrics["rollback_applied"] is True
+
+    def test_markdown_table_structural_check_skipped_when_format_changed(self) -> None:
+        """When message is in content_format_changed, Markdown table syntax failure is skipped."""
+        orig_msgs = [{"role": "user", "content": "| A | B |\n|:---|:---|\n| 1 | 2 |\n"}]
+        cand_msgs = [{"role": "user", "content": "| A | B | broken table row without pipes"}]
+        unit = _make_unit(0, role="user", structural_type=StructuralType.MARKDOWN_TABLE)
+        pmap = PreservationMap(units=(unit,))
+
+        ctx = _make_ctx(orig_msgs, preservation_map=pmap)
+        ctx.messages = cand_msgs
+        ctx.metadata["content_format_changed"] = {0}
+
+        result_ctx = ValidatorStage().process(ctx)
+        assert result_ctx.metrics["validation_decision"] == ValidationDecision.ACCEPT.value
+        assert result_ctx.metrics["rollback_applied"] is False
+
+    def test_markdown_table_structural_check_enforced_when_not_format_changed(self) -> None:
+        """When NOT in content_format_changed, broken table triggers rejection + rollback."""
+        orig_msgs = [{"role": "user", "content": "| A | B |\n|:---|:---|\n| 1 | 2 |\n"}]
+        cand_msgs = [{"role": "user", "content": "| A | B | broken table row without pipes"}]
+        unit = _make_unit(0, role="user", structural_type=StructuralType.MARKDOWN_TABLE)
+        pmap = PreservationMap(units=(unit,))
+
+        ctx = _make_ctx(orig_msgs, preservation_map=pmap)
+        ctx.messages = cand_msgs
+
+        result_ctx = ValidatorStage().process(ctx)
+        assert result_ctx.metrics["validation_decision"] == ValidationDecision.REJECT.value
+        assert result_ctx.metrics["rollback_applied"] is True
+
+    def test_tool_payload_structural_check_skipped_when_format_changed(self) -> None:
+        """When in content_format_changed, non-standard tool payload syntax is skipped."""
+        orig_msgs = [{"role": "tool", "content": '{"name": "lookup", "arguments": {"q": "test"}}'}]
+        cand_msgs = [{"role": "tool", "content": "lookup(q=test) -> compact representation"}]
+        unit = _make_unit(0, role="tool", structural_type=StructuralType.TOOL_PAYLOAD)
+        pmap = PreservationMap(units=(unit,))
+
+        ctx = _make_ctx(orig_msgs, preservation_map=pmap)
+        ctx.messages = cand_msgs
+        ctx.metadata["content_format_changed"] = {0}
+
+        result_ctx = ValidatorStage().process(ctx)
+        assert result_ctx.metrics["validation_decision"] == ValidationDecision.ACCEPT.value
+        assert result_ctx.metrics["rollback_applied"] is False
+
+    def test_tool_payload_structural_check_enforced_when_not_format_changed(self) -> None:
+        """When NOT in content_format_changed, invalid tool payload triggers rollback."""
+        orig_msgs = [{"role": "tool", "content": '{"name": "lookup", "arguments": {"q": "test"}}'}]
+        cand_msgs = [{"role": "tool", "content": "non-json unparseable payload {{{[[["}]
+        unit = _make_unit(0, role="tool", structural_type=StructuralType.TOOL_PAYLOAD)
+        pmap = PreservationMap(units=(unit,))
+
+        ctx = _make_ctx(orig_msgs, preservation_map=pmap)
+        ctx.messages = cand_msgs
+
+        result_ctx = ValidatorStage().process(ctx)
+        assert result_ctx.metrics["validation_decision"] == ValidationDecision.REJECT.value
+        assert result_ctx.metrics["rollback_applied"] is True
+
+    def test_preservation_and_semantic_invariants_never_bypassed_by_format_changed(self) -> None:
+        """Format-changed messages STILL enforce required invariants (e.g. constraints)."""
+        orig_msgs = [{"role": "tool", "content": '{"status": "ERR_504", "details": "timeout"}'}]
+        # Format changed, but missing the required error code marker
+        cand_msgs = [{"role": "tool", "content": "[1]{status:string}\ntimeout\n"}]
+        inv = PreservedInvariant(
+            category=EntityCategory.ERROR_CODE,
+            invariant_type=InvariantType.LEXICAL,
+            marker="ERR_504",
+            message_index=0,
+            role="tool",
+        )
+        unit = _make_unit(0, role="tool", structural_type=StructuralType.JSON, invariants=(inv,))
+        pmap = PreservationMap(units=(unit,), invariants=(inv,))
+
+        ctx = _make_ctx(orig_msgs, preservation_map=pmap)
+        ctx.messages = cand_msgs
+        ctx.metadata["content_format_changed"] = {0}
+
+        result_ctx = ValidatorStage().process(ctx)
+        # Even with content_format_changed = {0}, the missing required invariant causes rejection!
+        assert result_ctx.metrics["validation_decision"] == ValidationDecision.REJECT.value
+        assert result_ctx.metrics["rollback_applied"] is True
+
+
+# =============================================================================
+# Reverted Out Indices & Stage Metrics Tests
+# =============================================================================
+
+class TestRevertedOutIndicesAndStageMetrics:
+    def test_reverted_out_indices_multiple_messages(self) -> None:
+        """When multiple messages are partially reverted, reverted_out_indices has all indices."""
+        orig_msgs = [
+            {"role": "user", "content": '{"msg": "one", "valid": 1}'},
+            {"role": "user", "content": "Please kindly summarize the report."},
+            {"role": "user", "content": '{"msg": "three", "valid": 3}'},
+        ]
+        cand_msgs = [
+            {"role": "user", "content": '{"msg": "one", "valid":'},
+            {"role": "user", "content": "Summarize the report."},
+            {"role": "user", "content": '{"msg": "three", "valid":'},
+        ]
+        pmap = PreservationMap(
+            units=(
+                _make_unit(0, structural_type=StructuralType.JSON),
+                _make_unit(
+                    1,
+                    preservation_class=PreservationClass.P2_COMPRESSIBLE,
+                    structural_type=StructuralType.PROSE,
+                ),
+                _make_unit(2, structural_type=StructuralType.JSON),
+            ),
+            invariants=(),
+        )
+        ctx = _make_ctx(orig_msgs, preservation_map=pmap)
+        ctx.messages = cand_msgs
+
+        result_ctx = ValidatorStage().process(ctx)
+        assert result_ctx.metrics["validation_decision"] == ValidationDecision.ACCEPT.value
+        assert result_ctx.metrics["partial_revert_applied"] is True
+        assert result_ctx.metrics["reverted_message_count"] == 2
+        assert result_ctx.metrics["reverted_out_indices"] == [0, 2]
+        # Messages 0 and 2 were reverted to original
+        assert result_ctx.messages[0]["content"] == orig_msgs[0]["content"]
+        assert result_ctx.messages[2]["content"] == orig_msgs[2]["content"]
+        # Message 1 retained its optimized content
+        assert result_ctx.messages[1]["content"] == "Summarize the report."
+
+    def test_stage_metrics_backward_compatibility(self) -> None:
+        """OptimizationResult without stage_metrics defaults to empty dict."""
+        from tokenopt.optimizer import OptimizationResult
+
+        res = OptimizationResult(
+            optimized_messages=[{"role": "user", "content": "hello"}],
+            original_token_count=5,
+            optimized_token_count=5,
+            validation_decision="accept",
+            rollback_applied=False,
+            rollback_reason=None,
+            transformer_metrics={},
+            validator_metrics={},
+            pipeline_latency_ms=1.2,
+        )
+        assert res.stage_metrics == {}
+
+    def test_stage_metrics_populated_by_canonical_optimizer(self) -> None:
+        """CanonicalOptimizer.optimize() sets stage_metrics with all context metrics."""
+        from tokenopt.optimizer import CanonicalOptimizer
+
+        cfg = TokenOptConfig(content_compression_enabled=False)
+        optimizer = CanonicalOptimizer(cfg)
+        result = optimizer.optimize([{"role": "user", "content": "Hello world"}], model="gpt-4o")
+
+        assert isinstance(result.stage_metrics, dict)
+        assert "validation_passed" in result.stage_metrics
+        assert result.stage_metrics["validation_passed"] is True
+
+    def test_no_stale_indices_leak_across_optimizations(self) -> None:
+        """Successive optimize() calls on the same optimizer instance do not leak metrics."""
+        from tokenopt.optimizer import CanonicalOptimizer
+
+        items = [{"id": i, "value": f"val_{i}"} for i in range(50)]
+        cfg = TokenOptConfig(content_compression_enabled=True)
+        optimizer = CanonicalOptimizer(cfg)
+
+        # Run 1: triggers content compression
+        res1 = optimizer.optimize(
+            [
+                {"role": "user", "content": "Query data"},
+                {"role": "tool", "content": json.dumps(items)},
+            ],
+            model="gpt-4o",
+        )
+        assert res1.stage_metrics.get("content_compressor_applied") is True
+
+        # Run 2: clean run without tool messages
+        res2 = optimizer.optimize(
+            [{"role": "user", "content": "Just a clean prose message."}],
+            model="gpt-4o",
+        )
+        assert (
+            "content_compressor_format_changed" not in res2.stage_metrics
+            or res2.stage_metrics.get("content_compressor_format_changed") == []
+        )
+        assert res2.stage_metrics.get("reverted_out_indices") is None

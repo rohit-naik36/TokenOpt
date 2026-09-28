@@ -64,6 +64,10 @@ class InvariantViolation:
     original_message_index: int
     role: str
     reason: str
+    # When set, this violation is confined to a single changed output message
+    # and can be repaired by reverting that one message instead of the whole
+    # request. ``None`` marks a fatal (whole-request) violation.
+    revertible_out_idx: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize violation to dictionary representation."""
@@ -265,14 +269,26 @@ class ValidatorStage(PipelineStage):
         # 2. Execute validation with fail-closed exception guard
         try:
             result = self._validate(ctx)
-            if not result.passed:
+            if result.passed:
+                self._record_accept(ctx, result)
+            elif any(v.revertible_out_idx is None for v in result.violations):
+                # A fatal (structural/removal) violation → full rollback.
                 self._rollback(ctx, result)
             else:
-                self._record_accept(ctx, result)
+                # Every violation is confined to a single changed message →
+                # revert only those messages, keeping savings on the rest.
+                self._partial_revert(ctx, result)
         except Exception as e:
             self._handle_validator_exception(ctx, e)
 
         return ctx
+
+    @staticmethod
+    def _content_changed(ctx: OptimizationContext, out_idx: int, orig_idx: int) -> bool:
+        """True if the surviving output message differs from its original content."""
+        cand = ctx.messages[out_idx].get("content", "")
+        orig = ctx.original_messages[orig_idx].get("content", "")
+        return str(cand) != str(orig)
 
     def _validate(self, ctx: OptimizationContext) -> ValidationResult:
         """Execute deterministic invariant checks against candidate messages."""
@@ -406,7 +422,11 @@ class ValidatorStage(PipelineStage):
                     )
                 )
 
-        # E. Check Structural Invariants from PreservationMap units
+        # E. Check Structural Invariants from PreservationMap units.
+        # Messages the ContentCompressor rewrote to an intended non-native
+        # format (e.g. headroom's tabular form) are exempt from structural
+        # syntax checks; every other check still applies to them.
+        fmt_changed = ctx.metadata.get("content_format_changed") or set()
         if ctx.preservation_map is not None:
             for unit in ctx.preservation_map.units:
                 orig_idx = unit.message_index
@@ -433,6 +453,10 @@ class ValidatorStage(PipelineStage):
                             )
                     else:
                         out_idx = surviving_indices.index(orig_idx)
+                        if not self._content_changed(ctx, out_idx, orig_idx):
+                            continue
+                        if orig_idx in fmt_changed:
+                            continue
                         text = ctx.messages[out_idx].get("content", "")
                         if not isinstance(text, str) or not validate_python_syntax(text):
                             violations.append(
@@ -445,6 +469,7 @@ class ValidatorStage(PipelineStage):
                                     reason=(
                                         f"Python code at index {orig_idx} failed syntax validation"
                                     ),
+                                    revertible_out_idx=out_idx,
                                 )
                             )
 
@@ -467,6 +492,10 @@ class ValidatorStage(PipelineStage):
                             )
                     else:
                         out_idx = surviving_indices.index(orig_idx)
+                        if not self._content_changed(ctx, out_idx, orig_idx):
+                            continue
+                        if orig_idx in fmt_changed:
+                            continue
                         text = ctx.messages[out_idx].get("content", "")
                         if not isinstance(text, str) or not validate_json_syntax(text):
                             violations.append(
@@ -477,6 +506,7 @@ class ValidatorStage(PipelineStage):
                                     original_message_index=orig_idx,
                                     role=unit.role,
                                     reason=f"JSON at index {orig_idx} failed syntax validation",
+                                    revertible_out_idx=out_idx,
                                 )
                             )
 
@@ -501,6 +531,10 @@ class ValidatorStage(PipelineStage):
                             )
                     else:
                         out_idx = surviving_indices.index(orig_idx)
+                        if not self._content_changed(ctx, out_idx, orig_idx):
+                            continue
+                        if orig_idx in fmt_changed:
+                            continue
                         text = ctx.messages[out_idx].get("content", "")
                         if not isinstance(text, str) or not validate_markdown_table_structure(text):
                             violations.append(
@@ -513,6 +547,7 @@ class ValidatorStage(PipelineStage):
                                     reason=(
                                         f"Markdown table at index {orig_idx} failed validation"
                                     ),
+                                    revertible_out_idx=out_idx,
                                 )
                             )
 
@@ -520,6 +555,10 @@ class ValidatorStage(PipelineStage):
                     checked_count += 1
                     if orig_idx in surviving_indices:
                         out_idx = surviving_indices.index(orig_idx)
+                        if not self._content_changed(ctx, out_idx, orig_idx):
+                            continue
+                        if orig_idx in fmt_changed:
+                            continue
                         content = ctx.messages[out_idx].get("content", "")
                         if not validate_tool_payload(content):
                             violations.append(
@@ -532,6 +571,7 @@ class ValidatorStage(PipelineStage):
                                     reason=(
                                         f"Tool payload at index {orig_idx} failed syntax validation"
                                     ),
+                                    revertible_out_idx=out_idx,
                                 )
                             )
 
@@ -583,7 +623,7 @@ class ValidatorStage(PipelineStage):
                                 ),
                             )
                         )
-                    else:
+                    elif self._content_changed(ctx, out_idx, orig_idx):
                         cand_content = cand_msg.get("content", "")
                         if not isinstance(cand_content, str):
                             cand_content = str(cand_content)
@@ -600,6 +640,7 @@ class ValidatorStage(PipelineStage):
                                         f"Invariant marker '{invariant.marker}' missing from "
                                         f"message at original index {orig_idx}"
                                     ),
+                                    revertible_out_idx=out_idx,
                                 )
                             )
 
@@ -647,6 +688,54 @@ class ValidatorStage(PipelineStage):
         ctx.metrics["validation_invariants_checked"] = result.checked_invariants_count
         ctx.metrics["validation_invariants_passed"] = result.passed_invariants_count
         ctx.metrics["validation_invariants_failed"] = result.failed_invariants_count
+
+    def _partial_revert(self, ctx: OptimizationContext, result: ValidationResult) -> None:
+        """Revert only the changed messages that failed, keeping savings on the rest.
+
+        If reverting those messages leaves the output identical to the original
+        (e.g. a single-message request whose only message failed), this is
+        recorded as a full rollback for backward compatibility. Otherwise the
+        surviving transformations are accepted and their savings retained.
+        """
+        surviving_indices = ctx.metadata["surviving_indices"]
+        reverted = sorted(
+            {v.revertible_out_idx for v in result.violations if v.revertible_out_idx is not None}
+        )
+        for out_idx in reverted:
+            orig_idx = surviving_indices[out_idx]
+            ctx.messages[out_idx] = deepcopy(ctx.original_messages[orig_idx])
+
+        reasons = [
+            f"{v.invariant_name}: {v.reason}"
+            for v in result.violations
+            if v.revertible_out_idx is not None
+        ]
+        ctx.metrics["validation_invariants_checked"] = result.checked_invariants_count
+        ctx.metrics["validation_invariants_passed"] = result.passed_invariants_count
+        ctx.metrics["validation_invariants_failed"] = result.failed_invariants_count
+
+        if ctx.messages == ctx.original_messages:
+            # Nothing survived: identical to a full rollback.
+            ctx.metrics["validation_passed"] = False
+            ctx.metrics["validation_decision"] = ValidationDecision.REJECT.value
+            ctx.metrics["rollback_applied"] = True
+            ctx.metrics["rollback_reason"] = reasons[0] if reasons else "validation_rejected"
+            ctx.metrics["rollback_violations"] = [v.to_dict() for v in result.violations]
+            ctx.metrics["compression_applied"] = False
+            ctx.metrics["tokens_saved"] = 0
+            ctx.metrics["optimized_token_count"] = ctx.original_token_count
+            return
+
+        optimized = count_message_tokens_safe(ctx.messages, ctx.model)
+        ctx.metrics["validation_passed"] = True
+        ctx.metrics["validation_decision"] = ValidationDecision.ACCEPT.value
+        ctx.metrics["rollback_applied"] = False
+        ctx.metrics["partial_revert_applied"] = True
+        ctx.metrics["reverted_message_count"] = len(reverted)
+        ctx.metrics["reverted_out_indices"] = list(reverted)
+        ctx.metrics["reverted_reasons"] = reasons
+        ctx.metrics["optimized_token_count"] = optimized
+        ctx.metrics["tokens_saved"] = ctx.original_token_count - optimized
 
     def _record_accept(self, ctx: OptimizationContext, result: ValidationResult) -> None:
         """Record successful validation telemetry on context metrics."""

@@ -160,6 +160,17 @@ specific corpus, not a test failure.
 |---|---:|---|
 | Synthetic (8 author-written enterprise prompts) | ~16–24% | OBSERVED (prior session) |
 | **Real AAVA static agent definitions (4,343)** | **~0.7–0.9%** | VERIFIED |
+| SWE-bench Lite problem statements (300) | **0.23%** | VERIFIED |
+
+**Cross-corpus note — SWE-bench Lite (VERIFIED).** Replayed the 300 SWE-bench
+Lite **problem statements** — single-turn issue text, ~443 tokens average
+(132,952 tok / 300), containing **no tool outputs, no conversation history, no
+injected tool schemas** — through `get_prototype_config()` (o200k, diagnostic
+estimate). Aggregate saving **0.23%**; median per-instance **0.0%**; 254/300
+(85%) saved nothing; 80/300 (27%) rolled back. This is **issue text only**, not
+runtime coding-agent prompts. Conclusion: prose compression is **≈0% on dense
+technical text** and does not depend on the AAVA corpus specifically. Script:
+`evaluation/swebench_replay.py`.
 
 The synthetic result is not usable as production evidence because the synthetic
 prompts were **authored to contain exactly what the transformer removes** —
