@@ -33,8 +33,6 @@ logger = logging.getLogger(__name__)
 # Headroom integration (optional)
 # ---------------------------------------------------------------------------
 
-_headroom_compress: Any = None
-
 try:
     from headroom import compress as _headroom_compress  # type: ignore[import]
 except Exception:

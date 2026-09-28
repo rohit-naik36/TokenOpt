@@ -24,8 +24,6 @@ logger = logging.getLogger(__name__)
 # Headroom import (optional — fail-open if unavailable or broken)
 # ---------------------------------------------------------------------------
 
-_headroom_compress: Any = None
-
 try:
     from headroom import compress as _headroom_compress
 
