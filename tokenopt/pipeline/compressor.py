@@ -21,10 +21,7 @@ def compress_message_content(
     model: str,
 ) -> dict[str, Any]:
     """Apply deterministic heuristic compression to a single message dict.
-
-    This is the shared transformation engine used by both CompressorStage
-    (which applies it uniformly to all messages) and TransformerStage (which
-    applies it only to CandidatePlan-designated COMPRESS candidates).
+    Used by CompressorStage for baseline heuristic compression.
 
     Transformations applied:
     - Normalize excessive whitespace (3+ newlines → 2, 2+ spaces → 1).
