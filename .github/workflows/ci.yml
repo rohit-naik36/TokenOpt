@@ -51,7 +51,9 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: Install package with dev extras
-        run: pip install -e ".[dev]"
+        run: |
+          pip install -e ".[dev]"
+          pip install headroom-ai
       - name: Pytest with coverage gate (>=80%)
         run: |
           pytest tests/ -q --tb=short

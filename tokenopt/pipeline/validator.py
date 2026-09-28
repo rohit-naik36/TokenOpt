@@ -422,7 +422,11 @@ class ValidatorStage(PipelineStage):
                     )
                 )
 
-        # E. Check Structural Invariants from PreservationMap units
+        # E. Check Structural Invariants from PreservationMap units.
+        # Messages the ContentCompressor rewrote to an intended non-native
+        # format (e.g. headroom's tabular form) are exempt from structural
+        # syntax checks; every other check still applies to them.
+        fmt_changed = ctx.metadata.get("content_format_changed") or set()
         if ctx.preservation_map is not None:
             for unit in ctx.preservation_map.units:
                 orig_idx = unit.message_index
@@ -450,6 +454,8 @@ class ValidatorStage(PipelineStage):
                     else:
                         out_idx = surviving_indices.index(orig_idx)
                         if not self._content_changed(ctx, out_idx, orig_idx):
+                            continue
+                        if orig_idx in fmt_changed:
                             continue
                         text = ctx.messages[out_idx].get("content", "")
                         if not isinstance(text, str) or not validate_python_syntax(text):
@@ -488,6 +494,8 @@ class ValidatorStage(PipelineStage):
                         out_idx = surviving_indices.index(orig_idx)
                         if not self._content_changed(ctx, out_idx, orig_idx):
                             continue
+                        if orig_idx in fmt_changed:
+                            continue
                         text = ctx.messages[out_idx].get("content", "")
                         if not isinstance(text, str) or not validate_json_syntax(text):
                             violations.append(
@@ -525,6 +533,8 @@ class ValidatorStage(PipelineStage):
                         out_idx = surviving_indices.index(orig_idx)
                         if not self._content_changed(ctx, out_idx, orig_idx):
                             continue
+                        if orig_idx in fmt_changed:
+                            continue
                         text = ctx.messages[out_idx].get("content", "")
                         if not isinstance(text, str) or not validate_markdown_table_structure(text):
                             violations.append(
@@ -546,6 +556,8 @@ class ValidatorStage(PipelineStage):
                     if orig_idx in surviving_indices:
                         out_idx = surviving_indices.index(orig_idx)
                         if not self._content_changed(ctx, out_idx, orig_idx):
+                            continue
+                        if orig_idx in fmt_changed:
                             continue
                         content = ctx.messages[out_idx].get("content", "")
                         if not validate_tool_payload(content):
@@ -720,6 +732,7 @@ class ValidatorStage(PipelineStage):
         ctx.metrics["rollback_applied"] = False
         ctx.metrics["partial_revert_applied"] = True
         ctx.metrics["reverted_message_count"] = len(reverted)
+        ctx.metrics["reverted_out_indices"] = list(reverted)
         ctx.metrics["reverted_reasons"] = reasons
         ctx.metrics["optimized_token_count"] = optimized
         ctx.metrics["tokens_saved"] = ctx.original_token_count - optimized

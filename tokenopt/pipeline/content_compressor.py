@@ -24,6 +24,8 @@ logger = logging.getLogger(__name__)
 # Headroom import (optional — fail-open if unavailable or broken)
 # ---------------------------------------------------------------------------
 
+_headroom_compress: Any = None
+
 try:
     from headroom import compress as _headroom_compress
 
@@ -108,51 +110,74 @@ class ContentCompressorStage(PipelineStage):
     # PipelineStage interface
     # ------------------------------------------------------------------
 
+    def _should_compress(self, role: str, prev_role: str, msg: dict[str, Any], roles: list[str],
+                         model: str) -> bool:
+        """Decide whether a message is eligible for content compression."""
+        if role in roles:
+            return True
+        if "user-observation" in roles and role == "user" and prev_role == "assistant":
+            return True
+        return (
+            role == "assistant"
+            and count_message_tokens([msg], model) >= _LARGE_MESSAGE_THRESHOLD
+        )
+
     def process(self, ctx: OptimizationContext) -> OptimizationContext:
         if not getattr(ctx.config, "content_compression_enabled", False):
             ctx.metrics["content_compressor_skipped"] = "disabled"
             return ctx
 
+        roles = getattr(ctx.config, "content_compression_roles", None) or ["tool"]
         tokens_before = count_message_tokens(ctx.messages, ctx.model)
 
         compressed_messages: list[dict[str, Any]] = []
+        format_changed: set[int] = set()
         messages_compressed = 0
+        used_headroom = False
+        prev_role = ""
 
-        for msg in ctx.messages:
-            role = msg.get("role", "")
+        for idx, msg in enumerate(ctx.messages):
+            role = str(msg.get("role", ""))
             content = msg.get("content", "")
 
             if not isinstance(content, str) or not content:
                 compressed_messages.append(msg)
+                prev_role = role
                 continue
 
-            should_compress = role == "tool" or (
-                role == "assistant"
-                and count_message_tokens([msg], ctx.model) >= _LARGE_MESSAGE_THRESHOLD
-            )
-
-            if not should_compress:
+            if not self._should_compress(role, prev_role, msg, roles, ctx.model):
                 compressed_messages.append(msg)
+                prev_role = role
                 continue
 
-            new_content = self._compress(content)
-            if new_content != content:
+            new_content, fmt = self._compress(content, role)
+            if fmt is not None and new_content != content:
                 compressed_messages.append({**msg, "content": new_content})
                 messages_compressed += 1
+                format_changed.add(idx)
+                if fmt == "headroom-tabular":
+                    used_headroom = True
             else:
                 compressed_messages.append(msg)
+            prev_role = role
 
         ctx.messages = compressed_messages
 
-        tokens_after = count_message_tokens(ctx.messages, ctx.model)
-        tokens_saved = max(0, tokens_before - tokens_after)
+        # Record which output messages had an intended format change so the
+        # Validator can skip structural-syntax checks on them (headroom's
+        # tabular form is not valid JSON) while keeping every other check.
+        existing = ctx.metadata.get("content_format_changed") or set()
+        ctx.metadata["content_format_changed"] = set(existing) | format_changed
 
+        tokens_after = count_message_tokens(ctx.messages, ctx.model)
         ctx.metrics["content_compressor_applied"] = True
         ctx.metrics["content_compressor_messages_compressed"] = messages_compressed
-        ctx.metrics["content_compressor_tokens_saved"] = tokens_saved
+        ctx.metrics["content_compressor_format_changed"] = sorted(format_changed)
+        ctx.metrics["content_compressor_tokens_saved"] = max(0, tokens_before - tokens_after)
         ctx.metrics["content_compressor_backend"] = (
             "headroom" if self._use_headroom else "fallback"
         )
+        ctx.metrics["content_compressor_headroom_effective"] = used_headroom
 
         return ctx
 
@@ -160,18 +185,30 @@ class ContentCompressorStage(PipelineStage):
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _compress(self, content: str) -> str:
-        """Compress *content*, falling back gracefully on any error."""
-        if self._use_headroom:
+    def _compress(self, content: str, role: str = "tool") -> tuple[str, str | None]:
+        """Compress *content*; return (new_content, format_tag).
+
+        ``format_tag`` is ``"headroom-tabular"`` when headroom rewrote the
+        content, ``"fallback-json"`` for the JSON sampler, or ``None`` when the
+        content is unchanged. Fails open to the fallback, then to passthrough.
+        """
+        if self._use_headroom and _headroom_compress is not None:
             try:
-                result = _headroom_compress(content)
-                return result if isinstance(result, str) else content
-            except Exception as exc:
+                # headroom requires role="tool" to compress structured payloads;
+                # present the eligible observation/tool content as role="tool".
+                result = _headroom_compress([{"role": "tool", "content": content}])
+                out = getattr(result, "messages", None)
+                if out and isinstance(out[0].get("content"), str):
+                    new = out[0]["content"]
+                    if new and new != content and len(new) < len(content):
+                        return new, "headroom-tabular"
+            except Exception as exc:  # noqa: BLE001
                 logger.debug("headroom.compress() failed, using fallback: %s", exc)
 
-        # Pure-Python fallback
         try:
-            return _fallback_compress(content)
-        except Exception as exc:
+            new = _fallback_compress(content)
+            if new != content:
+                return new, "fallback-json"
+        except Exception as exc:  # noqa: BLE001
             logger.debug("fallback compress failed, passing through: %s", exc)
-            return content
+        return content, None

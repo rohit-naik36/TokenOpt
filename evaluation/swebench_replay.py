@@ -217,6 +217,16 @@ def replay_trajectory(path: Path, optimizer: CanonicalOptimizer) -> dict[str, An
         result = optimizer.optimize([dict(m) for m in messages], model="gpt-4o")
         opt = sum(count_tokens(str(m.get("content", ""))) for m in result.optimized_messages)
         tm = result.transformer_metrics
+        sm = result.stage_metrics
+        reverted_indices = sm.get("validator_reverted_out_indices", [])
+        if result.rollback_applied:
+            outcome = "total_rollback"
+        elif reverted_indices:
+            outcome = "partial_revert"
+        else:
+            outcome = "full_accept"
+
+        cc_compressed = sm.get("content_compressor_messages_compressed", 0)
         turns.append(
             {
                 "turn": turn,
@@ -226,8 +236,14 @@ def replay_trajectory(path: Path, optimizer: CanonicalOptimizer) -> dict[str, An
                 "saved_tokens": orig - opt,
                 "saved_pct": round((orig - opt) / orig * 100, 3) if orig else 0.0,
                 "validation_decision": result.validation_decision,
+                "outcome": outcome,
                 "rollback_applied": result.rollback_applied,
                 "rollback_reason": result.rollback_reason,
+                "reverted_out_indices": reverted_indices,
+                "content_compressor_messages_compressed": cc_compressed,
+                "content_compressor_headroom_effective": sm.get(
+                    "content_compressor_headroom_effective", False
+                ),
                 "sentences_pruned": tm.get("sentences_pruned", 0),
                 "p2_prose_transformed": tm.get("p2_prose_transformed", 0),
             }
@@ -261,6 +277,34 @@ def summarize_trajectories(runs: list[dict[str, Any]]) -> dict[str, Any]:
         if t["rollback_applied"]:
             reasons[str(t["rollback_reason"])] = reasons.get(str(t["rollback_reason"]), 0) + 1
     run_pcts = [r["run_saved_pct"] for r in runs]
+
+    validator_outcomes: dict[str, int] = {
+        "full_accept": 0,
+        "partial_revert": 0,
+        "total_rollback": 0,
+    }
+    transformations_kept = 0
+    transformations_reverted = 0
+    for t in all_turns:
+        outcome = t.get("outcome", "total_rollback" if t["rollback_applied"] else "full_accept")
+        validator_outcomes[outcome] = validator_outcomes.get(outcome, 0) + 1
+        compressed = t.get("content_compressor_messages_compressed", 0)
+        reverted_count = len(t.get("reverted_out_indices", []))
+        if outcome == "total_rollback":
+            transformations_reverted += compressed
+        elif outcome == "partial_revert":
+            transformations_reverted += min(reverted_count, compressed)
+            transformations_kept += max(0, compressed - reverted_count)
+        else:
+            transformations_kept += compressed
+
+    total_compressed_msgs = sum(
+        t.get("content_compressor_messages_compressed", 0) for t in all_turns
+    )
+    effective_headroom_turns = sum(
+        1 for t in all_turns if t.get("content_compressor_headroom_effective")
+    )
+
     return {
         "trajectories": len(runs),
         "llm_calls_total": len(all_turns),
@@ -272,6 +316,11 @@ def summarize_trajectories(runs: list[dict[str, Any]]) -> dict[str, Any]:
         if total_orig
         else 0.0,
         "median_run_saved_pct": round(statistics.median(run_pcts), 3) if run_pcts else 0.0,
+        "validator_outcomes": validator_outcomes,
+        "transformations_kept": transformations_kept,
+        "transformations_reverted": transformations_reverted,
+        "total_compressed_messages": total_compressed_msgs,
+        "effective_headroom_turns": effective_headroom_turns,
         "total_rollbacks": sum(r["rollbacks"] for r in runs),
         "saved_pct_by_turn_number": turn_curve,
         "rollback_reasons": reasons,
@@ -290,6 +339,12 @@ def print_traj_summary(summary: dict[str, Any]) -> None:
     )
     print(f"  median per-run saving: {summary['median_run_saved_pct']}%")
     print(f"  total rollbacks: {summary['total_rollbacks']} of {summary['llm_calls_total']} calls")
+    print(f"  validator outcomes: {summary.get('validator_outcomes', {})}")
+    print(
+        f"  compressed messages: {summary.get('total_compressed_messages', 0)} "
+        f"(kept: {summary.get('transformations_kept', 0)}, "
+        f"reverted: {summary.get('transformations_reverted', 0)})"
+    )
     print("  saved% by turn number (mean):")
     for turn, pct in summary["saved_pct_by_turn_number"].items():
         print(f"    turn {turn:<3} {pct}%")
@@ -309,17 +364,18 @@ def run_trajectory_mode(
     if not files:
         raise SystemExit(f"No .traj files found under {trajs_dir}")
     cfg = get_prototype_config()
+    backend = "disabled"
     if with_content_compressor:
         cfg.content_compression_enabled = True  # type: ignore[attr-defined]
+        cfg.content_compression_roles = ["tool", "user-observation"]
         from tokenopt.pipeline import content_compressor
 
-        print(
-            "ContentCompressorStage: ON, backend="
-            + ("headroom" if content_compressor._HEADROOM_AVAILABLE else "fallback")
-        )
+        backend = "headroom" if content_compressor._HEADROOM_AVAILABLE else "fallback"
+        print(f"ContentCompressorStage: ON, backend={backend}")
     optimizer = CanonicalOptimizer(cfg)
     runs = [replay_trajectory(f, optimizer) for f in files]
     summary = summarize_trajectories(runs)
+    summary["content_compressor_backend"] = backend
     print_traj_summary(summary)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({"summary": summary, "runs": runs}, indent=1), encoding="utf-8")

@@ -9,7 +9,7 @@ without changing the underlying validated behavior.
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from tokenopt.config import TokenOptConfig
@@ -35,6 +35,9 @@ class OptimizationResult:
     transformer_metrics: dict[str, Any]
     validator_metrics: dict[str, Any]
     pipeline_latency_ms: float
+    # Full pipeline metrics (content-compressor, cache-planner, reverts, …) for
+    # observability and offline analysis. Not authoritative for token counts.
+    stage_metrics: dict[str, Any] = field(default_factory=dict)
 
 
 class CanonicalOptimizer:
@@ -140,6 +143,7 @@ class CanonicalOptimizer:
             transformer_metrics=transformer_metrics,
             validator_metrics=validator_metrics,
             pipeline_latency_ms=ctx.metrics.get("pipeline_latency_ms", 0.0),
+            stage_metrics=dict(ctx.metrics),
         )
 
     def _run_pipeline(self, ctx: OptimizationContext) -> OptimizationContext:

@@ -96,6 +96,10 @@ class TokenOptConfig:
 
     # Content Compression (headroom integration)
     content_compression_enabled: bool = False
+    # Which message roles the ContentCompressorStage may compress. The special
+    # value "user-observation" matches a user message that immediately follows
+    # an assistant message (the SWE-agent tool-observation pattern).
+    content_compression_roles: list[str] = field(default_factory=lambda: ["tool"])
 
     # Observability
     observability_enabled: bool = True

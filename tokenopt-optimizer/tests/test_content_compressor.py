@@ -11,6 +11,7 @@ from tokenopt_optimizer.content_compressor import (
     CompressorConfig,
     ContentCompressor,
     _fallback_compress,
+    _headroom_compress,
     _sample_json_array,
 )
 
@@ -64,14 +65,33 @@ class TestDisabled:
 
 class TestToolMessageCompression:
     def test_large_json_array_is_reduced(self) -> None:
+        """Deterministic JSON-to-JSON fallback sampler reduces large arrays."""
         items = [{"id": i, "v": f"val{i}"} for i in range(50)]
         messages = [_tool(json.dumps(items))]
         cc = ContentCompressor(_enabled_cfg())
+        cc._use_headroom = False
         result = cc.compress_messages(messages)
 
         compressed_items = json.loads(result.messages[0]["content"])
         assert len(compressed_items) < len(items)
         assert result.messages_compressed >= 1
+        assert result.backend == "fallback"
+
+    @pytest.mark.skipif(_headroom_compress is None, reason="headroom-ai is not installed")
+    def test_large_json_array_headroom(self) -> None:
+        """Headroom backend compresses large JSON arrays into tabular format."""
+        items = [{"id": i, "v": f"val{i}"} for i in range(50)]
+        raw = json.dumps(items)
+        messages = [_tool(raw)]
+        cc = ContentCompressor(_enabled_cfg())
+        cc._use_headroom = True
+        result = cc.compress_messages(messages)
+
+        compressed = result.messages[0]["content"]
+        assert compressed != raw
+        assert len(compressed) < len(raw)
+        assert result.messages_compressed >= 1
+        assert result.backend == "headroom"
 
     def test_small_array_not_compressed(self) -> None:
         items = [{"x": i} for i in range(5)]

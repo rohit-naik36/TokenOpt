@@ -201,12 +201,20 @@ class ContentCompressor:
             return _estimate_tokens(content) >= self.config.large_message_token_threshold
         return False
 
-    def _compress(self, content: str) -> str:
-        """Try headroom first, fall back to the pure-Python sampler."""
-        if self._use_headroom:
+    def _compress(self, content: str, role: str = "tool") -> str:
+        """Try headroom first, fall back to the pure-Python sampler.
+
+        headroom.compress() takes a list of message dicts and returns a
+        CompressResult; extract the rewritten content from result.messages.
+        """
+        if self._use_headroom and _headroom_compress is not None:
             try:
-                result = _headroom_compress(content)
-                return result if isinstance(result, str) else content
+                result = _headroom_compress([{"role": role, "content": content}])
+                out = getattr(result, "messages", None)
+                if out and isinstance(out[0].get("content"), str):
+                    new = out[0]["content"]
+                    if new and new != content and len(new) < len(content):
+                        return new
             except Exception as exc:
                 logger.debug("headroom.compress() failed, using fallback: %s", exc)
 
