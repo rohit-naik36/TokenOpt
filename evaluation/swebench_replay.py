@@ -315,6 +315,68 @@ def run_trajectory_mode(trajs_dir: Path, limit: int | None, out: Path) -> None:
     print(f"\nwrote {out}")
 
 
+def run_cache_planner_mode(trajs_dir: Path, limit: int | None, out: Path) -> None:
+    """Report prompt-cache eligibility + expected Anthropic/OpenAI discount per trajectory."""
+    from tokenopt.config import TokenOptConfig
+    from tokenopt.pipeline.base import OptimizationContext
+    from tokenopt.pipeline.cache_planner import CachePlannerStage
+
+    files = sorted(trajs_dir.glob("*.traj"))
+    if limit is not None:
+        files = files[:limit]
+    if not files:
+        raise SystemExit(f"No .traj files found under {trajs_dir}")
+
+    total_input = 0
+    total_eligible = 0
+    saved_anthropic = 0.0
+    saved_openai = 0.0
+    busting_calls = 0
+    calls = 0
+    for f in files:
+        planner = CachePlannerStage(provider="anthropic", session_id=f.stem, min_prefix_tokens=1024)
+        for _turn, messages in iter_traj_turns(f):
+            ctx = OptimizationContext(
+                messages=[dict(m) for m in messages],
+                model="gpt-4o",
+                config=TokenOptConfig(),
+                model_explicit=True,
+            )
+            ctx = planner.process(ctx)
+            calls += 1
+            total_input += sum(count_tokens(m["content"]) for m in messages)
+            total_eligible += ctx.metrics["cache_eligible_tokens"]
+            saved_anthropic += ctx.metrics["cache_expected_saved_tokens_anthropic"]
+            saved_openai += ctx.metrics["cache_expected_saved_tokens_openai"]
+            busting_calls += 1 if ctx.metrics["cache_busting_detected"] else 0
+
+    summary = {
+        "trajectories": len(files),
+        "llm_calls": calls,
+        "total_input_tokens": total_input,
+        "cache_eligible_tokens": total_eligible,
+        "cache_eligible_pct": round(total_eligible / total_input * 100, 2) if total_input else 0.0,
+        "expected_saved_pct_anthropic": round(saved_anthropic / total_input * 100, 2)
+        if total_input
+        else 0.0,
+        "expected_saved_pct_openai": round(saved_openai / total_input * 100, 2)
+        if total_input
+        else 0.0,
+        "cache_busting_calls": busting_calls,
+        "note": "diagnostic estimate; cumulative-history upper bound; min prefix 1024 tokens",
+    }
+    ant = summary["expected_saved_pct_anthropic"]
+    oai = summary["expected_saved_pct_openai"]
+    print(f"\nCache-planner report — {summary['trajectories']} runs, {calls} LLM calls")
+    print(f"  cache-eligible prefix: {summary['cache_eligible_pct']}% of total input")
+    print(f"  expected saving (Anthropic, ~90% off cached): {ant}%")
+    print(f"  expected saving (OpenAI, ~50% off cached):    {oai}%")
+    print(f"  cache-busting calls: {busting_calls} of {calls}")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(summary, indent=1), encoding="utf-8")
+    print(f"\nwrote {out}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(
         description="Replay SWE-bench prompts through the TokenOpt optimizer."
@@ -335,6 +397,11 @@ def main() -> None:
     )
     ap.add_argument("--include-hints", action="store_true", help="Append hints_text to the prompt.")
     ap.add_argument(
+        "--cache-planner",
+        action="store_true",
+        help="Trajectory mode: report cache-eligible prefix and expected discount instead.",
+    )
+    ap.add_argument(
         "--out",
         type=Path,
         default=None,
@@ -343,6 +410,10 @@ def main() -> None:
     args = ap.parse_args()
 
     if args.trajs is not None:
+        if args.cache_planner:
+            out = args.out or REPO_ROOT / "evaluation" / "results" / "swebench_cache_planner.json"
+            run_cache_planner_mode(args.trajs, args.limit, out)
+            return
         out = args.out or REPO_ROOT / "evaluation" / "results" / "swebench_trajs_replay.json"
         run_trajectory_mode(args.trajs, args.limit, out)
         return
