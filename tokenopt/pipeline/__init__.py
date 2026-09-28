@@ -3,6 +3,7 @@
 from tokenopt.pipeline.analyzer import AnalyzerStage, ContextAnalyzer
 from tokenopt.pipeline.base import OptimizationContext, OptimizationPipeline, PipelineStage
 from tokenopt.pipeline.cache import CacheStage
+from tokenopt.pipeline.cache_planner import CachePlannerStage
 from tokenopt.pipeline.compressor import (
     CompressorStage,
     ContextSummarizerStage,
@@ -59,6 +60,7 @@ __all__ = [
     "InvariantViolation",
     "ValidationResult",
     "CacheStage",
+    "CachePlannerStage",
     "RouterStage",
     "RAGOptimizerStage",
     "FewShotSelectorStage",
