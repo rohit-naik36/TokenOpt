@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from typing import Any
 
 from tokenopt.config import TokenOptConfig
@@ -24,9 +25,11 @@ logger = logging.getLogger(__name__)
 # Headroom import (optional — fail-open if unavailable or broken)
 # ---------------------------------------------------------------------------
 
+_headroom_compress: Callable[..., Any] | None
 try:
-    from headroom import compress as _headroom_compress
+    import headroom
 
+    _headroom_compress = headroom.compress
     _HEADROOM_AVAILABLE = True
 except Exception:  # noqa: BLE001
     _headroom_compress = None

@@ -30,12 +30,7 @@ class FidelityScore:
     details: dict[str, Any]
 
 
-# Lazy import to avoid circular dependency
-def _get_prompt_optimizer() -> type:
-    return CanonicalOptimizerAdapter
-
-
-PromptOptimizer = _get_prompt_optimizer()
+PromptOptimizer = CanonicalOptimizerAdapter
 
 
 class DegradedFidelityValidator:

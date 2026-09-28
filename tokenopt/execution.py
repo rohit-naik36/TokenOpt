@@ -94,37 +94,20 @@ class CanonicalOptimizerAdapter:
 
         return result
 
-    def _optimize_sync(self, messages: list[dict], model: str) -> dict:
+    def _optimize_sync(self, messages: list[dict[str, Any]], model: str) -> dict[str, Any]:
         """Synchronous optimization for thread pool execution."""
-        from tokenopt.pipeline.base import OptimizationContext
-        from tokenopt.utils.token_counter import count_message_tokens
-
-        config = self._core.config
-        ctx = OptimizationContext(
-            messages=messages,
-            model=model,
-            config=config,
-            model_explicit=True,
-        )
-        ctx = self._core._run_pipeline(ctx)
-
+        res = self._core.optimize(messages, model=model)
         return {
-            "optimized_prompt": "\n".join(f"{m['role']}: {m['content']}" for m in ctx.messages),
-            "optimized_tokens": count_message_tokens(ctx.messages, model=model),
-            "original_tokens": ctx.original_token_count,
-            "techniques": [],  # populated by transformer metrics
-            "validation_decision": ctx.metrics.get("validation_decision", "accept"),
-            "rollback_applied": ctx.metrics.get("rollback_applied", False),
-            "rollback_reason": ctx.metrics.get("rollback_reason"),
-            "transformer_metrics": {
-                "compress_count": ctx.metrics.get("transformer_compress_count", 0),
-                "remove_count": ctx.metrics.get("transformer_remove_count", 0),
-                "protected_count": ctx.metrics.get("transformer_protected_count", 0),
-            },
-            "validator_metrics": {
-                "validation_decision": ctx.metrics.get("validation_decision", "accept"),
-                "rollback_applied": ctx.metrics.get("rollback_applied", False),
-                "rollback_reason": ctx.metrics.get("rollback_reason"),
-            },
-            "pipeline_latency_ms": ctx.metrics.get("pipeline_latency_ms", 0.0),
+            "optimized_prompt": "\n".join(
+                f"{m.get('role', 'user')}: {m.get('content', '')}" for m in res.optimized_messages
+            ),
+            "optimized_tokens": res.optimized_token_count,
+            "original_tokens": res.original_token_count,
+            "techniques": [],
+            "validation_decision": res.validation_decision,
+            "rollback_applied": res.rollback_applied,
+            "rollback_reason": res.rollback_reason,
+            "transformer_metrics": res.transformer_metrics,
+            "validator_metrics": res.validator_metrics,
+            "pipeline_latency_ms": res.pipeline_latency_ms,
         }

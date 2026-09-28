@@ -53,16 +53,6 @@ try:
 except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
 
-try:
-    import headroom
-    from headroom import CompressConfig as HeadroomConfig
-    from headroom import compress as headroom_compress
-    HEADROOM_AVAILABLE = True
-except ImportError:
-    headroom = None
-    headroom_compress = None
-    HeadroomConfig = None
-    HEADROOM_AVAILABLE = False
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("tokenopt.v2")
