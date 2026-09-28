@@ -875,3 +875,80 @@ class TestEndToEndPipelineWithValidator:
         assert ctx.metrics.get("rollback_applied") is True
         assert ctx.messages == messages
         assert ctx.metrics.get("tokens_saved") == 0
+
+
+class TestValidatorPerMessageRevert:
+    """Per-message revert: unchanged messages are skipped, one failure is isolated."""
+
+    def test_unchanged_malformed_json_does_not_rollback(self) -> None:
+        """An unchanged message misdetected as JSON must not trigger any rollback."""
+        malformed = '{"broken": '
+        orig_msgs = [
+            {"role": "user", "content": malformed},
+            {"role": "user", "content": "Please kindly summarize the quarterly report."},
+        ]
+        cand_msgs = [
+            {"role": "user", "content": malformed},
+            {"role": "user", "content": "Summarize the quarterly report."},
+        ]
+        pmap = PreservationMap(
+            units=(
+                _make_unit(0, structural_type=StructuralType.JSON),
+                _make_unit(
+                    1,
+                    preservation_class=PreservationClass.P2_COMPRESSIBLE,
+                    structural_type=StructuralType.PROSE,
+                ),
+            ),
+            invariants=(),
+        )
+        ctx = _make_ctx(orig_msgs, preservation_map=pmap)
+        ctx.messages = cand_msgs
+
+        result_ctx = ValidatorStage().process(ctx)
+
+        assert result_ctx.metrics["validation_decision"] == ValidationDecision.ACCEPT.value
+        assert result_ctx.metrics["rollback_applied"] is False
+        assert result_ctx.messages[0]["content"] == malformed
+        assert result_ctx.messages[1]["content"] == "Summarize the quarterly report."
+
+    def test_one_failed_message_keeps_savings_on_others(self) -> None:
+        """A single broken message is reverted; the other compressed messages survive."""
+        orig_msgs = [
+            {"role": "user", "content": "Please kindly summarize part one of the document."},
+            {"role": "user", "content": '{"valid": true, "id": 7}'},
+            {"role": "user", "content": "Please kindly summarize part three of the document."},
+        ]
+        cand_msgs = [
+            {"role": "user", "content": "Summarize part one of the document."},
+            {"role": "user", "content": '{"valid": true, "id":'},
+            {"role": "user", "content": "Summarize part three of the document."},
+        ]
+        pmap = PreservationMap(
+            units=(
+                _make_unit(
+                    0,
+                    preservation_class=PreservationClass.P2_COMPRESSIBLE,
+                    structural_type=StructuralType.PROSE,
+                ),
+                _make_unit(1, structural_type=StructuralType.JSON),
+                _make_unit(
+                    2,
+                    preservation_class=PreservationClass.P2_COMPRESSIBLE,
+                    structural_type=StructuralType.PROSE,
+                ),
+            ),
+            invariants=(),
+        )
+        ctx = _make_ctx(orig_msgs, preservation_map=pmap)
+        ctx.messages = cand_msgs
+
+        result_ctx = ValidatorStage().process(ctx)
+
+        assert result_ctx.metrics["validation_decision"] == ValidationDecision.ACCEPT.value
+        assert result_ctx.metrics["rollback_applied"] is False
+        assert result_ctx.metrics["partial_revert_applied"] is True
+        assert result_ctx.metrics["reverted_message_count"] == 1
+        assert result_ctx.messages[1]["content"] == '{"valid": true, "id": 7}'
+        assert result_ctx.messages[0]["content"] == "Summarize part one of the document."
+        assert result_ctx.messages[2]["content"] == "Summarize part three of the document."
