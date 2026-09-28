@@ -645,6 +645,7 @@ async def chat_completions(
                 optimizer = build_optimizer(request.model)
                 opt_result = await optimizer.optimize(
                     request.messages,
+                    model=request.model,
                     optimization_level=request.optimization_level or "standard"
                 )
 
