@@ -2,7 +2,19 @@
 
 [![CI](https://github.com/rohit-naik36/TokenOpt/actions/workflows/ci.yml/badge.svg)](https://github.com/rohit-naik36/TokenOpt/actions/workflows/ci.yml)
 
-TokenOpt is an enterprise AI token optimization platform and client SDK. It reduces LLM prompt size, latency, and cost through transparent compression, semantic caching, model routing, and quality-fidelity validation.
+TokenOpt is an AI prompt-optimization SDK and proxy. It applies preservation-aware, deterministic transformations to LLM prompts (whitespace/filler removal, duplicate pruning) behind a fidelity Validator, with semantic caching, model routing, and observability.
+
+## Measured savings
+
+These are the current, evidence-based numbers. Do not cite higher figures.
+
+| Workload | Measured input-token reduction | Notes |
+| --- | --- | --- |
+| AAVA agent definitions (4,343) | **~0.7–0.9%** (median 0%) | deterministic optimizer, o200k estimate — see [benchmark](evaluation/AAVA_STATIC_AGENT_BENCHMARK.md) |
+| SWE-bench Lite problem statements (300) | **0.23%** (median 0%) | dense technical prose |
+| SWE-agent trajectories (20, per LLM call) | **~1.8%** optimizer (0 rollbacks) | recorded runtime context |
+
+The optimizer's prose compression is small on real, dense prompts. The large levers on agent workloads are **provider prompt caching** (the repeated system+demonstration prefix was **~42%** of input tokens on the trajectories measured — cache-eligible, realized savings depend on the provider's cache discount) and **stale-observation elision** (**~24%** upper bound, lossy). Both are measured estimates on 20 trajectories, not billing, and are not yet implemented. Earlier "15–20%" / "~24% compression" style claims were from synthetic prompts and are not representative.
 
 ---
 

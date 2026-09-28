@@ -7,6 +7,17 @@
 
 ---
 
+> **⚠️ Savings figures in this document are aspirational, not measured.**
+> The "30–60%", tier-table, and ROI percentages below were written before
+> validation and are **not supported by evidence**. Measured input-token
+> reduction on real workloads is **~1–2%** for the deterministic optimizer
+> (see [`evaluation/AAVA_STATIC_AGENT_BENCHMARK.md`](../../evaluation/AAVA_STATIC_AGENT_BENCHMARK.md)).
+> The realistic large levers are provider prompt caching (~42% cache-eligible
+> prefix) and stale-context elision (~24% upper bound, lossy) — both measured
+> estimates, both not yet implemented. Do not quote the percentages below.
+
+---
+
 ## Table of Contents
 1. Architecture & Design
 2. Integration & API
