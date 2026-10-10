@@ -15,6 +15,6 @@ Date: 2026-10-10. Status: PROPOSED.
 
 **Gates:** handler protected-fact retention >=99%, never larger, idempotent, deterministic; end-to-end outcome >=95% of baseline on held-out 30%; misses reported. Target 30-40% is unproven.
 
-**Open:** proxy path is not a valid host until streaming flatten (tokenopt_proxy_v2.py:770-776) and `_normalize_message` field-dropping (execution.py:43-56) are fixed; separate decision.
+**Open:** proxy path is not a valid host until the proxy's always-flatten behavior (tokenopt_proxy_v2.py:664-671) and the executor's role/content-only normalization (execution.py:71-75) are fixed; separate decision. Main's ContentCompressorStage and CachePlannerStage overlap the H2 handler and the cache guard (design doc 3b).
 
 **Licenses:** rtk, headroom Apache-2.0; repomix MIT (likely). Study only unless attribution/NOTICE handled.
