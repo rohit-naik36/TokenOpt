@@ -147,12 +147,20 @@ def turns_per_agent(rows):
     return d
 
 
+def rel(p):
+    """Repo-relative posix path, so result files carry no local absolute paths."""
+    try:
+        return Path(p).resolve().relative_to(Path(__file__).resolve().parent.parent.parent).as_posix()
+    except ValueError:
+        return Path(p).name
+
+
 def main(trace_glob, out):
     paths = sorted(glob.glob(trace_glob))
     rows = [r for r in load(paths) if r.get("response")]
     handoffs = analyze(rows)
     res = {"note": "ESTIMATES: used/unused is a lexical matching heuristic; payload token counts are o200k, not the served model's tokenizer. Provider usage (Ollama prompt_eval_count/eval_count) is truth for totals but cached tokens are UNKNOWN. NOT a quality comparison.",
-           "traces": paths, "pooled": {}, "per_task": {}, "turns_per_agent": turns_per_agent(rows), "handoffs": handoffs}
+           "traces": [rel(x) for x in paths], "pooled": {}, "per_task": {}, "turns_per_agent": turns_per_agent(rows), "handoffs": handoffs}
     for thr in ("t0.25", "t0.50", "t1.00"):
         res["pooled"][thr] = shares(rows, handoffs, thr)
     for task in sorted({r["task"] for r in rows}):

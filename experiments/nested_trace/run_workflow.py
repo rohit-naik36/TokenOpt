@@ -43,7 +43,15 @@ def safe(ws, p):
     return q
 
 
+def scrub(s):
+    """Replace local absolute paths in tool output so traces stay portable."""
+    for q in (SCRATCH.resolve(), REPO.resolve(), Path.home()):
+        s = s.replace(str(q), "<path>").replace(q.as_posix(), "<path>")
+    return s
+
+
 def cap(s):
+    s = scrub(s)
     return s if len(s) <= TOOL_CAP else s[:TOOL_CAP] + "\n...[truncated %d chars]" % (len(s) - TOOL_CAP)
 
 

@@ -39,3 +39,18 @@ def test_analyze_rebilling():
 def test_extract():
     p, rest = extract_payload([{"content": "x <<<HANDOFF id=h9 from=A>>>\nbody\n<<<END HANDOFF h9>>> y"}], "h9")
     assert p == "body" and "body" not in rest
+
+
+def test_no_absolute_paths_in_output(tmp_path):
+    import json, re
+    import measure_handoff
+    from pathlib import Path
+    repo = Path(measure_handoff.__file__).resolve().parent.parent.parent
+    tr = tmp_path / "t.jsonl"
+    tr.write_text(json.dumps(_row(1, "A", [{"role": "user", "content": "x"}], "alpha_func")) + chr(10), encoding="utf-8")
+    out = tmp_path / "o.json"
+    measure_handoff.main(str(tr), str(out))
+    txt = out.read_text(encoding="utf-8")
+    assert not re.search(r"[A-Za-z]:[\\/]", txt) and str(tmp_path) not in txt
+    import run_workflow
+    assert str(repo) not in run_workflow.scrub("error in " + str(repo) + "/tokenopt/x.py")
