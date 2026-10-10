@@ -35,3 +35,19 @@ Thumbs.db
 
 # Evaluation run evidence artifacts (preserve canonical baseline.json)
 evaluation/results/evidence_*
+
+# Local-only safety / scratch (added 2026-10-10)
+test-token.txt
+_local_backup/
+_archive_local/
+execution-trace*.jsonl
+execution-trace*.patch
+
+# Claude Code local state / generated scratch
+.claude/HANDOFF.md
+.claude/worktrees/
+.claude/KICKOFF.md
+.claude/PHASE1B_SDLC_CENSUS.md
+.claude/PROMPT_STREAMLINE.md
+experiments/nested_trace/_ws/
+experiments/nested_trace/__pycache__/

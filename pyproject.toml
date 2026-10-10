@@ -91,3 +91,7 @@ addopts = "--cov=tokenopt --cov-report=term-missing"
 
 [tool.coverage]
 fail_under = 80
+
+[tool.ruff.lint.per-file-ignores]
+"experiments/sdlc_census/**" = ["E501"]
+"experiments/nested_trace/**" = ["E501"]
