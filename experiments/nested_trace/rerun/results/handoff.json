@@ -1,0 +1,716 @@
+{
+  "note": "ESTIMATES: used/unused is a lexical matching heuristic; payload token counts are o200k, not the served model's tokenizer. Provider usage (Ollama prompt_eval_count/eval_count) is truth for totals but cached tokens are UNKNOWN. NOT a quality comparison.",
+  "traces": [
+    "experiments\\nested_trace\\traces\\t1.jsonl",
+    "experiments\\nested_trace\\traces\\t2.jsonl",
+    "experiments\\nested_trace\\traces\\t3.jsonl"
+  ],
+  "pooled": {
+    "t0.25": {
+      "n_calls": 34,
+      "n_handoffs": 15,
+      "provider_prompt_tokens": 35475,
+      "provider_output_tokens": 3466,
+      "provider_total_tokens": 38941,
+      "est_full_prompt_tokens_o200k": 34824,
+      "unused_rebilled_tokens_est": 8861,
+      "used_rebilled_tokens_est": 5874,
+      "neutral_rebilled_tokens_est": 111,
+      "gross_payload_rebilled_tokens_est": 15209,
+      "bloat_share_tokens_provider_denominator": 0.2275,
+      "bloat_share_tokens_estfull_denominator": 0.2314,
+      "gross_share_tokens_provider_denominator": 0.3906,
+      "gross_share_tokens_estfull_denominator": 0.3972,
+      "weighted_cost_provider": 49339,
+      "weighted_cost_estfull": 48688,
+      "bloat_share_cost_provider_denominator": 0.1796,
+      "bloat_share_cost_estfull_denominator": 0.182,
+      "gross_share_cost_provider_denominator": 0.3083,
+      "gross_share_cost_estfull_denominator": 0.3124
+    },
+    "t0.50": {
+      "n_calls": 34,
+      "n_handoffs": 15,
+      "provider_prompt_tokens": 35475,
+      "provider_output_tokens": 3466,
+      "provider_total_tokens": 38941,
+      "est_full_prompt_tokens_o200k": 34824,
+      "unused_rebilled_tokens_est": 10844,
+      "used_rebilled_tokens_est": 3891,
+      "neutral_rebilled_tokens_est": 111,
+      "gross_payload_rebilled_tokens_est": 15209,
+      "bloat_share_tokens_provider_denominator": 0.2785,
+      "bloat_share_tokens_estfull_denominator": 0.2832,
+      "gross_share_tokens_provider_denominator": 0.3906,
+      "gross_share_tokens_estfull_denominator": 0.3972,
+      "weighted_cost_provider": 49339,
+      "weighted_cost_estfull": 48688,
+      "bloat_share_cost_provider_denominator": 0.2198,
+      "bloat_share_cost_estfull_denominator": 0.2227,
+      "gross_share_cost_provider_denominator": 0.3083,
+      "gross_share_cost_estfull_denominator": 0.3124
+    },
+    "t1.00": {
+      "n_calls": 34,
+      "n_handoffs": 15,
+      "provider_prompt_tokens": 35475,
+      "provider_output_tokens": 3466,
+      "provider_total_tokens": 38941,
+      "est_full_prompt_tokens_o200k": 34824,
+      "unused_rebilled_tokens_est": 13296,
+      "used_rebilled_tokens_est": 1439,
+      "neutral_rebilled_tokens_est": 111,
+      "gross_payload_rebilled_tokens_est": 15209,
+      "bloat_share_tokens_provider_denominator": 0.3414,
+      "bloat_share_tokens_estfull_denominator": 0.3472,
+      "gross_share_tokens_provider_denominator": 0.3906,
+      "gross_share_tokens_estfull_denominator": 0.3972,
+      "weighted_cost_provider": 49339,
+      "weighted_cost_estfull": 48688,
+      "bloat_share_cost_provider_denominator": 0.2695,
+      "bloat_share_cost_estfull_denominator": 0.2731,
+      "gross_share_cost_provider_denominator": 0.3083,
+      "gross_share_cost_estfull_denominator": 0.3124
+    }
+  },
+  "per_task": {
+    "t1": {
+      "t0.25": {
+        "n_calls": 12,
+        "n_handoffs": 5,
+        "provider_prompt_tokens": 17404,
+        "provider_output_tokens": 1347,
+        "provider_total_tokens": 18751,
+        "est_full_prompt_tokens_o200k": 17979,
+        "unused_rebilled_tokens_est": 5188,
+        "used_rebilled_tokens_est": 2710,
+        "neutral_rebilled_tokens_est": 11,
+        "gross_payload_rebilled_tokens_est": 8037,
+        "bloat_share_tokens_provider_denominator": 0.2767,
+        "bloat_share_tokens_estfull_denominator": 0.2684,
+        "gross_share_tokens_provider_denominator": 0.4286,
+        "gross_share_tokens_estfull_denominator": 0.4159,
+        "weighted_cost_provider": 22792,
+        "weighted_cost_estfull": 23367,
+        "bloat_share_cost_provider_denominator": 0.2276,
+        "bloat_share_cost_estfull_denominator": 0.222,
+        "gross_share_cost_provider_denominator": 0.3526,
+        "gross_share_cost_estfull_denominator": 0.3439
+      },
+      "t0.50": {
+        "n_calls": 12,
+        "n_handoffs": 5,
+        "provider_prompt_tokens": 17404,
+        "provider_output_tokens": 1347,
+        "provider_total_tokens": 18751,
+        "est_full_prompt_tokens_o200k": 17979,
+        "unused_rebilled_tokens_est": 6183,
+        "used_rebilled_tokens_est": 1715,
+        "neutral_rebilled_tokens_est": 11,
+        "gross_payload_rebilled_tokens_est": 8037,
+        "bloat_share_tokens_provider_denominator": 0.3297,
+        "bloat_share_tokens_estfull_denominator": 0.3199,
+        "gross_share_tokens_provider_denominator": 0.4286,
+        "gross_share_tokens_estfull_denominator": 0.4159,
+        "weighted_cost_provider": 22792,
+        "weighted_cost_estfull": 23367,
+        "bloat_share_cost_provider_denominator": 0.2713,
+        "bloat_share_cost_estfull_denominator": 0.2646,
+        "gross_share_cost_provider_denominator": 0.3526,
+        "gross_share_cost_estfull_denominator": 0.3439
+      },
+      "t1.00": {
+        "n_calls": 12,
+        "n_handoffs": 5,
+        "provider_prompt_tokens": 17404,
+        "provider_output_tokens": 1347,
+        "provider_total_tokens": 18751,
+        "est_full_prompt_tokens_o200k": 17979,
+        "unused_rebilled_tokens_est": 6988,
+        "used_rebilled_tokens_est": 910,
+        "neutral_rebilled_tokens_est": 11,
+        "gross_payload_rebilled_tokens_est": 8037,
+        "bloat_share_tokens_provider_denominator": 0.3727,
+        "bloat_share_tokens_estfull_denominator": 0.3616,
+        "gross_share_tokens_provider_denominator": 0.4286,
+        "gross_share_tokens_estfull_denominator": 0.4159,
+        "weighted_cost_provider": 22792,
+        "weighted_cost_estfull": 23367,
+        "bloat_share_cost_provider_denominator": 0.3066,
+        "bloat_share_cost_estfull_denominator": 0.2991,
+        "gross_share_cost_provider_denominator": 0.3526,
+        "gross_share_cost_estfull_denominator": 0.3439
+      }
+    },
+    "t2": {
+      "t0.25": {
+        "n_calls": 12,
+        "n_handoffs": 5,
+        "provider_prompt_tokens": 8596,
+        "provider_output_tokens": 1044,
+        "provider_total_tokens": 9640,
+        "est_full_prompt_tokens_o200k": 8025,
+        "unused_rebilled_tokens_est": 1673,
+        "used_rebilled_tokens_est": 918,
+        "neutral_rebilled_tokens_est": 45,
+        "gross_payload_rebilled_tokens_est": 2761,
+        "bloat_share_tokens_provider_denominator": 0.1735,
+        "bloat_share_tokens_estfull_denominator": 0.1845,
+        "gross_share_tokens_provider_denominator": 0.2864,
+        "gross_share_tokens_estfull_denominator": 0.3044,
+        "weighted_cost_provider": 12772,
+        "weighted_cost_estfull": 12201,
+        "bloat_share_cost_provider_denominator": 0.131,
+        "bloat_share_cost_estfull_denominator": 0.1371,
+        "gross_share_cost_provider_denominator": 0.2162,
+        "gross_share_cost_estfull_denominator": 0.2263
+      },
+      "t0.50": {
+        "n_calls": 12,
+        "n_handoffs": 5,
+        "provider_prompt_tokens": 8596,
+        "provider_output_tokens": 1044,
+        "provider_total_tokens": 9640,
+        "est_full_prompt_tokens_o200k": 8025,
+        "unused_rebilled_tokens_est": 2024,
+        "used_rebilled_tokens_est": 567,
+        "neutral_rebilled_tokens_est": 45,
+        "gross_payload_rebilled_tokens_est": 2761,
+        "bloat_share_tokens_provider_denominator": 0.21,
+        "bloat_share_tokens_estfull_denominator": 0.2232,
+        "gross_share_tokens_provider_denominator": 0.2864,
+        "gross_share_tokens_estfull_denominator": 0.3044,
+        "weighted_cost_provider": 12772,
+        "weighted_cost_estfull": 12201,
+        "bloat_share_cost_provider_denominator": 0.1585,
+        "bloat_share_cost_estfull_denominator": 0.1659,
+        "gross_share_cost_provider_denominator": 0.2162,
+        "gross_share_cost_estfull_denominator": 0.2263
+      },
+      "t1.00": {
+        "n_calls": 12,
+        "n_handoffs": 5,
+        "provider_prompt_tokens": 8596,
+        "provider_output_tokens": 1044,
+        "provider_total_tokens": 9640,
+        "est_full_prompt_tokens_o200k": 8025,
+        "unused_rebilled_tokens_est": 2505,
+        "used_rebilled_tokens_est": 86,
+        "neutral_rebilled_tokens_est": 45,
+        "gross_payload_rebilled_tokens_est": 2761,
+        "bloat_share_tokens_provider_denominator": 0.2599,
+        "bloat_share_tokens_estfull_denominator": 0.2762,
+        "gross_share_tokens_provider_denominator": 0.2864,
+        "gross_share_tokens_estfull_denominator": 0.3044,
+        "weighted_cost_provider": 12772,
+        "weighted_cost_estfull": 12201,
+        "bloat_share_cost_provider_denominator": 0.1961,
+        "bloat_share_cost_estfull_denominator": 0.2053,
+        "gross_share_cost_provider_denominator": 0.2162,
+        "gross_share_cost_estfull_denominator": 0.2263
+      }
+    },
+    "t3": {
+      "t0.25": {
+        "n_calls": 10,
+        "n_handoffs": 5,
+        "provider_prompt_tokens": 9475,
+        "provider_output_tokens": 1075,
+        "provider_total_tokens": 10550,
+        "est_full_prompt_tokens_o200k": 8820,
+        "unused_rebilled_tokens_est": 2000,
+        "used_rebilled_tokens_est": 2246,
+        "neutral_rebilled_tokens_est": 55,
+        "gross_payload_rebilled_tokens_est": 4411,
+        "bloat_share_tokens_provider_denominator": 0.1896,
+        "bloat_share_tokens_estfull_denominator": 0.2021,
+        "gross_share_tokens_provider_denominator": 0.4181,
+        "gross_share_tokens_estfull_denominator": 0.4458,
+        "weighted_cost_provider": 13775,
+        "weighted_cost_estfull": 13120,
+        "bloat_share_cost_provider_denominator": 0.1452,
+        "bloat_share_cost_estfull_denominator": 0.1524,
+        "gross_share_cost_provider_denominator": 0.3202,
+        "gross_share_cost_estfull_denominator": 0.3362
+      },
+      "t0.50": {
+        "n_calls": 10,
+        "n_handoffs": 5,
+        "provider_prompt_tokens": 9475,
+        "provider_output_tokens": 1075,
+        "provider_total_tokens": 10550,
+        "est_full_prompt_tokens_o200k": 8820,
+        "unused_rebilled_tokens_est": 2637,
+        "used_rebilled_tokens_est": 1609,
+        "neutral_rebilled_tokens_est": 55,
+        "gross_payload_rebilled_tokens_est": 4411,
+        "bloat_share_tokens_provider_denominator": 0.25,
+        "bloat_share_tokens_estfull_denominator": 0.2665,
+        "gross_share_tokens_provider_denominator": 0.4181,
+        "gross_share_tokens_estfull_denominator": 0.4458,
+        "weighted_cost_provider": 13775,
+        "weighted_cost_estfull": 13120,
+        "bloat_share_cost_provider_denominator": 0.1914,
+        "bloat_share_cost_estfull_denominator": 0.201,
+        "gross_share_cost_provider_denominator": 0.3202,
+        "gross_share_cost_estfull_denominator": 0.3362
+      },
+      "t1.00": {
+        "n_calls": 10,
+        "n_handoffs": 5,
+        "provider_prompt_tokens": 9475,
+        "provider_output_tokens": 1075,
+        "provider_total_tokens": 10550,
+        "est_full_prompt_tokens_o200k": 8820,
+        "unused_rebilled_tokens_est": 3803,
+        "used_rebilled_tokens_est": 443,
+        "neutral_rebilled_tokens_est": 55,
+        "gross_payload_rebilled_tokens_est": 4411,
+        "bloat_share_tokens_provider_denominator": 0.3605,
+        "bloat_share_tokens_estfull_denominator": 0.3843,
+        "gross_share_tokens_provider_denominator": 0.4181,
+        "gross_share_tokens_estfull_denominator": 0.4458,
+        "weighted_cost_provider": 13775,
+        "weighted_cost_estfull": 13120,
+        "bloat_share_cost_provider_denominator": 0.2761,
+        "bloat_share_cost_estfull_denominator": 0.2899,
+        "gross_share_cost_provider_denominator": 0.3202,
+        "gross_share_cost_estfull_denominator": 0.3362
+      }
+    }
+  },
+  "turns_per_agent": {
+    "A": {
+      "t1": 5,
+      "t2": 5,
+      "t3": 3
+    },
+    "B": {
+      "t1": 2,
+      "t2": 2,
+      "t3": 2
+    },
+    "B1": {
+      "t1": 2,
+      "t2": 2,
+      "t3": 2
+    },
+    "B2": {
+      "t1": 2,
+      "t2": 2,
+      "t3": 2
+    },
+    "C": {
+      "t1": 1,
+      "t2": 1,
+      "t3": 1
+    }
+  },
+  "handoffs": [
+    {
+      "task": "t1",
+      "workflow_id": "t1",
+      "agent": "B",
+      "from": "A",
+      "kind": "forward",
+      "turns_billed": 2,
+      "payload_tokens": 1511,
+      "t0.25": {
+        "used": 616,
+        "unused": 869,
+        "neutral": 0,
+        "units": 173
+      },
+      "t0.50": {
+        "used": 370,
+        "unused": 1115,
+        "neutral": 0,
+        "units": 173
+      },
+      "t1.00": {
+        "used": 111,
+        "unused": 1374,
+        "neutral": 0,
+        "units": 173
+      }
+    },
+    {
+      "task": "t1",
+      "workflow_id": "t1.B-sub",
+      "agent": "B1",
+      "from": "B",
+      "kind": "forward",
+      "turns_billed": 2,
+      "payload_tokens": 1762,
+      "t0.25": {
+        "used": 391,
+        "unused": 1340,
+        "neutral": 3,
+        "units": 178
+      },
+      "t0.50": {
+        "used": 375,
+        "unused": 1356,
+        "neutral": 3,
+        "units": 178
+      },
+      "t1.00": {
+        "used": 336,
+        "unused": 1395,
+        "neutral": 3,
+        "units": 178
+      }
+    },
+    {
+      "task": "t1",
+      "workflow_id": "t1.B-sub",
+      "agent": "B2",
+      "from": "B1",
+      "kind": "forward",
+      "turns_billed": 2,
+      "payload_tokens": 326,
+      "t0.25": {
+        "used": 9,
+        "unused": 315,
+        "neutral": 0,
+        "units": 5
+      },
+      "t0.50": {
+        "used": 9,
+        "unused": 315,
+        "neutral": 0,
+        "units": 5
+      },
+      "t1.00": {
+        "used": 0,
+        "unused": 324,
+        "neutral": 0,
+        "units": 5
+      }
+    },
+    {
+      "task": "t1",
+      "workflow_id": "t1",
+      "agent": "B",
+      "from": "B2",
+      "kind": "return",
+      "turns_billed": 1,
+      "payload_tokens": 88,
+      "t0.25": {
+        "used": 27,
+        "unused": 52,
+        "neutral": 5,
+        "units": 9
+      },
+      "t0.50": {
+        "used": 27,
+        "unused": 52,
+        "neutral": 5,
+        "units": 9
+      },
+      "t1.00": {
+        "used": 0,
+        "unused": 79,
+        "neutral": 5,
+        "units": 9
+      }
+    },
+    {
+      "task": "t1",
+      "workflow_id": "t1",
+      "agent": "C",
+      "from": "B",
+      "kind": "forward",
+      "turns_billed": 1,
+      "payload_tokens": 751,
+      "t0.25": {
+        "used": 651,
+        "unused": 88,
+        "neutral": 0,
+        "units": 27
+      },
+      "t0.50": {
+        "used": 180,
+        "unused": 559,
+        "neutral": 0,
+        "units": 27
+      },
+      "t1.00": {
+        "used": 16,
+        "unused": 723,
+        "neutral": 0,
+        "units": 27
+      }
+    },
+    {
+      "task": "t2",
+      "workflow_id": "t2",
+      "agent": "B",
+      "from": "A",
+      "kind": "forward",
+      "turns_billed": 2,
+      "payload_tokens": 276,
+      "t0.25": {
+        "used": 101,
+        "unused": 138,
+        "neutral": 11,
+        "units": 51
+      },
+      "t0.50": {
+        "used": 56,
+        "unused": 183,
+        "neutral": 11,
+        "units": 51
+      },
+      "t1.00": {
+        "used": 9,
+        "unused": 230,
+        "neutral": 11,
+        "units": 51
+      }
+    },
+    {
+      "task": "t2",
+      "workflow_id": "t2.B-sub",
+      "agent": "B1",
+      "from": "B",
+      "kind": "forward",
+      "turns_billed": 2,
+      "payload_tokens": 431,
+      "t0.25": {
+        "used": 152,
+        "unused": 243,
+        "neutral": 8,
+        "units": 60
+      },
+      "t0.50": {
+        "used": 53,
+        "unused": 342,
+        "neutral": 8,
+        "units": 60
+      },
+      "t1.00": {
+        "used": 6,
+        "unused": 389,
+        "neutral": 8,
+        "units": 60
+      }
+    },
+    {
+      "task": "t2",
+      "workflow_id": "t2.B-sub",
+      "agent": "B2",
+      "from": "B1",
+      "kind": "forward",
+      "turns_billed": 2,
+      "payload_tokens": 301,
+      "t0.25": {
+        "used": 0,
+        "unused": 299,
+        "neutral": 0,
+        "units": 5
+      },
+      "t0.50": {
+        "used": 0,
+        "unused": 299,
+        "neutral": 0,
+        "units": 5
+      },
+      "t1.00": {
+        "used": 0,
+        "unused": 299,
+        "neutral": 0,
+        "units": 5
+      }
+    },
+    {
+      "task": "t2",
+      "workflow_id": "t2",
+      "agent": "B",
+      "from": "B2",
+      "kind": "return",
+      "turns_billed": 1,
+      "payload_tokens": 99,
+      "t0.25": {
+        "used": 85,
+        "unused": 6,
+        "neutral": 5,
+        "units": 7
+      },
+      "t0.50": {
+        "used": 69,
+        "unused": 22,
+        "neutral": 5,
+        "units": 7
+      },
+      "t1.00": {
+        "used": 13,
+        "unused": 78,
+        "neutral": 5,
+        "units": 7
+      }
+    },
+    {
+      "task": "t2",
+      "workflow_id": "t2",
+      "agent": "C",
+      "from": "B",
+      "kind": "forward",
+      "turns_billed": 1,
+      "payload_tokens": 646,
+      "t0.25": {
+        "used": 327,
+        "unused": 307,
+        "neutral": 2,
+        "units": 25
+      },
+      "t0.50": {
+        "used": 280,
+        "unused": 354,
+        "neutral": 2,
+        "units": 25
+      },
+      "t1.00": {
+        "used": 43,
+        "unused": 591,
+        "neutral": 2,
+        "units": 25
+      }
+    },
+    {
+      "task": "t3",
+      "workflow_id": "t3",
+      "agent": "B",
+      "from": "A",
+      "kind": "forward",
+      "turns_billed": 2,
+      "payload_tokens": 831,
+      "t0.25": {
+        "used": 542,
+        "unused": 258,
+        "neutral": 10,
+        "units": 70
+      },
+      "t0.50": {
+        "used": 447,
+        "unused": 353,
+        "neutral": 10,
+        "units": 70
+      },
+      "t1.00": {
+        "used": 107,
+        "unused": 693,
+        "neutral": 10,
+        "units": 70
+      }
+    },
+    {
+      "task": "t3",
+      "workflow_id": "t3.B-sub",
+      "agent": "B1",
+      "from": "B",
+      "kind": "forward",
+      "turns_billed": 2,
+      "payload_tokens": 1003,
+      "t0.25": {
+        "used": 413,
+        "unused": 554,
+        "neutral": 13,
+        "units": 76
+      },
+      "t0.50": {
+        "used": 248,
+        "unused": 719,
+        "neutral": 13,
+        "units": 76
+      },
+      "t1.00": {
+        "used": 88,
+        "unused": 879,
+        "neutral": 13,
+        "units": 76
+      }
+    },
+    {
+      "task": "t3",
+      "workflow_id": "t3.B-sub",
+      "agent": "B2",
+      "from": "B1",
+      "kind": "forward",
+      "turns_billed": 2,
+      "payload_tokens": 132,
+      "t0.25": {
+        "used": 0,
+        "unused": 130,
+        "neutral": 0,
+        "units": 5
+      },
+      "t0.50": {
+        "used": 0,
+        "unused": 130,
+        "neutral": 0,
+        "units": 5
+      },
+      "t1.00": {
+        "used": 0,
+        "unused": 130,
+        "neutral": 0,
+        "units": 5
+      }
+    },
+    {
+      "task": "t3",
+      "workflow_id": "t3",
+      "agent": "B",
+      "from": "B2",
+      "kind": "return",
+      "turns_billed": 1,
+      "payload_tokens": 66,
+      "t0.25": {
+        "used": 19,
+        "unused": 38,
+        "neutral": 4,
+        "units": 8
+      },
+      "t0.50": {
+        "used": 19,
+        "unused": 38,
+        "neutral": 4,
+        "units": 8
+      },
+      "t1.00": {
+        "used": 19,
+        "unused": 38,
+        "neutral": 4,
+        "units": 8
+      }
+    },
+    {
+      "task": "t3",
+      "workflow_id": "t3",
+      "agent": "C",
+      "from": "B",
+      "kind": "forward",
+      "turns_billed": 1,
+      "payload_tokens": 413,
+      "t0.25": {
+        "used": 317,
+        "unused": 78,
+        "neutral": 5,
+        "units": 24
+      },
+      "t0.50": {
+        "used": 200,
+        "unused": 195,
+        "neutral": 5,
+        "units": 24
+      },
+      "t1.00": {
+        "used": 34,
+        "unused": 361,
+        "neutral": 5,
+        "units": 24
+      }
+    }
+  ]
+}
