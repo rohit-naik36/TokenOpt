@@ -108,4 +108,10 @@ Recorded 2026-10-11, before run 1 (partial; the infrastructure ids are added whe
 - Harness: `ctxopt_v1.3-otl`, Aegis repo branch `exp/output-turn-levers` (not Aegis main), commit `cede08b`. Control behaviour is unchanged from `ctxopt_v1.2`; arms add `--append-system-prompt` only.
 - **Contract digest: `841bed81f41b3c464f2aaabdf7aa7d0fb797d3f026094b37d20fa11679d19b47`** (covers model, digest, agent, relay, tools, permissions, the frozen arm texts and the task specs). The historic controls (digest `c180c11b9ed2d567...`, harness v1.2) carry a different digest because the arm texts are now part of the contract.
 - Arm texts: exactly those in section 3 (`contract.ARMS`). Judge: `otl_judge.py` with `otl_rubric.md` (committed in the same commit, before any judging call).
-- Image ids, Ollama version, model digest, relay config hash: pending (Docker engine unreachable at the time of writing).
+- Infrastructure (recorded 2026-10-11 after the Docker engine was restored and `aegis-exp4-relay` started from its existing container config; all identical to the `baseline-variance-001` controls):
+  - agent image `aegis-exp4-agent:claude-2.1.286` = `sha256:8278555f9b07420a166c403ddc4e8b6b822a97ac83f829ca1aaf12a3f5d5f3b7`
+  - relay image `aegis-exp4-relay:1` = `sha256:3d2a02fdc40aac685469be007d5acb90f81c5e8cbda85ff2d51db33f16f16302`; relay config hash `c4c53c0273be7bb80932e8c5da24a1a1a355aa5701cbdcbb7c5a1d52e9faf705`
+  - Ollama `0.35.0`; model `qwen3.5:9b` digest `6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7`
+  - `aegis-exp4-ctxmgr` is stopped and not on the path; `aegis-exp4-proxy` is stopped (the harness gate requires it to be down).
+- Smoke test (one throwaway run per arm, exp-id `otl-smoke`, no judging): `--append-system-prompt` together with `--safe-mode` works. A, B and C each exited 0 and passed the task (6, 5 and 5 model calls). The appended text reached the model: the first request grew from 15,980 bytes / 3,928 input tokens (historic control) to 16,221 / 3,980 (A), 16,261 / 3,990 (B) and 16,467 / 4,036 (C). One smoke run per arm says nothing about the effect.
+- Judge key: `ANTHROPIC_API_KEY` was not set in the runner's shell at the start of Stage 1, so judging is deferred and run afterwards with `python -m experiments.ctxopt_v1.otl_judge --exp-id otl-001` (blind, shuffled order, $3 cap).
