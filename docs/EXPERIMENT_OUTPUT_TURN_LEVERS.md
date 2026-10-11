@@ -104,4 +104,8 @@ Decisions by the user at the checkpoint:
 10. **Reporting.** Interim progress goes to `.claude/HANDOFF.md` about every 20 runs. Interim results are not used to change anything (there is no stopping rule other than the judge cost ceiling, harness errors per section 5, and the stop conditions of the base pre-registration).
 
 ## Run record (filled in before the first run)
-Contract digest, harness version, Aegis commit, image ids, Ollama version and model digest: *to be recorded here and committed before run 1.*
+Recorded 2026-10-11, before run 1 (partial; the infrastructure ids are added when the Docker engine is reachable and are committed before run 1):
+- Harness: `ctxopt_v1.3-otl`, Aegis repo branch `exp/output-turn-levers` (not Aegis main), commit `cede08b`. Control behaviour is unchanged from `ctxopt_v1.2`; arms add `--append-system-prompt` only.
+- **Contract digest: `841bed81f41b3c464f2aaabdf7aa7d0fb797d3f026094b37d20fa11679d19b47`** (covers model, digest, agent, relay, tools, permissions, the frozen arm texts and the task specs). The historic controls (digest `c180c11b9ed2d567...`, harness v1.2) carry a different digest because the arm texts are now part of the contract.
+- Arm texts: exactly those in section 3 (`contract.ARMS`). Judge: `otl_judge.py` with `otl_rubric.md` (committed in the same commit, before any judging call).
+- Image ids, Ollama version, model digest, relay config hash: pending (Docker engine unreachable at the time of writing).
