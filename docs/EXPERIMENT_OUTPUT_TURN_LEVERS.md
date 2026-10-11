@@ -1,6 +1,6 @@
 # Experiment: output-discipline and turn-discipline levers (pre-registration)
 
-Status: **PRE-REGISTRATION, written before any run.** Frozen at the commit that adds this file. Deviations after the first run are recorded in a `Deviations` section of the report, never edited in here. Date: 2026-10-11. Branch: `feat/output-turn-levers`.
+Status: **PRE-REGISTRATION, written before any run; amended 2026-10-11 before any run (see Amendment 1 at the end, which supersedes sections 5, 6 and 7 where they differ).** Frozen at the commit that adds this file. Deviations after the first run are recorded in a `Deviations` section of the report, never edited in here. Date: 2026-10-11. Branch: `feat/output-turn-levers`.
 
 ## 1. Question
 The Phase 1b census (`experiments/sdlc_census/REPORT.md`) found that on the Aegis T1 bug-fix task, context-compression levers cap near 10% of weighted cost even at 100% removal, while output is 44-45% of weighted cost and one average turn is 12-15%. Can instruction-level changes to agent behaviour reduce output tokens and turn count, and therefore weighted cost, without losing task quality?
@@ -89,3 +89,19 @@ No paid model is called before these are given.
 
 ## 10. After approval
 Run the interleaved matrix, copy each run directory unmodified under `experiments/output_turn_levers/results/`, run `python -m tokenopt.census` on the new directories for the share table, then report per arm: effect with CI, quality gate result, held-out headline, and what did not work.
+
+## Amendment 1 (2026-10-11, before any run; supersedes sections 5-9 where they differ)
+Decisions by the user at the checkpoint:
+1. **Scope and spend.** Stage 1 only (local qwen3.5:9b agent). Judge spend is approved at about $1 with a hard ceiling of **$3**; the runner stops immediately if the judge's accumulated cost passes $3. **Stage 2 (paid agent model) is not approved** and will be decided after Stage 1. `ANTHROPIC_API_KEY` comes from the user's environment and is never written to a file or log.
+2. **Harness.** Arm conditions are added to the Aegis `ctxopt_v1` harness on a branch (`exp/output-turn-levers` in the Aegis repo, not Aegis main). The new contract digest and harness version are recorded in the "Run record" section below before the first run.
+3. **Sample.** 20 runs per arm (control, A, B, C = 80 runs), interleaved rep-major with fresh controls. The runner is resumable and logs progress to a file. An overnight GPU window is available.
+4. **No tuning, no split.** The 70/30 tune/held-out split of section 6.5 is **dropped**. Nothing is tuned: the arm texts in section 3 are used exactly as written (including the turn budget of 8). All 20 runs per arm form the primary analysis.
+5. **Primary endpoints** (replacing section 5's primary): **output tokens per run, turn count per run, and tokens per turn** (total prompt + output tokens divided by turns). Each is reported as the ratio of arm to concurrent control with a 95% percentile-bootstrap CI (10,000 resamples, fixed seed). Because there are three primary endpoints, p-values for any "an effect exists" statement are Holm-adjusted; the CIs are the headline. **Weighted cost W is secondary** (its CV is 0.50), reported with its bootstrap CI and the assumed price weights (uncached 1, cached 0.1, output 4; sensitivity at output weight 1 and 8).
+6. **Quality gate unchanged**: pass rate and the judge's mean score must each be at least 95% of the control's, with Wilson intervals, and the same caveat that at n = 20 a pass means "not distinguishable", not "equivalent".
+7. **Judge pinned**: model `claude-sonnet-4-6`, `temperature: 0`, blind to arm, rubric committed before the first judging call. Cost is tracked from the API's reported usage at $3 / $15 per million tokens.
+8. **Stage 1 transfer limit.** Stage 1 results are for the local 9B model (qwen3.5:9b through Claude Code). They do **not** transfer to Claude models or to other tasks; they test whether the instruction texts change the behaviour of this agent on T1, nothing more.
+9. **Power under the new endpoints.** Census CV is about 0.50 for output tokens, 0.53 for turns and 0.18 for tokens per turn. At 20 runs per arm the minimum detectable relative difference is about 44% for output tokens and turns and about 16% for tokens per turn (alpha 0.05, power 0.8, normal approximation). A smaller effect on output tokens or turns will most likely come back with a CI that includes zero and is reported as inconclusive.
+10. **Reporting.** Interim progress goes to `.claude/HANDOFF.md` about every 20 runs. Interim results are not used to change anything (there is no stopping rule other than the judge cost ceiling, harness errors per section 5, and the stop conditions of the base pre-registration).
+
+## Run record (filled in before the first run)
+Contract digest, harness version, Aegis commit, image ids, Ollama version and model digest: *to be recorded here and committed before run 1.*
