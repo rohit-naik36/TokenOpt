@@ -3,7 +3,7 @@
 Status: **IMPLEMENTED and VERIFIED against the run artifacts** (80 run dirs, 604 model turns; the census CLI on the same dirs reports 80 sessions, 604 turns, and per-run sums match). Run directories live in the Aegis worktree `docs/evidence/ctxopt-v1/otl-001/runs/` (untracked there, 18 MB) and were not copied here. Analysis: `analyze.py`; numbers: `results.md` / `results.json`; pooled census: `census_pooled.json`.
 
 ## Procedure and deviations
-- Judge deviation recorded before scoring: Amendment 2 in `docs/EXPERIMENT_OUTPUT_TURN_LEVERS.md` (commit a3b689a): judge is Claude Code (Sonnet 5.5), temperature uncontrollable, not the planned API judge; hidden-test pass rate is primary, judge score secondary.
+- Judge deviation recorded before scoring: Amendment 2 in `docs/EXPERIMENT_OUTPUT_TURN_LEVERS.md` (commit 64d79e2): judge is Claude Code (Sonnet 5.5), temperature uncontrollable, not the planned API judge; hidden-test pass rate is primary, judge score secondary.
 - Judging: diffs only (the rubric scores the diff), under random IDs (`blind/`), scored against `otl_rubric.md` with fixed rules: tests 3 = normal + separator runs + leading/trailing + empty-or-symbol-only input, 2 = one missing; correctness judged on the code; minimality/hygiene docked only for clear unrelated edits or misleading leftovers. Scores (`scores.csv`) were committed before `id_to_arm.json` existed in the repo or was read into the analysis.
 - Blinding was imperfect: the judging session had already seen `progress.jsonl` (per-run arm, success, turns, tokens) and knew one C run failed. It had not seen any judge score.
 - `progress.jsonl` had duplicate re-logged lines (identical except `ts`); 80 unique run_ids, no stray containers.
