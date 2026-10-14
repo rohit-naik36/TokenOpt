@@ -1,0 +1,49 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,27 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify_lowercase():
++    assert slugify("Hello World") == "hello-world"
++
++
++def test_slugify_remove_special_chars():
++    assert slugify("Hello! How@are_you?") == "hello-how-are-you"
++
++
++def test_slugify_multiple_spaces():
++    assert slugify("hello   world") == "hello-world"
++
++
++def test_slugify_leading_hyphen_stripped():
++    assert slugify("-Hello World-") == "hello-world"
++
++
++def test_slugify_only_special_chars():
++    assert slugify("!!!???@@@") == ""
++
++
++def test_slugify_empty_string():
++    assert slugify("") == ""
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,10 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    import re
++    text = text.lower()
++    text = re.sub(r"[^a-z0-9]+", "-", text)
++    return text.strip("-")

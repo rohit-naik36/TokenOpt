@@ -1,0 +1,38 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,11 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    assert slugify("Hello World!") == "hello-world"
++    assert slugify("Foo-Bar...Baz!!!") == "foo-bar-baz"
++    assert slugify("---Leading---Trailing---") == "leading-trailing"
++    assert slugify("  ---  ") == ""
++    assert slugify("NoSpecialChars123") == "nospecialchars123"
+--- a/textutils.py
++++ b/textutils.py
+@@ -1,4 +1,5 @@
+ """Small text helpers used by the CLI."""
++import re
+ 
+ 
+ def title_case(text: str) -> str:
+@@ -11,3 +12,9 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    result = text.lower()
++    result = re.sub(r'[^a-z0-9]+', '-', result)
++    return result.strip('-')

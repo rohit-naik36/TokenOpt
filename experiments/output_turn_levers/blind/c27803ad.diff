@@ -1,0 +1,71 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,36 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    # Basic slugification
++    assert slugify("Hello World") == "hello-world"
++
++    # Lowercasing
++    assert slugify("HELLO WORLD") == "hello-world"
++
++    # Multiple consecutive non-alphanumeric chars become single hyphen
++    assert slugify("Hello!!! World... Test") == "hello-world-test"
++
++    # Existing hyphens (non-alphanumeric) are also replaced with hyphens
++    # So 'foo-bar_baz.qux!test@test.com' becomes 'foo-bar-baz-qux-test-test-com'
++    assert slugify("foo-bar_baz.qux!test@test.com") == "foo-bar-baz-qux-test-test-com"
++
++    # Leading special characters are stripped
++    assert slugify("---Hello World---") == "hello-world"
++
++    # Leading/trailing spaces (non-alphanumeric) become hyphens and get stripped
++    assert slugify("  Hello World  ") == "hello-world"
++
++    # Only special characters results in empty string
++    assert slugify("@@@!!!###") == ""
++
++    # Empty string
++    assert slugify("") == ""
++
++    # Text with numbers
++    assert slugify("Version 1.2.3 Released") == "version-1-2-3-released"
++
++    # Mixed case with special chars (underscore is also replaced with hyphen)
++    assert slugify("Hello-World_Test/Path:File") == "hello-world-test-path-file"
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,23 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercase the text, replace every run of non-ASCII-alphanumeric characters
++    with a single hyphen, and strip leading/trailing hyphens.
++    """
++    import re
++
++    # Lowercase
++    text = text.lower()
++
++    # Replace runs of non-ASCII letters/digits with a single hyphen
++    text = re.sub(r'[^a-z0-9]+', '-', text)
++
++    # Strip leading and trailing hyphens
++    text = text.strip('-')
++
++    return text

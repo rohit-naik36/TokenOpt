@@ -1,0 +1,57 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,26 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++class TestSlugify:
++    def test_lowercase(self):
++        """Converts text to lowercase."""
++        assert slugify("Hello World") == "hello-world"
++
++    def test_replace_non_alnum(self):
++        """Replaces runs of non-ASCII letters/digits with hyphens."""
++        assert slugify("Hello_World!@#") == "hello-world"
++        assert slugify("Hello...World") == "hello-world"  # Multiple consecutive replaced with single hyphen
++
++    def test_strip_hyphens(self):
++        """Strips leading and trailing hyphens."""
++        assert slugify("-hello-world-") == "hello-world"
++        assert slugify("--hello") == "hello"
++        assert slugify("world--") == "world"
++        assert slugify("---") == ""
++
++    def test_mixed_content(self):
++        """Handles mixed alphanumeric and special characters."""
++        assert slugify("Hello123World!@#456") == "hello123world-456"  # @# is a run, but 456 follows it
++        assert slugify("Test-User_2024:Admin") == "test-user-2024-admin"
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,19 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases the text, replaces every run of non-ASCII letters/digits with a single hyphen,
++    and strips leading/trailing hyphens.
++    """
++    import re
++    # Lowercase the text
++    text = text.lower()
++    # Replace runs of non-ASCII letters/digits with a single hyphen
++    text = re.sub(r'[^a-z0-9]+', '-', text)
++    # Strip leading and trailing hyphens
++    text = text.strip('-')
++    return text

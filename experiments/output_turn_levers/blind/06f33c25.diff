@@ -1,0 +1,42 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,18 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    # Lowercase
++    assert slugify("Hello World") == "hello-world"
++    # Replace runs of non-ASCII letters/digits with single hyphen
++    assert slugify("Hello--World!!!") == "hello-world"
++    # Non-ASCII characters (including accented) are treated as separators and replaced
++    assert slugify("Café résumé") == "caf-r-sum"
++    assert slugify("test@example.com") == "test-example-com"
++    # Strip leading/trailing hyphens
++    assert slugify("---Hello---") == "hello"
++    assert slugify("--hello-world--") == "hello-world"
++    # Empty runs between words count as one separator
++    assert slugify("Multiple   Spaces") == "multiple-spaces"
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,12 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    import re
++    text = text.lower()
++    # Keep only ASCII letters, digits and replace other characters with hyphens
++    text = re.sub(r"[^a-z0-9]+", "-", text)
++    text = text.strip("-")
++    return text

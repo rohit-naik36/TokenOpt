@@ -1,0 +1,37 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,14 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    assert slugify("Hello World!") == "hello-world"
++    assert slugify("HELLO...world") == "hello-world"
++    assert slugify("  Hello___World-123  ") == "hello-world-123"
++    assert slugify("---leading---trailing---") == "leading-trailing"
++    assert slugify("---only-hyphens---") == "only-hyphens"
++    assert slugify("a--b") == "a-b"
++    assert slugify("!@#abc def") == "abc-def"
++    assert slugify("") == ""
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,11 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug."""
++    text = text.lower()
++    import re
++    text = re.sub(r"[^a-z0-9]+", "-", text)
++    return text.strip("-")

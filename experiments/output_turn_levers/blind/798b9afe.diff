@@ -1,0 +1,69 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,34 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    # Test basic lowercasing and separator replacement
++    assert slugify("Hello World") == "hello-world"
++
++    # Test multiple consecutive non-alphanumeric characters become single hyphen
++    assert slugify("Hello!! World...!!!") == "hello-world"
++
++    # Test runs of special characters
++    assert slugify("C++ Programming!") == "c-programming"
++
++    # Test leading/trailing whitespace becomes hyphens then stripped
++    assert slugify("  foo bar  ") == "foo-bar"
++
++    # Test leading and trailing hyphens are stripped
++    assert slugify("---hello---world---") == "hello-world"
++    assert slugify("-foo--bar-") == "foo-bar"
++
++    # Test empty string
++    assert slugify("") == ""
++
++    # Test string with only non-alphanumeric characters
++    assert slugify("!!!...---") == ""
++
++    # Test mixed alphanumeric content
++    assert slugify("Test123!@#User") == "test123-user"
++
++    # Test special character at start/end
++    assert slugify("--Hello World!") == "hello-world"
++
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,23 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases the text, replaces runs of non-ASCII letters/digits with hyphens,
++    and strips leading/trailing hyphens.
++    """
++    import re
++
++    # Lowercase the text
++    text = text.lower()
++
++    # Replace runs of non-ASCII letters or digits with a single hyphen
++    text = re.sub(r"[^a-z0-9]+", "-", text)
++
++    # Strip leading and trailing hyphens
++    text = text.strip("-")
++
++    return text

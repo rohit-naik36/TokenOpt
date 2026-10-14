@@ -1,0 +1,76 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,47 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify_basic():
++    assert slugify("Hello World") == "hello-world"
++
++
++def test_slugify_lower_case():
++    assert slugify("HELLO WORLD") == "hello-world"
++
++
++def test_slugify_mixed_case():
++    assert slugify("HeLLo WoRLd!") == "hello-world"
++
++
++def test_slugify_special_characters_replaced():
++    assert slugify("Hello, World!") == "hello-world"
++
++
++def test_slugify_multiple_special_chars():
++    assert slugify("Hello...World???") == "hello-world"
++
++
++def test_slugify_leading_trailing_hyphens_stripped():
++    assert slugify("---Hello World---") == "hello-world"
++
++
++def test_slugify_leading_trailing_spaces_and_symbols():
++    assert slugify("  ... Hello-World !!! ") == "hello-world"
++
++
++def test_slugify_empty_string():
++    assert slugify("") == ""
++
++
++def test_slugify_already_slugified():
++    assert slugify("hello-world") == "hello-world"
++
++
++def test_slugify_digits():
++    assert slugify("Test123Example") == "test123example"
++
++
++def test_slugify_complex_url_string():
++    assert slugify("Python 3.10 is great! (version release) - awesome!") == "python-3-10-is-great-version-release-awesome"
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,17 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases the text, replaces every run of non-ASCII letters/digits with a single hyphen,
++    and strips leading and trailing hyphens.
++    """
++    result = text.lower()
++    # Replace any sequence of non-ASCII letters or digits with a single hyphen
++    import re
++    result = re.sub(r'[^a-zA-Z0-9]+', '-', result)
++    # Strip leading and trailing hyphens
++    return result.strip('-')

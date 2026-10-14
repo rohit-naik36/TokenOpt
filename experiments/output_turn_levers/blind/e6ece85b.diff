@@ -1,0 +1,64 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,33 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify_basic():
++    assert slugify("Hello World") == "hello-world"
++
++
++def test_slugify_special_chars():
++    assert slugify("Hello...World!") == "hello-world"
++
++
++def test_slugify_multiple_special_runs():
++    # Multiple consecutive special chars become single hyphen
++    assert slugify("Hello!!!   World---Test") == "hello-world-test"
++
++
++def test_slugify_leading_trailing_hyphens_stripped():
++    assert slugify("-Hello World-") == "hello-world"
++
++
++def test_slugify_empty_string():
++    assert slugify("") == ""
++
++
++def test_slugify_preserves_numbers():
++    assert slugify("test123ABC!") == "test123abc"
++
++
++def test_slugify_only_special_chars():
++    # All special chars become hyphens which get stripped
++    assert slugify("---Hello!!!") == "hello"
+--- a/textutils.py
++++ b/textutils.py
+@@ -1,4 +1,6 @@
+ """Small text helpers used by the CLI."""
++
++import re
+ 
+ 
+ def title_case(text: str) -> str:
+@@ -11,3 +13,12 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    # Lowercase the text
++    text = text.lower()
++    # Replace runs of non-ASCII letters/digits with a single hyphen
++    text = re.sub(r'[^a-z0-9]+', '-', text)
++    # Strip leading and trailing hyphens
++    return text.strip('-')

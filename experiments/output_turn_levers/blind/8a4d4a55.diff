@@ -1,0 +1,64 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,28 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    # Basic lowercasing
++    assert slugify("Hello World") == "hello-world"
++
++    # Replace runs of non-alphanumeric with single hyphen
++    assert slugify("Foo---Bar!!!") == "foo-bar"
++    assert slugify("test...string...here") == "test-string-here"
++
++    # Strip leading hyphens
++    assert slugify("---hello") == "hello"
++
++    # Strip trailing hyphens
++    assert slugify("world---") == "world"
++
++    # Strip both leading and trailing hyphens
++    assert slugify("---hello---") == "hello"
++
++    # Empty string and punctuation only
++    assert slugify("") == ""
++    assert slugify("!!!") == ""
++
++    # Numbers should be preserved
++    assert slugify("Test123String") == "test123string"
+--- a/textutils.py
++++ b/textutils.py
+@@ -1,4 +1,6 @@
+ """Small text helpers used by the CLI."""
++
++import re
+ 
+ 
+ def title_case(text: str) -> str:
+@@ -11,3 +13,17 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases the text and replaces runs of non-ASCII letters/digits
++    with a single hyphen, stripping leading and trailing hyphens.
++    """
++    # Lowercase the text
++    slug = text.lower()
++    # Replace runs of non-alphanumeric characters with a single hyphen
++    slug = re.sub(r'[^a-z0-9]+', '-', slug)
++    # Strip leading and trailing hyphens
++    return slug.strip('-')

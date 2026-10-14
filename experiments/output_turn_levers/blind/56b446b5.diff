@@ -1,0 +1,59 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,30 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    # Basic slugification - lowercase and preserve letters/digits
++    assert slugify("Hello World!") == "hello-world"
++
++    # Multiple special characters become single hyphen (underscore also replaced)
++    assert slugify("foo-bar_baz.test!@#") == "foo-bar-baz-test"
++
++    # Runs of non-ASCII chars collapse to single hyphen
++    assert slugify("hello---world!!!test") == "hello-world-test"
++
++    # Leading/trailing hyphens are stripped
++    assert slugify("---hello world---") == "hello-world"
++
++    # Already clean text
++    assert slugify("simple-text") == "simple-text"
++
++    # Empty string and whitespace-only become empty
++    assert slugify("") == ""
++    assert slugify("   ") == ""
++
++    # Special characters in the middle
++    assert slugify("test@#$%email@domain.com") == "test-email-domain-com"
++
++    # Mix of ASCII letters, digits, and special chars
++    assert slugify("v1.0-release_candidate!") == "v1-0-release-candidate"
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,17 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++import re
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases the text, replaces every run of non-ASCII letters or digits
++    with a single hyphen, and strips leading and trailing hyphens.
++    """
++    text = text.lower()
++    text = re.sub(r'[^a-z0-9]+', '-', text)
++    return text.strip('-')

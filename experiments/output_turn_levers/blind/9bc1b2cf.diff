@@ -1,0 +1,49 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,21 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    # Basic lowercasing
++    assert slugify("Hello World") == "hello-world"
++    # Replace multiple non-ASCII/non-digit chars with single hyphen
++    assert slugify("Hello... World!") == "hello-world"
++    assert slugify("Test@#123") == "test-123"
++    # Strip leading hyphens
++    assert slugify("--- hello ---") == "hello"
++    # Strip trailing hyphens
++    assert slugify("world---") == "world"
++    # Combined: lowercase, replace runs, strip
++    assert slugify("   Hello... World!   ") == "hello-world"
++    # Empty string becomes empty
++    assert slugify("") == ""
++    # Only special chars becomes empty after stripping
++    assert slugify("---!!!") == ""
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,16 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++import re
++
++
++def slugify(text: str) -> str:
++    # Lowercase the text
++    text = text.lower()
++    # Replace runs of non-ASCII letters/digits with single hyphen
++    text = re.sub(r'[^a-z0-9]+', '-', text)
++    # Strip leading and trailing hyphens
++    text = text.strip('-')
++    return text

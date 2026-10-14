@@ -1,0 +1,69 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,39 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    # Basic slugify - lowercase and replace non-ASCII/non-digit with hyphens
++    assert slugify("Hello World!") == "hello-world"
++
++    # Multiple consecutive special chars become single hyphen
++    assert slugify("Hello...World") == "hello-world"
++    assert slugify("Hello___World") == "hello-world"
++    assert slugify("Hello@@@World") == "hello-world"
++
++    # Mixed runs of special chars (spaces are also non-ASCII/non-digit)
++    assert slugify("Hello!!! ... @@@ World") == "hello-world"
++
++    # Strip leading hyphens
++    assert slugify("---hello world") == "hello-world"
++
++    # Strip trailing hyphens
++    assert slugify("hello world---") == "hello-world"
++
++    # Strip both leading and trailing hyphens
++    assert slugify("---hello world---") == "hello-world"
++
++    # Empty string
++    assert slugify("") == ""
++
++    # Already clean text
++    assert slugify("hello123world") == "hello123world"
++
++    # Single char tests
++    assert slugify("-") == ""
++    assert slugify("!") == ""
++    assert slugify("a") == "a"
++
++    # Numbers preserved
++    assert slugify("test-123") == "test-123"
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,18 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++import re
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases the text, replaces every run of characters that are not ASCII
++    letters or digits with a single hyphen, and strips leading and trailing
++    hyphens.
++    """
++    text = text.lower()
++    text = re.sub(r'[^a-z0-9]+', '-', text)
++    return text.strip('-')

@@ -1,0 +1,38 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,16 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    assert slugify("Hello World!") == "hello-world"
++    assert slugify("Foo-Bar_Baz.test") == "foo-bar-baz-test"
++    # Leading and trailing hyphens are stripped, internal runs become single hyphen
++    assert slugify("---leading dashes---") == "leading-dashes"
++    assert slugify("---trailing dashes") == "trailing-dashes"
++    assert slugify("...multiple spaces...") == "multiple-spaces"
++    assert slugify("") == ""
++    assert slugify("!!!") == ""
++    assert slugify("123") == "123"
++    assert slugify("a-b") == "a-b"
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,10 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    import re
++    text = text.lower()
++    text = re.sub(r"[^a-z0-9]+", "-", text)
++    return text.strip("-")

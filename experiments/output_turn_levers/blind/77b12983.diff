@@ -1,0 +1,81 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,50 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    # Basic slugification with spaces
++    assert slugify("hello world") == "hello-world"
++
++    # Lowercase conversion
++    assert slugify("HELLO World") == "hello-world"
++
++    # Mixed case (underscores are not ASCII letters/digits, so they're replaced)
++    assert slugify("Hello-World_TEST") == "hello-world-test"
++
++    # Replace multiple non-alphanumeric chars with single hyphen
++    assert slugify("hello!!!world@home") == "hello-world-home"
++
++    # Run of special characters becomes single hyphen
++    assert slugify("hello   world--test") == "hello-world-test"
++
++    # Strip leading hyphens
++    assert slugify("---hello---") == "hello"
++
++    # Strip trailing hyphens
++    assert slugify("hello---world---") == "hello-world"
++
++    # Combined: leading/trailing stripped, internal collapsed
++    assert slugify("--hello...!!!---") == "hello"
++
++    # Empty string and edge cases
++    assert slugify("") == ""
++
++    # Only special characters
++    assert slugify("!!!@@@###") == ""
++
++    # Numbers are preserved, underscores replaced (they're not ASCII letters or digits)
++    assert slugify("file_2024_v1.0") == "file-2024-v1-0"
++
++    # Single character
++    assert slugify("a") == "a"
++
++    # Single special char becomes empty after strip
++    assert slugify("---") == ""
++
++    # ASCII letters and digits are kept
++    assert slugify("test123ABC") == "test123abc"
++
++    # Special characters in different positions (underscores also replaced, trailing hyphen stripped)
++    assert slugify("_underscore-") == "underscore"
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,19 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases the text and replaces every run of non-ASCII letters or digits
++    with a single hyphen. Strips leading and trailing hyphens.
++    """
++    import re
++    # Lowercase the text
++    result = text.lower()
++    # Replace runs of non-ASCII letters/digits with a single hyphen
++    result = re.sub(r'[^a-z0-9]+', '-', result)
++    # Strip leading and trailing hyphens
++    result = result.strip('-')
++    return result

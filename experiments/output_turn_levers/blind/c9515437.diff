@@ -1,0 +1,70 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,44 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    # Basic case
++    assert slugify("Hello World") == "hello-world"
++
++    # Lowercase conversion
++    assert slugify("HELLO WORLD") == "hello-world"
++
++    # Mixed case
++    assert slugify("HeLLo WoRLd") == "hello-world"
++
++    # Run of special characters becomes single hyphen
++    assert slugify("Hello---World") == "hello-world"
++
++    # Multiple runs become single hyphen each
++    assert slugify("Hello___-World...!") == "hello-world"
++
++    # Strip leading hyphens
++    assert slugify("-Hello World") == "hello-world"
++
++    # Strip trailing hyphens
++    assert slugify("Hello World-") == "hello-world"
++
++    # Both leading and trailing hyphens stripped
++    assert slugify("---Hello World---") == "hello-world"
++
++    # Text with numbers
++    assert slugify("Hello123World") == "hello123world"
++
++    # Run of numbers is preserved (numbers are ASCII digits)
++    assert slugify("Hello___123___World") == "hello-123-world"
++
++    # Empty string
++    assert slugify("") == ""
++
++    # Only special characters (all become hyphens, then stripped)
++    assert slugify("!!!---???") == ""
++
++    # Special chars with letters in middle
++    assert slugify("!!Hello!!!") == "hello"
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,14 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases the text, replaces every run of non-ASCII letters/digits
++    with a single hyphen, and strips leading/trailing hyphens.
++    """
++    text = text.lower()
++    import re
++    return re.sub(r'[^a-z0-9]+', '-', text).strip('-')

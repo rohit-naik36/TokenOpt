@@ -1,0 +1,72 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,43 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    # Basic slugification
++    assert slugify("Hello World") == "hello-world"
++
++    # Multiple spaces become single hyphen
++    assert slugify("Hello   World") == "hello-world"
++
++    # Various non-alphanumeric characters replaced by single hyphen
++    assert slugify("Hello...World!") == "hello-world"
++
++    # Leading/trailing hyphens stripped
++    assert slugify("-Hello-World-") == "hello-world"
++    assert slugify("--hello--world--") == "hello-world"
++
++    # Already lowercase with no special chars
++    assert slugify("simple-slug") == "simple-slug"
++
++    # Empty string
++    assert slugify("") == ""
++
++    # Text with numbers
++    assert slugify("Test123-String456") == "test123-string456"
++
++    # Mixed special characters at start and end
++    assert slugify("---hello---world---") == "hello-world"
++
++    # Unicode/emojis treated as non-ASCII (not in a-z0-9, so stripped)
++    # Spaces around emoji are part of the same run
++    assert slugify("Hello 🎉 World") == "hello-world"
++    # Only the first emoji-run at start becomes leading hyphen which gets stripped
++    assert slugify("🎉 Hello") == "hello"
++
++    # Single character edge cases
++    assert slugify("-") == ""
++    assert slugify("---") == ""
++
++    # Only letters
++    assert slugify("abc") == "abc"
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,17 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++import re
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases the text, replaces every run of non-ASCII letters or digits
++    with a single hyphen, and strips leading/trailing hyphens.
++    """
++    text = text.lower()
++    text = re.sub(r'[^a-z0-9]+', '-', text)
++    return text.strip('-')

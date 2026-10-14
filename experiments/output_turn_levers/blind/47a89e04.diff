@@ -1,0 +1,64 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,10 +1,38 @@
+-from textutils import title_case, truncate
++from textutils import slugify, title_case, truncate
+ 
+ 
+ def test_title_case():
+     assert title_case("hello big world") == "Hello Big World"
+ 
+ 
++def test_slugify():
++    # Test basic lowercase and hyphenation
++    assert slugify("Hello World!") == "hello-world"
++    assert slugify("This is a Test.") == "this-is-a-test"
++
++    # Test that runs of special characters become single hyphens
++    assert slugify("foo---bar") == "foo-bar"
++    assert slugify("foo!!@#$%%bar") == "foo-bar"
++
++    # Test leading/trailing special characters are stripped
++    assert slugify("---leading hyphens---") == "leading-hyphens"
++    assert slugify("trailing----") == "trailing"
++    assert slugify("---both---") == "both"
++
++    # Test empty result when all characters are non-alphanumeric
++    assert slugify("!!!...@@@") == ""
++
++    # Test pure ASCII letters and digits pass through unchanged (lowercased)
++    assert slugify("ABC123") == "abc123"
++
++    # Test Unicode characters are removed (not in a-z range)
++    assert slugify("café") == "caf"
++    assert slugify("日本語テスト") == ""
++
++    # Test numbers are preserved
++    assert slugify("test123-test456") == "test123-test456"
++
++
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
+--- a/textutils.py
++++ b/textutils.py
+@@ -1,4 +1,19 @@
+ """Small text helpers used by the CLI."""
++import re
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases the text, replaces runs of non-ASCII letters/digits with
++    a single hyphen, and strips leading/trailing hyphens.
++    """
++    result = text.lower()
++    # Replace any sequence of non-ASCII letters or digits with a single hyphen
++    result = re.sub(r'[^a-z0-9]+', '-', result)
++    # Strip leading and trailing hyphens
++    result = result.strip('-')
++    return result
+ 
+ 
+ def title_case(text: str) -> str:

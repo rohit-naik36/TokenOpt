@@ -1,0 +1,69 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,36 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    # Basic lowercasing
++    assert slugify("HELLO WORLD") == "hello-world"
++
++    # Replace runs of non-ASCII-alphanumeric with single hyphen
++    assert slugify("Hello... World!") == "hello-world"
++    assert slugify("foo@bar#baz") == "foo-bar-baz"
++    assert slugify("test__double__underscore") == "test-double-underscore"
++
++    # Strip leading hyphens (spaces are also replaced with hyphens)
++    assert slugify("--leading dashes") == "leading-dashes"
++    assert slugify("---multiple---") == "multiple"
++
++    # Strip trailing hyphens
++    assert slugify("trailing----") == "trailing"
++    assert slugify("dash--") == "dash"
++
++    # Combined: leading, trailing, and middle runs
++    assert slugify("--foo...bar--!") == "foo-bar"
++
++    # Already clean text
++    assert slugify("simple-slug") == "simple-slug"
++
++    # Empty string
++    assert slugify("") == ""
++
++    # Only special characters (becomes hyphen then stripped)
++    assert slugify("!!!") == ""
++
++    # Mixed case with numbers
++    assert slugify("Test123-Case456!") == "test123-case456"
+--- a/textutils.py
++++ b/textutils.py
+@@ -1,4 +1,6 @@
+ """Small text helpers used by the CLI."""
++
++import re
+ 
+ 
+ def title_case(text: str) -> str:
+@@ -11,3 +13,14 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases the text, replaces runs of non-ASCII-alphanumeric characters
++    with single hyphens, and strips leading/trailing hyphens.
++    """
++    text = text.lower()
++    text = re.sub(r'[^a-z0-9]+', '-', text)
++    return text.strip('-')

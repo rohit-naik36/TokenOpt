@@ -1,0 +1,35 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,11 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    assert slugify("Hello World!") == "hello-world"
++    assert slugify("Hello...World??") == "hello-world"
++    assert slugify("___HELLO___") == "hello"
++    assert slugify("--leading--trailing--") == "leading-trailing"
++    assert slugify("test123!@#ABC") == "test123-abc"
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,12 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++import re
++
++
++def slugify(text: str) -> str:
++    text = text.lower()
++    text = re.sub(r"[^a-z0-9]+", "-", text)
++    return text.strip("-")

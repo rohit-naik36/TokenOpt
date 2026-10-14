@@ -1,0 +1,40 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,12 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    assert slugify("Hello World!") == "hello-world"
++    assert slugify("Foo Bar---Baz") == "foo-bar-baz"
++    assert slugify("---Leading Hyphens") == "leading-hyphens"
++    assert slugify("Trailing---") == "trailing"
++    assert slugify("---") == ""
++    assert slugify("Text_123!@#") == "text-123"
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,16 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++import re
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug."""
++    # Lowercase the text
++    text = text.lower()
++    # Replace runs of non-ASCII letters/digits with a single hyphen
++    text = re.sub(r'[^a-z0-9]+', '-', text)
++    # Strip leading and trailing hyphens
++    return text.strip('-')

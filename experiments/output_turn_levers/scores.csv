@@ -1,0 +1,81 @@
+id,correctness,tests,minimality,hygiene,note
+060ca656,4,3,2,1,all categories covered
+06f33c25,4,2,2,1,no empty/symbol-only test
+07ee823f,4,3,2,1,
+0f24528b,4,2,2,1,no empty/symbol-only test
+16706f8c,4,3,2,1,
+1a91361e,4,3,2,1,
+1ecda581,4,3,2,1,
+2b547aff,4,3,2,1,
+2dd649a7,4,3,2,1,
+3a6003c5,4,3,2,1,
+3d54c182,4,2,2,1,no empty/symbol-only test
+3da7490f,4,3,2,1,
+3df5791e,4,3,2,1,
+45415cec,4,3,2,1,
+46863c64,4,3,2,1,
+47a89e04,4,3,2,1,
+4dffa996,4,3,2,1,
+4f55b249,4,3,2,1,
+4fa1446e,4,3,2,1,
+5125c3ff,4,3,2,1,
+56b446b5,4,3,2,1,
+58be830b,4,3,2,1,
+67703427,4,2,2,1,no empty/symbol-only test
+69de3287,4,2,2,1,no empty/symbol-only test
+7165e5b6,4,3,2,1,
+75ffecec,4,3,2,1,
+77b12983,4,3,2,1,
+78d0bdab,4,3,2,1,
+79485f23,4,3,2,1,
+798b9afe,4,3,2,1,
+79c5a850,4,3,2,1,
+7a6befa0,4,3,2,1,
+8a4d4a55,4,3,2,1,
+8b5a2515,4,3,2,1,
+97c2c37b,4,3,2,1,
+98a99531,4,3,2,1,
+9b3863b9,4,3,2,1,
+9bc1b2cf,4,3,2,1,
+a2e5d0d5,4,3,2,1,
+a7280a63,4,3,2,1,
+afec2be7,4,3,2,1,
+b5633633,4,3,2,1,
+b6f8c8e1,4,3,2,1,
+b7a1241e,4,3,2,1,
+b84e1a55,4,3,2,1,
+b9b780e2,4,3,2,1,
+bd3673a8,4,3,2,1,
+bef2ca85,4,3,2,1,
+bfa275b1,4,3,2,1,
+8a0505f2,4,2,2,1,no empty/symbol-only test
+8ca8ea66,4,2,2,1,no empty/symbol-only test
+96be39f7,4,2,2,1,no empty/symbol-only test
+ab583a57,4,2,2,1,no empty/symbol-only test
+ab98dd62,4,2,2,1,no empty/symbol-only test
+c03f9ed3,4,3,2,1,
+c1b00ded,4,3,2,1,
+c27803ad,4,3,2,1,
+c9515437,4,3,2,1,
+cac1818c,4,3,2,1,
+ccca6666,4,3,2,1,
+ce3ce0be,4,3,2,1,
+cf4d7b01,4,3,2,1,
+d10098eb,4,3,2,1,
+db2134d3,4,3,2,1,
+de31538a,4,3,2,1,
+ded58996,4,3,2,1,
+e51197b5,4,3,2,1,
+e6ece85b,4,3,2,1,
+eacc9c80,4,3,2,1,
+f475b1c5,4,3,2,1,
+f4b7ea5b,4,3,2,1,
+f74a964e,4,3,2,1,
+f9d297b9,4,3,2,1,
+fcf9bb51,4,3,2,1,
+dd32fdd3,4,2,2,1,no empty/symbol-only test
+e34e3c86,4,2,2,1,no empty/symbol-only test
+e2caa215,4,2,2,1,no empty/symbol-only test
+ca9c885a,2,2,2,0,keeps underscores and non-ASCII letters (spec deviation); test asserts the wrong behaviour; docstring contradicts code
+fda6c10e,4,2,2,0,contrived test expression; no empty/symbol-only test
+f8e987d9,4,3,1,1,deletes existing test_title_case

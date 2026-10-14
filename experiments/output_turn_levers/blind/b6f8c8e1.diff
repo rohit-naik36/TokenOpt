@@ -1,0 +1,65 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,27 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify_lowercase():
++    assert slugify("Hello World!") == "hello-world"
++
++
++def test_slugify_replace_non_alnum():
++    assert slugify("Foo-Bar_Baz.test") == "foo-bar-baz-test"
++
++
++def test_slugify_single_run_replaced_with_single_hyphen():
++    # Multiple non-ASCII chars in a row should become a single hyphen
++    assert slugify("Hello...World!!!" ) == "hello-world"
++
++
++def test_slugify_strip_leading_trailing_hyphens():
++    assert slugify("-foo-bar-") == "foo-bar"
++    assert slugify("--") == ""
++    assert slugify("---hello---") == "hello"
++    assert slugify("---") == ""
++
++
++def test_slugify_empty_string():
++    assert slugify("") == ""
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,26 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases the text, replaces every run of non-ASCII-alphanumeric
++    characters with a single hyphen, and strips leading/trailing hyphens.
++    """
++    lower = text.lower()
++    # Replace any run of non-ASCII letters or digits with a hyphen
++    slug_parts = []
++    prev_was_hyphen = True  # Assume start is like being "after" a hyphen for run detection
++    for char in lower:
++        if "a" <= char <= "z" or "0" <= char <= "9":
++            # This is an ASCII letter or digit - it's not part of a non-ASCII run
++            slug_parts.append(char)
++            prev_was_hyphen = False
++        else:
++            # Non-ASCII letter/digit -> treat as a separator, produce hyphen if needed
++            if not prev_was_hyphen and slug_parts:  # Only add hyphen if we had letters
++                slug_parts.append("-")
++            prev_was_hyphen = True
++    return "".join(slug_parts).strip("-")

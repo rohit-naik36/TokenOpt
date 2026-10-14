@@ -1,0 +1,55 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,26 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    # Basic slugification
++    assert slugify("Hello World") == "hello-world"
++
++    # Multiple consecutive non-alphanumeric chars become single hyphen
++    assert slugify("Hello   World!!") == "hello-world"
++
++    # Leading and trailing hyphens are stripped
++    assert slugify("-Hello-World-") == "hello-world"
++
++    # Mixed case with various separators
++    assert slugify("Hello...World!@#Test") == "hello-world-test"
++
++    # Already lowercased with dashes
++    assert slugify("HELLO-WORLD") == "hello-world"
++
++    # Text with numbers
++    assert slugify("My Test123 Post 456") == "my-test123-post-456"
++
++    # Special characters in between text
++    assert slugify("User@Name#123") == "user-name-123"
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,17 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++import re
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases the text, replaces every run of characters that are not ASCII
++    letters or digits with a single hyphen, and strips leading and trailing hyphens.
++    """
++    text = text.lower()
++    text = re.sub(r'[^a-z0-9]+', '-', text)
++    return text.strip('-')

@@ -1,0 +1,54 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,22 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    # Test basic slugification
++    assert slugify("Hello World") == "hello-world"
++    # Test with multiple spaces and punctuation (runs become single hyphen)
++    assert slugify("Hello   Hello!!") == "hello-hello"
++    # Test that leading/trailing hyphens are stripped
++    assert slugify("---Hello---") == "hello"
++    # Test empty string
++    assert slugify("") == ""
++    # Test with numbers
++    assert slugify("Hello123World456") == "hello123world456"
++    # Test that multiple runs of special chars become single hyphen
++    assert slugify("foo---bar!!baz...qux") == "foo-bar-baz-qux"
++    # Test mixed case and special chars (dots are also non-alphanumeric)
++    assert slugify("A.B.C-D-E") == "a-b-c-d-e"
++    # Test with spaces at end (should be stripped as non-alphanumeric)
++    assert slugify("hello world ") == "hello-world"
+--- a/textutils.py
++++ b/textutils.py
+@@ -1,4 +1,6 @@
+ """Small text helpers used by the CLI."""
++
++import re
+ 
+ 
+ def title_case(text: str) -> str:
+@@ -11,3 +13,13 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    # Lowercase the text
++    text = text.lower()
++    # Replace every run of non-ASCII letters/digits with a single hyphen
++    text = re.sub(r'[^a-z0-9]+', '-', text)
++    # Strip leading and trailing hyphens
++    text = text.strip('-')
++    return text

@@ -1,0 +1,67 @@
+--- a/test_textutils.py
++++ b/test_textutils.py
+@@ -1,4 +1,4 @@
+-from textutils import title_case, truncate
++from textutils import title_case, truncate, slugify
+ 
+ 
+ def test_title_case():
+@@ -8,3 +8,36 @@
+ def test_truncate():
+     assert truncate("abcdef", 10) == "abcdef"
+     assert truncate("abcdefghij", 6) == "abc..."
++
++
++def test_slugify():
++    # Test basic slugification
++    assert slugify("Hello World") == "hello-world"
++
++    # Test with multiple spaces (should become single hyphen)
++    assert slugify("Hello   World") == "hello-world"
++
++    # Test with punctuation
++    assert slugify("Hello, World!") == "hello-world"
++
++    # Test with mixed special characters
++    assert slugify("Hello@World#Test$") == "hello-world-test"
++
++    # Test leading/trailing spaces
++    assert slugify("  Hello World  ") == "hello-world"
++
++    # Test leading/trailing hyphens are stripped
++    assert slugify("-Hello- World-") == "hello-world"
++
++    # Test already slug-like input
++    assert slugify("hello-world") == "hello-world"
++
++    # Test empty string
++    assert slugify("") == ""
++
++    # Test text with only special characters
++    assert slugify("---   !!!   ---") == ""
++
++    # Test case insensitivity
++    assert slugify("HELLO WORLD") == "hello-world"
++    assert slugify("HeLLo WoRLd") == "hello-world"
+--- a/textutils.py
++++ b/textutils.py
+@@ -11,3 +11,19 @@
+     if len(text) <= limit:
+         return text
+     return text[: max(limit - 3, 0)] + "..."
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases the text, replaces every run of non-ASCII letters/digits
++    with a single hyphen, and strips leading/trailing hyphens.
++    """
++    import re
++    # Lowercase the text
++    text = text.lower()
++    # Replace runs of non-ASCII letters or digits with a single hyphen
++    text = re.sub(r'[^a-z0-9]+', '-', text)
++    # Strip leading and trailing hyphens
++    text = text.strip('-')
++    return text
