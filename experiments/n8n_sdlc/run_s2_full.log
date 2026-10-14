@@ -1,0 +1,200 @@
+﻿s2-anthropic-none-T01-control-r01: ok attempts=1 wall=19.6s cost=$0.00288
+s2-anthropic-none-T01-A-r01: ok attempts=1 wall=15.9s cost=$0.00240
+s2-anthropic-none-T01-H-r01: ok attempts=1 wall=20.7s cost=$0.00220
+running total: 20 stage calls, spent $0.0092 of cap $1.50
+s2-anthropic-none-T01-AH-r01: ok attempts=1 wall=14.1s cost=$0.00168
+s2-anthropic-none-T01-control-r02: ok attempts=1 wall=25.2s cost=$0.00306
+s2-anthropic-none-T01-A-r02: ok attempts=1 wall=16.9s cost=$0.00260
+s2-anthropic-none-T01-H-r02: ok attempts=1 wall=18.0s cost=$0.00208
+running total: 40 stage calls, spent $0.0187 of cap $1.50
+s2-anthropic-none-T01-AH-r02: ok attempts=1 wall=15.6s cost=$0.00178
+s2-anthropic-none-T01-control-r03: ok attempts=1 wall=19.3s cost=$0.00296
+s2-anthropic-none-T01-A-r03: ok attempts=1 wall=17.3s cost=$0.00246
+s2-anthropic-none-T01-H-r03: ok attempts=1 wall=19.7s cost=$0.00218
+running total: 60 stage calls, spent $0.0281 of cap $1.50
+s2-anthropic-none-T01-AH-r03: ok attempts=1 wall=15.7s cost=$0.00182
+s2-anthropic-none-T01-control-r04: ok attempts=1 wall=29.0s cost=$0.00314
+s2-anthropic-none-T01-A-r04: ok attempts=1 wall=14.4s cost=$0.00228
+s2-anthropic-none-T01-H-r04: ok attempts=1 wall=19.8s cost=$0.00226
+running total: 80 stage calls, spent $0.0375 of cap $1.50
+s2-anthropic-none-T01-AH-r04: ok attempts=1 wall=15.2s cost=$0.00174
+s2-anthropic-none-T01-control-r05: ok attempts=1 wall=18.6s cost=$0.00273
+s2-anthropic-none-T01-A-r05: ok attempts=1 wall=15.8s cost=$0.00243
+s2-anthropic-none-T01-H-r05: ok attempts=1 wall=19.7s cost=$0.00228
+running total: 100 stage calls, spent $0.0468 of cap $1.50
+s2-anthropic-none-T01-AH-r05: ok attempts=1 wall=15.5s cost=$0.00185
+s2-anthropic-none-T02-control-r01: ok attempts=1 wall=21.8s cost=$0.00315
+s2-anthropic-none-T02-A-r01: ok attempts=1 wall=16.0s cost=$0.00230
+s2-anthropic-none-T02-H-r01: ok attempts=1 wall=20.9s cost=$0.00246
+running total: 120 stage calls, spent $0.0567 of cap $1.50
+s2-anthropic-none-T02-AH-r01: ok attempts=1 wall=17.2s cost=$0.00199
+s2-anthropic-none-T02-control-r02: ok attempts=1 wall=20.1s cost=$0.00299
+s2-anthropic-none-T02-A-r02: ok attempts=1 wall=17.6s cost=$0.00248
+s2-anthropic-none-T02-H-r02: ok attempts=1 wall=20.3s cost=$0.00233
+running total: 140 stage calls, spent $0.0665 of cap $1.50
+s2-anthropic-none-T02-AH-r02: ok attempts=1 wall=17.5s cost=$0.00197
+s2-anthropic-none-T02-control-r03: ok attempts=1 wall=24.6s cost=$0.00342
+s2-anthropic-none-T02-A-r03: ok attempts=1 wall=15.9s cost=$0.00239
+s2-anthropic-none-T02-H-r03: ok attempts=1 wall=20.1s cost=$0.00236
+running total: 160 stage calls, spent $0.0766 of cap $1.50
+s2-anthropic-none-T02-AH-r03: ok attempts=1 wall=17.7s cost=$0.00193
+s2-anthropic-none-T02-control-r04: ok attempts=1 wall=19.6s cost=$0.00296
+s2-anthropic-none-T02-A-r04: ok attempts=1 wall=16.2s cost=$0.00238
+s2-anthropic-none-T02-H-r04: ok attempts=1 wall=20.5s cost=$0.00236
+running total: 180 stage calls, spent $0.0864 of cap $1.50
+s2-anthropic-none-T02-AH-r04: ok attempts=1 wall=16.8s cost=$0.00205
+s2-anthropic-none-T02-control-r05: ok attempts=1 wall=23.1s cost=$0.00319
+s2-anthropic-none-T02-A-r05: ok attempts=1 wall=16.8s cost=$0.00251
+s2-anthropic-none-T02-H-r05: ok attempts=1 wall=22.1s cost=$0.00261
+running total: 200 stage calls, spent $0.0967 of cap $1.50
+s2-anthropic-none-T02-AH-r05: ok attempts=1 wall=17.9s cost=$0.00203
+s2-anthropic-none-T03-control-r01: ok attempts=1 wall=19.9s cost=$0.00285
+s2-anthropic-none-T03-A-r01: ok attempts=1 wall=18.4s cost=$0.00269
+s2-anthropic-none-T03-H-r01: ok attempts=1 wall=21.0s cost=$0.00232
+running total: 220 stage calls, spent $0.1063 of cap $1.50
+s2-anthropic-none-T03-AH-r01: ok attempts=1 wall=15.9s cost=$0.00178
+s2-anthropic-none-T03-control-r02: ok attempts=1 wall=24.5s cost=$0.00339
+s2-anthropic-none-T03-A-r02: ok attempts=1 wall=30.5s cost=$0.00253
+s2-anthropic-none-T03-H-r02: ok attempts=1 wall=21.9s cost=$0.00245
+running total: 240 stage calls, spent $0.1166 of cap $1.50
+s2-anthropic-none-T03-AH-r02: ok attempts=1 wall=17.9s cost=$0.00192
+s2-anthropic-none-T03-control-r03: ok attempts=1 wall=25.0s cost=$0.00354
+s2-anthropic-none-T03-A-r03: ok attempts=1 wall=24.8s cost=$0.00263
+s2-anthropic-none-T03-H-r03: ok attempts=1 wall=20.7s cost=$0.00230
+running total: 260 stage calls, spent $0.1269 of cap $1.50
+s2-anthropic-none-T03-AH-r03: ok attempts=1 wall=15.7s cost=$0.00183
+s2-anthropic-none-T03-control-r04: ok attempts=1 wall=21.3s cost=$0.00311
+s2-anthropic-none-T03-A-r04: ok attempts=1 wall=23.8s cost=$0.00282
+s2-anthropic-none-T03-H-r04: ok attempts=1 wall=20.7s cost=$0.00224
+running total: 280 stage calls, spent $0.1369 of cap $1.50
+s2-anthropic-none-T03-AH-r04: ok attempts=1 wall=15.6s cost=$0.00181
+s2-anthropic-none-T03-control-r05: ok attempts=1 wall=24.6s cost=$0.00326
+s2-anthropic-none-T03-A-r05: ok attempts=1 wall=18.0s cost=$0.00253
+s2-anthropic-none-T03-H-r05: ok attempts=1 wall=21.8s cost=$0.00231
+running total: 300 stage calls, spent $0.1469 of cap $1.50
+s2-anthropic-none-T03-AH-r05: ok attempts=1 wall=16.8s cost=$0.00192
+s2-anthropic-none-T04-control-r01: ok attempts=1 wall=20.6s cost=$0.00272
+s2-anthropic-none-T04-A-r01: ok attempts=1 wall=15.2s cost=$0.00214
+s2-anthropic-none-T04-H-r01: ok attempts=1 wall=18.8s cost=$0.00193
+running total: 320 stage calls, spent $0.1552 of cap $1.50
+s2-anthropic-none-T04-AH-r01: ok attempts=1 wall=14.3s cost=$0.00152
+s2-anthropic-none-T04-control-r02: ok attempts=1 wall=18.7s cost=$0.00266
+s2-anthropic-none-T04-A-r02: ok attempts=1 wall=15.5s cost=$0.00229
+s2-anthropic-none-T04-H-r02: ok attempts=1 wall=17.6s cost=$0.00194
+running total: 340 stage calls, spent $0.1636 of cap $1.50
+s2-anthropic-none-T04-AH-r02: ok attempts=1 wall=12.5s cost=$0.00148
+s2-anthropic-none-T04-control-r03: ok attempts=1 wall=18.3s cost=$0.00277
+s2-anthropic-none-T04-A-r03: ok attempts=1 wall=16.9s cost=$0.00236
+s2-anthropic-none-T04-H-r03: ok attempts=1 wall=15.7s cost=$0.00178
+running total: 360 stage calls, spent $0.1721 of cap $1.50
+s2-anthropic-none-T04-AH-r03: ok attempts=1 wall=13.9s cost=$0.00157
+s2-anthropic-none-T04-control-r04: ok attempts=1 wall=18.9s cost=$0.00286
+s2-anthropic-none-T04-A-r04: ok attempts=1 wall=15.3s cost=$0.00227
+s2-anthropic-none-T04-H-r04: ok attempts=1 wall=17.1s cost=$0.00184
+running total: 380 stage calls, spent $0.1805 of cap $1.50
+s2-anthropic-none-T04-AH-r04: ok attempts=1 wall=15.4s cost=$0.00150
+s2-anthropic-none-T04-control-r05: ok attempts=1 wall=17.6s cost=$0.00265
+s2-anthropic-none-T04-A-r05: ok attempts=1 wall=14.2s cost=$0.00223
+s2-anthropic-none-T04-H-r05: ok attempts=1 wall=17.2s cost=$0.00190
+running total: 400 stage calls, spent $0.1888 of cap $1.50
+s2-anthropic-none-T04-AH-r05: ok attempts=1 wall=14.7s cost=$0.00149
+s2-anthropic-none-T05-control-r01: ok attempts=1 wall=19.0s cost=$0.00291
+s2-anthropic-none-T05-A-r01: ok attempts=1 wall=14.9s cost=$0.00217
+s2-anthropic-none-T05-H-r01: ok attempts=1 wall=17.5s cost=$0.00203
+running total: 420 stage calls, spent $0.1977 of cap $1.50
+s2-anthropic-none-T05-AH-r01: ok attempts=1 wall=15.6s cost=$0.00180
+s2-anthropic-none-T05-control-r02: ok attempts=1 wall=21.4s cost=$0.00292
+s2-anthropic-none-T05-A-r02: ok attempts=1 wall=13.7s cost=$0.00212
+s2-anthropic-none-T05-H-r02: ok attempts=1 wall=87.9s cost=$0.00223
+running total: 440 stage calls, spent $0.2068 of cap $1.50
+s2-anthropic-none-T05-AH-r02: ok attempts=1 wall=17.7s cost=$0.00177
+s2-anthropic-none-T05-control-r03: ok attempts=1 wall=18.6s cost=$0.00273
+s2-anthropic-none-T05-A-r03: ok attempts=1 wall=15.3s cost=$0.00231
+s2-anthropic-none-T05-H-r03: ok attempts=1 wall=22.1s cost=$0.00220
+running total: 460 stage calls, spent $0.2159 of cap $1.50
+s2-anthropic-none-T05-AH-r03: ok attempts=1 wall=15.0s cost=$0.00187
+s2-anthropic-none-T05-control-r04: ok attempts=1 wall=19.2s cost=$0.00281
+s2-anthropic-none-T05-A-r04: ok attempts=1 wall=16.1s cost=$0.00232
+s2-anthropic-none-T05-H-r04: ok attempts=1 wall=17.7s cost=$0.00209
+running total: 480 stage calls, spent $0.2248 of cap $1.50
+s2-anthropic-none-T05-AH-r04: ok attempts=1 wall=20.3s cost=$0.00176
+s2-anthropic-none-T05-control-r05: ok attempts=1 wall=20.0s cost=$0.00277
+s2-anthropic-none-T05-A-r05: ok attempts=1 wall=15.7s cost=$0.00226
+s2-anthropic-none-T05-H-r05: ok attempts=1 wall=20.7s cost=$0.00228
+running total: 500 stage calls, spent $0.2340 of cap $1.50
+s2-anthropic-none-T05-AH-r05: ok attempts=1 wall=15.8s cost=$0.00184
+s2-anthropic-none-T06-control-r01: ok attempts=1 wall=17.7s cost=$0.00269
+s2-anthropic-none-T06-A-r01: ok attempts=1 wall=14.8s cost=$0.00217
+s2-anthropic-none-T06-H-r01: ok attempts=1 wall=15.7s cost=$0.00183
+running total: 520 stage calls, spent $0.2422 of cap $1.50
+s2-anthropic-none-T06-AH-r01: ok attempts=1 wall=13.0s cost=$0.00153
+s2-anthropic-none-T06-control-r02: ok attempts=1 wall=17.4s cost=$0.00262
+s2-anthropic-none-T06-A-r02: ok attempts=1 wall=14.0s cost=$0.00207
+s2-anthropic-none-T06-H-r02: ok attempts=1 wall=18.3s cost=$0.00210
+running total: 540 stage calls, spent $0.2507 of cap $1.50
+s2-anthropic-none-T06-AH-r02: ok attempts=1 wall=13.6s cost=$0.00170
+s2-anthropic-none-T06-control-r03: ok attempts=1 wall=16.3s cost=$0.00255
+s2-anthropic-none-T06-A-r03: ok attempts=1 wall=14.3s cost=$0.00213
+s2-anthropic-none-T06-H-r03: ok attempts=1 wall=16.2s cost=$0.00187
+running total: 560 stage calls, spent $0.2587 of cap $1.50
+s2-anthropic-none-T06-AH-r03: ok attempts=1 wall=12.6s cost=$0.00150
+s2-anthropic-none-T06-control-r04: ok attempts=1 wall=16.4s cost=$0.00247
+s2-anthropic-none-T06-A-r04: ok attempts=1 wall=16.0s cost=$0.00217
+s2-anthropic-none-T06-H-r04: ok attempts=1 wall=86.3s cost=$0.00192
+running total: 580 stage calls, spent $0.2669 of cap $1.50
+s2-anthropic-none-T06-AH-r04: ok attempts=1 wall=15.9s cost=$0.00163
+s2-anthropic-none-T06-control-r05: ok attempts=1 wall=19.1s cost=$0.00275
+s2-anthropic-none-T06-A-r05: ok attempts=1 wall=14.2s cost=$0.00205
+s2-anthropic-none-T06-H-r05: ok attempts=1 wall=19.2s cost=$0.00205
+running total: 600 stage calls, spent $0.2753 of cap $1.50
+s2-anthropic-none-T06-AH-r05: ok attempts=1 wall=49.8s cost=$0.00156
+s2-anthropic-none-T07-control-r01: ok attempts=1 wall=17.2s cost=$0.00255
+s2-anthropic-none-T07-A-r01: ok attempts=1 wall=13.5s cost=$0.00194
+s2-anthropic-none-T07-H-r01: ok attempts=1 wall=17.3s cost=$0.00194
+running total: 620 stage calls, spent $0.2833 of cap $1.50
+s2-anthropic-none-T07-AH-r01: ok attempts=1 wall=13.3s cost=$0.00149
+s2-anthropic-none-T07-control-r02: ok attempts=1 wall=19.3s cost=$0.00278
+s2-anthropic-none-T07-A-r02: ok attempts=1 wall=16.4s cost=$0.00213
+s2-anthropic-none-T07-H-r02: ok attempts=1 wall=16.1s cost=$0.00177
+running total: 640 stage calls, spent $0.2914 of cap $1.50
+s2-anthropic-none-T07-AH-r02: ok attempts=1 wall=14.2s cost=$0.00151
+s2-anthropic-none-T07-control-r03: ok attempts=1 wall=18.4s cost=$0.00268
+s2-anthropic-none-T07-A-r03: ok attempts=1 wall=12.7s cost=$0.00191
+s2-anthropic-none-T07-H-r03: ok attempts=1 wall=18.5s cost=$0.00211
+running total: 660 stage calls, spent $0.2997 of cap $1.50
+s2-anthropic-none-T07-AH-r03: ok attempts=1 wall=16.5s cost=$0.00154
+s2-anthropic-none-T07-control-r04: ok attempts=1 wall=16.4s cost=$0.00238
+s2-anthropic-none-T07-A-r04: ok attempts=1 wall=13.8s cost=$0.00201
+s2-anthropic-none-T07-H-r04: ok attempts=1 wall=16.9s cost=$0.00190
+running total: 680 stage calls, spent $0.3075 of cap $1.50
+s2-anthropic-none-T07-AH-r04: ok attempts=1 wall=14.3s cost=$0.00150
+s2-anthropic-none-T07-control-r05: ok attempts=1 wall=17.3s cost=$0.00249
+s2-anthropic-none-T07-A-r05: ok attempts=1 wall=12.4s cost=$0.00192
+s2-anthropic-none-T07-H-r05: ok attempts=1 wall=19.5s cost=$0.00212
+running total: 700 stage calls, spent $0.3156 of cap $1.50
+s2-anthropic-none-T07-AH-r05: ok attempts=1 wall=13.9s cost=$0.00157
+s2-anthropic-none-T08-control-r01: ok attempts=1 wall=21.5s cost=$0.00327
+s2-anthropic-none-T08-A-r01: ok attempts=1 wall=16.3s cost=$0.00248
+s2-anthropic-none-T08-H-r01: ok attempts=1 wall=20.9s cost=$0.00241
+running total: 720 stage calls, spent $0.3255 of cap $1.50
+s2-anthropic-none-T08-AH-r01: ok attempts=1 wall=15.8s cost=$0.00181
+s2-anthropic-none-T08-control-r02: ok attempts=1 wall=21.6s cost=$0.00312
+s2-anthropic-none-T08-A-r02: ok attempts=1 wall=16.1s cost=$0.00248
+s2-anthropic-none-T08-H-r02: ok attempts=1 wall=19.5s cost=$0.00235
+running total: 740 stage calls, spent $0.3353 of cap $1.50
+s2-anthropic-none-T08-AH-r02: ok attempts=1 wall=16.4s cost=$0.00186
+s2-anthropic-none-T08-control-r03: ok attempts=1 wall=22.4s cost=$0.00312
+s2-anthropic-none-T08-A-r03: ok attempts=1 wall=16.6s cost=$0.00247
+s2-anthropic-none-T08-H-r03: ok attempts=1 wall=22.0s cost=$0.00246
+running total: 760 stage calls, spent $0.3453 of cap $1.50
+s2-anthropic-none-T08-AH-r03: ok attempts=1 wall=16.0s cost=$0.00189
+s2-anthropic-none-T08-control-r04: ok attempts=1 wall=20.4s cost=$0.00296
+s2-anthropic-none-T08-A-r04: ok attempts=1 wall=17.9s cost=$0.00252
+s2-anthropic-none-T08-H-r04: ok attempts=1 wall=22.2s cost=$0.00252
+running total: 780 stage calls, spent $0.3551 of cap $1.50
+s2-anthropic-none-T08-AH-r04: ok attempts=1 wall=15.7s cost=$0.00183
+s2-anthropic-none-T08-control-r05: ok attempts=1 wall=23.9s cost=$0.00311
+s2-anthropic-none-T08-A-r05: ok attempts=1 wall=16.0s cost=$0.00255
+s2-anthropic-none-T08-H-r05: ok attempts=1 wall=19.8s cost=$0.00235
+running total: 800 stage calls, spent $0.3650 of cap $1.50
+s2-anthropic-none-T08-AH-r05: ok attempts=1 wall=15.4s cost=$0.00186
