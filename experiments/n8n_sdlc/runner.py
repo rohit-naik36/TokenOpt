@@ -49,6 +49,7 @@ def main():
     ap.add_argument("--tickets", default="", help="comma list; default all tickets/T*.json")
     ap.add_argument("--reps", type=int, default=1)
     ap.add_argument("--out", type=Path, default=HERE / "runs.jsonl")
+    ap.add_argument("--temperature", type=float, default=0.3)
     ap.add_argument("--timeout", type=int, default=3600)
     ap.add_argument("--max-attempts", type=int, default=2)
     ap.add_argument("--no-unload", action="store_true", help="keep the model loaded between runs (warms the KV cache)")
@@ -67,7 +68,7 @@ def main():
                 if not a.no_unload:
                     post(a.ollama_host + "/api/generate", {"model": a.model, "keep_alive": 0}, 120)
                 payload = {"run_id": run_id, "arm": arm, "model": a.model, "ollama_base_url": a.ollama_base_url,
-                           "ticket": ticket, "diff": diff}
+                           "ticket": ticket, "diff": diff, "temperature": a.temperature, "seed": rep}
                 t0, status, err, res = time.time(), "ok", None, None
                 try:
                     res = post(a.webhook, payload, a.timeout)
@@ -86,7 +87,7 @@ def main():
                             f.write(json.dumps({"kind": "stage", "run_id": run_id, "ticket_id": tid, "arm": arm, "rep": rep,
                                                 "stage": s, **res["stages"][s]}) + "\n")
                     f.write(json.dumps({"kind": "run", "run_id": run_id, "ticket_id": tid, "arm": arm, "rep": rep,
-                                        "status": status, "error": err, "wall_s": wall, "model": a.model,
+                                        "status": status, "error": err, "wall_s": wall, "model": a.model, "temperature": a.temperature, "seed": rep,
                                         "unloaded_before": not a.no_unload,
                                         "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z")}) + "\n")
                 print(f"{run_id}: {status} {wall}s {err or ''}", flush=True)

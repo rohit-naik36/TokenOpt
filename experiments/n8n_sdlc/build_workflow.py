@@ -26,7 +26,11 @@ function parseJ(t) {
   const s = t.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
   const a = s.indexOf('{'), b = s.lastIndexOf('}');
   if (a < 0 || b < a) return null;
-  try { return JSON.parse(s.slice(a, b + 1)); } catch (e) { return null; }
+  const body = s.slice(a, b + 1);
+  for (const tail of ['', ']', '] }', ']', ' }']) {
+    try { return JSON.parse(body + tail); } catch (e) { }
+  }
+  return null;
 }
 function up(s) {
   const o = parseJ(raw[s]);
@@ -62,7 +66,7 @@ const sys = SYSTEM[STAGE] + (useA ? '\n\n' + ARM_A : '');
 const user = useH ? JSON.stringify(needed(STAGE), null, 2) : plain(STAGE);
 return {
   model: P.model, stream: false, think: false, keep_alive: '10m',
-  options: { temperature: 0, seed: 7, num_ctx: 12288, num_predict: 2048 },
+  options: { temperature: P.temperature === undefined ? 0.3 : P.temperature, seed: P.seed === undefined ? 7 : P.seed, num_ctx: 12288, num_predict: 2048 },
   messages: [{ role: 'system', content: sys }, { role: 'user', content: user }]
 };
 """

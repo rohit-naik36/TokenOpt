@@ -1,0 +1,23 @@
+runs ok: 4; harness-error attempts: 0 ([])
+
+Per arm, per stage: mean prompt tokens / output tokens
+arm                    triage        requirements                plan              review        release_note   wall_s/run
+control          713/71              725/490            1213/421            2125/618            2263/178        58
+A                760/67              768/212             978/407            1876/430            1826/149        43
+H                593/74              495/300             592/488            1449/306             370/77         40
+AH               640/57              542/221             573/514            1461/267             412/87         39
+
+Per arm: totals and quality (n = runs)
+arm      n  prompt  output  total      W  | stage-ok triag requi  plan revie relea | defect_hit  quality_pass (Wilson)  [repaired-brace variant]
+control  1    7039    1778   8817   14151  |              1     1     0     1     1 |     1/1  0/1 (0.00-0.79)  [0/1]
+A        1    6208    1265   7473   11268  |              1     1     0     1     1 |     1/1  0/1 (0.00-0.79)  [1/1]
+H        1    3499    1245   4744    8479  |              1     1     0     1     1 |     1/1  0/1 (0.00-0.79)  [1/1]
+AH       1    3628    1146   4774    8212  |              1     1     0     1     1 |     1/1  0/1 (0.00-0.79)  [1/1]
+
+(fewer than 2 control runs: no CIs)
+
+Quality failures (run, failed checks, defect_hit):
+  ('T01-control-r01', {'plan': ['not_json']}, True)
+  ('T01-A-r01', {'plan': ['not_json']}, True)
+  ('T01-H-r01', {'plan': ['not_json']}, True)
+  ('T01-AH-r01', {'plan': ['not_json']}, True)

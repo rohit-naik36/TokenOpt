@@ -22,7 +22,10 @@ lengths inside the stated range, and done_reason != "length" (truncated output).
   review: verdict approve|request_changes, findings list (<= 6) of {file, line, severity, issue,
           suggested_fix}, summary str
   release_note: title str, summary str (<= 60 words), changes list of 1-4 str, breaking bool, upgrade_notes str
-Run quality pass = every stage ok AND review identifies the planted defect.
+Run quality pass (composite, reported) = every stage ok AND review identifies the planted defect.
+QUALITY GATE (two components, each arm >= 95% of control): format rate (every stage ok) and defect-hit rate. If the
+control format rate is < 0.5 the format component is declared uninformative and is not used for the gate.
+The "repaired-brace" variant (output that only lacks closing brackets) is reported as a secondary column.
 
 Cost: W = prompt_eval_count + 4 * eval_count (uncached 1, output 4). The model is unloaded before every
 run, so prompt_eval_count is the full prompt (no KV-cache reuse) and no cached-token term is needed.
@@ -54,6 +57,24 @@ def parse_json(t):
     except json.JSONDecodeError:
         return None
     return o if isinstance(o, dict) else None
+
+
+def parse_json_repaired(t):
+    """Secondary: also accept output that only lacks closing brackets (same repair as the workflow's upstream parse)."""
+    o = parse_json(t)
+    if o is not None or not isinstance(t, str):
+        return o
+    s = re.sub(r"```\s*$", "", re.sub(r"^```(?:json)?\s*", "", t.strip(), flags=re.I))
+    a = s.find("{")
+    if a < 0:
+        return None
+    for tail in ("}", "]}", "}}", "]}}"):
+        try:
+            o = json.loads(s[a:] + tail)
+            return o if isinstance(o, dict) else None
+        except json.JSONDecodeError:
+            pass
+    return None
 
 
 def _str(x):
@@ -150,15 +171,18 @@ def main():
         if len(st) != 5:
             continue
         checks = {s: check_stage(s, parse_json(st[s]["output"])) + (["truncated"] if st[s].get("done_reason") == "length" else []) for s in STAGES}
+        rep = {s: not check_stage(s, parse_json_repaired(st[s]["output"])) and st[s].get("done_reason") != "length" for s in STAGES}
         hit, other = defect_hit(parse_json(st["review"]["output"]), gt[run["ticket_id"]])
+        hit_rep, _ = defect_hit(parse_json_repaired(st["review"]["output"]), gt[run["ticket_id"]])
         rv = parse_json(st["review"]["output"]) or {}
         eval_t = sum(st[s]["eval_count"] for s in STAGES); prompt_t = sum(st[s]["prompt_eval_count"] for s in STAGES)
         scored.append(dict(run_id=rid, ticket_id=run["ticket_id"], arm=run["arm"], rep=run["rep"], wall_s=run["wall_s"],
-                           stage_checks=checks, stages_ok={s: not c for s, c in checks.items()}, defect_hit=hit, other_findings=other,
+                           stage_checks=checks, stages_ok={s: not c for s, c in checks.items()}, stages_ok_repaired=rep, defect_hit=hit, defect_hit_repaired=hit_rep, other_findings=other,
                            verdict_approve=rv.get("verdict") == "approve", prompt_tokens=prompt_t, output_tokens=eval_t,
                            total_tokens=prompt_t + eval_t, W=prompt_t + 4 * eval_t, W_out1=prompt_t + eval_t, W_out8=prompt_t + 8 * eval_t,
                            per_stage={s: dict(prompt=st[s]["prompt_eval_count"], output=st[s]["eval_count"], total_duration_s=round((st[s]["total_duration"] or 0) / 1e9, 1)) for s in STAGES},
-                           quality_pass=all(not c for c in checks.values()) and hit))
+                           quality_pass=all(not c for c in checks.values()) and hit,
+                           quality_pass_repaired=all(rep.values()) and hit_rep))
     if a.out:
         a.out.write_text("".join(json.dumps(s) + "\n" for s in scored), encoding="utf-8", newline="\n")
 
@@ -174,7 +198,7 @@ def main():
             m = lambda s, k: sum(x["per_stage"][s][k] for x in g) / len(g)
             print(f"{arm:<9}" + "".join(f"{m(s, 'prompt'):>11.0f}/{m(s, 'output'):<8.0f}" for s in STAGES) + f"   {sum(x['wall_s'] for x in g) / len(g):.0f}")
     print("\nPer arm: totals and quality (n = runs)")
-    print("arm      n  prompt  output  total      W  | stage-ok " + " ".join(f"{s[:5]:>5}" for s in STAGES) + " | defect_hit  quality_pass (Wilson)")
+    print("arm      n  prompt  output  total      W  | stage-ok " + " ".join(f"{s[:5]:>5}" for s in STAGES) + " | defect_hit  quality_pass (Wilson)  [repaired-brace variant]")
     for arm in ARMS:
         g = by[arm]
         if not g:
@@ -182,7 +206,7 @@ def main():
         n = len(g); mean = lambda k: sum(x[k] for x in g) / n
         ok = " ".join(f"{sum(x['stages_ok'][s] for x in g):>5}" for s in STAGES)
         qp = sum(x["quality_pass"] for x in g); lo, hi = wilson(qp, n)
-        print(f"{arm:<7}{n:>3}{mean('prompt_tokens'):>8.0f}{mean('output_tokens'):>8.0f}{mean('total_tokens'):>7.0f}{mean('W'):>8.0f}  |          {ok} | {sum(x['defect_hit'] for x in g):>5}/{n}  {qp}/{n} ({lo:.2f}-{hi:.2f})")
+        print(f"{arm:<7}{n:>3}{mean('prompt_tokens'):>8.0f}{mean('output_tokens'):>8.0f}{mean('total_tokens'):>7.0f}{mean('W'):>8.0f}  |          {ok} | {sum(x['defect_hit'] for x in g):>5}/{n}  {qp}/{n} ({lo:.2f}-{hi:.2f})  [{sum(x['quality_pass_repaired'] for x in g)}/{n}]")
     ctl = {(s["ticket_id"], s["rep"]): s for s in by["control"]}
     if len(ctl) >= 2:
         print(f"\nRatio arm/control, paired percentile bootstrap over (ticket, rep) units, {B} resamples, seed {SEED}")
@@ -198,8 +222,12 @@ def main():
                     v.append(sum(p[1][k] for p in smp) / sum(p[0][k] for p in smp))
                 r = sum(p[1][k] for p in pairs) / sum(p[0][k] for p in pairs)
                 line += f"  {k} {r:.2f} [{pct(v, .025):.2f}, {pct(v, .975):.2f}]"
-            cq = sum(p[0]["quality_pass"] for p in pairs) / len(pairs); aq = sum(p[1]["quality_pass"] for p in pairs) / len(pairs)
-            line += f"  | quality {aq:.2f} vs {cq:.2f} -> gate {'PASS' if aq >= 0.95 * cq else 'FAIL'}"
+            rate = lambda i, f: sum(f(p[i]) for p in pairs) / len(pairs)
+            fmt = lambda x: all(x["stages_ok"].values())
+            c_f, a_f, c_h, a_h = rate(0, fmt), rate(1, fmt), rate(0, lambda x: x["defect_hit"]), rate(1, lambda x: x["defect_hit"])
+            g_f = "n/a (control format rate < 0.5)" if c_f < 0.5 else ("PASS" if a_f >= 0.95 * c_f else "FAIL")
+            g_h = "PASS" if a_h >= 0.95 * c_h else "FAIL"
+            line += f"\n      quality gate: format {a_f:.2f} vs {c_f:.2f} -> {g_f}; defect_hit {a_h:.2f} vs {c_h:.2f} -> {g_h}; composite {rate(1, lambda x: x['quality_pass']):.2f} vs {rate(0, lambda x: x['quality_pass']):.2f}"
             print(line)
     else:
         print("\n(fewer than 2 control runs: no CIs)")
