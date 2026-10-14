@@ -1,0 +1,112 @@
+{
+ "prices": {
+  "uncached": 1.0,
+  "cached": 0.1,
+  "output": 4.0
+ },
+ "sets": {
+  "runs": {
+   "rows": {
+    "static(system+tools+task)": {
+     "tok": 0.7075483049683134,
+     "w": 0.39706958581605073,
+     "break_extra_w": 5.421561414205258e-06
+    },
+    "assistant_history": {
+     "tok": 0.15133822434681193,
+     "w": 0.1058872327136206,
+     "break_extra_w": 0.0006414230506043069
+    },
+    "tr_file_reads": {
+     "tok": 0.04685236883107541,
+     "w": 0.029610347523376126,
+     "break_extra_w": 0.00038031331968594445,
+     "first_tok": 0.009389736645720972,
+     "first_w": 0.01933113105176511,
+     "rebill_tok": 0.03746263218535445,
+     "rebill_w": 0.010279216471611022
+    },
+    "tr_other": {
+     "tok": 0.015978579520861638,
+     "w": 0.013581379157388197,
+     "break_extra_w": 5.850974149014516e-05,
+     "first_tok": 0.0038256122175759676,
+     "first_w": 0.009669392758148347,
+     "rebill_tok": 0.012152967303285668,
+     "rebill_w": 0.003911986399239852
+    },
+    "tr_test_ci": {
+     "tok": 0.037730973252465494,
+     "w": 0.03868635356110625,
+     "break_extra_w": 0.0,
+     "first_tok": 0.012298403089281307,
+     "first_w": 0.028865766590268405,
+     "rebill_tok": 0.025432570163184186,
+     "rebill_w": 0.009820586970837838
+    },
+    "output": {
+     "tok": 0.040551549080472045,
+     "w": 0.415165101228458
+    }
+   },
+   "n_breaks": 2,
+   "break_w": 0.0013804650750920138,
+   "avg_turn_share": 0.1455442474192474,
+   "n_sessions": 80,
+   "n_turns": 604,
+   "total_tokens": 3399081,
+   "handoff": null,
+   "cache_known": true,
+   "levers": [
+    {
+     "lever": "output-token reduction",
+     "tag": "turn reduction",
+     "w_ub": 0.415165101228458,
+     "tok_ub": 0.040551549080472045
+    },
+    {
+     "lever": "one-turn reduction (avg turn)",
+     "tag": "turn reduction",
+     "w_ub": 0.1455442474192474,
+     "tok_ub": 0.1455442474192474
+    },
+    {
+     "lever": "test/CI/build output handler",
+     "tag": "handler",
+     "w_ub": 0.03868635356110625,
+     "tok_ub": 0.037730973252465494
+    },
+    {
+     "lever": "file-read (outline) handler",
+     "tag": "handler",
+     "w_ub": 0.029610347523376126,
+     "tok_ub": 0.04685236883107541
+    },
+    {
+     "lever": "cache-prefix-break avoidance",
+     "tag": "cache discipline",
+     "w_ub": 0.0013804650750920138,
+     "tok_ub": 0.0
+    },
+    {
+     "lever": "JSON/log handler",
+     "tag": "handler",
+     "w_ub": 0.0,
+     "tok_ub": 0.0
+    },
+    {
+     "lever": "diff handler",
+     "tag": "handler",
+     "w_ub": 0.0,
+     "tok_ub": 0.0
+    },
+    {
+     "lever": "handoff payload",
+     "tag": "handoff contract",
+     "w_ub": null,
+     "tok_ub": null
+    }
+   ]
+  }
+ }
+}

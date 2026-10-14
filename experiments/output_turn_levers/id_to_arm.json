@@ -1,0 +1,402 @@
+{
+ "060ca656": {
+  "run_id": "otl-001-T1-A-r01",
+  "arm": "A",
+  "rep": 1
+ },
+ "f4b7ea5b": {
+  "run_id": "otl-001-T1-A-r02",
+  "arm": "A",
+  "rep": 2
+ },
+ "de31538a": {
+  "run_id": "otl-001-T1-A-r03",
+  "arm": "A",
+  "rep": 3
+ },
+ "a2e5d0d5": {
+  "run_id": "otl-001-T1-A-r04",
+  "arm": "A",
+  "rep": 4
+ },
+ "75ffecec": {
+  "run_id": "otl-001-T1-A-r05",
+  "arm": "A",
+  "rep": 5
+ },
+ "cf4d7b01": {
+  "run_id": "otl-001-T1-A-r06",
+  "arm": "A",
+  "rep": 6
+ },
+ "16706f8c": {
+  "run_id": "otl-001-T1-A-r07",
+  "arm": "A",
+  "rep": 7
+ },
+ "b9b780e2": {
+  "run_id": "otl-001-T1-A-r08",
+  "arm": "A",
+  "rep": 8
+ },
+ "4fa1446e": {
+  "run_id": "otl-001-T1-A-r09",
+  "arm": "A",
+  "rep": 9
+ },
+ "1ecda581": {
+  "run_id": "otl-001-T1-A-r10",
+  "arm": "A",
+  "rep": 10
+ },
+ "b6f8c8e1": {
+  "run_id": "otl-001-T1-A-r11",
+  "arm": "A",
+  "rep": 11
+ },
+ "96be39f7": {
+  "run_id": "otl-001-T1-A-r12",
+  "arm": "A",
+  "rep": 12
+ },
+ "79c5a850": {
+  "run_id": "otl-001-T1-A-r13",
+  "arm": "A",
+  "rep": 13
+ },
+ "4dffa996": {
+  "run_id": "otl-001-T1-A-r14",
+  "arm": "A",
+  "rep": 14
+ },
+ "ab98dd62": {
+  "run_id": "otl-001-T1-A-r15",
+  "arm": "A",
+  "rep": 15
+ },
+ "a7280a63": {
+  "run_id": "otl-001-T1-A-r16",
+  "arm": "A",
+  "rep": 16
+ },
+ "d10098eb": {
+  "run_id": "otl-001-T1-A-r17",
+  "arm": "A",
+  "rep": 17
+ },
+ "97c2c37b": {
+  "run_id": "otl-001-T1-A-r18",
+  "arm": "A",
+  "rep": 18
+ },
+ "b84e1a55": {
+  "run_id": "otl-001-T1-A-r19",
+  "arm": "A",
+  "rep": 19
+ },
+ "c03f9ed3": {
+  "run_id": "otl-001-T1-A-r20",
+  "arm": "A",
+  "rep": 20
+ },
+ "e2caa215": {
+  "run_id": "otl-001-T1-B-r01",
+  "arm": "B",
+  "rep": 1
+ },
+ "db2134d3": {
+  "run_id": "otl-001-T1-B-r02",
+  "arm": "B",
+  "rep": 2
+ },
+ "b5633633": {
+  "run_id": "otl-001-T1-B-r03",
+  "arm": "B",
+  "rep": 3
+ },
+ "c9515437": {
+  "run_id": "otl-001-T1-B-r04",
+  "arm": "B",
+  "rep": 4
+ },
+ "3da7490f": {
+  "run_id": "otl-001-T1-B-r05",
+  "arm": "B",
+  "rep": 5
+ },
+ "46863c64": {
+  "run_id": "otl-001-T1-B-r06",
+  "arm": "B",
+  "rep": 6
+ },
+ "b7a1241e": {
+  "run_id": "otl-001-T1-B-r07",
+  "arm": "B",
+  "rep": 7
+ },
+ "5125c3ff": {
+  "run_id": "otl-001-T1-B-r08",
+  "arm": "B",
+  "rep": 8
+ },
+ "77b12983": {
+  "run_id": "otl-001-T1-B-r09",
+  "arm": "B",
+  "rep": 9
+ },
+ "2dd649a7": {
+  "run_id": "otl-001-T1-B-r10",
+  "arm": "B",
+  "rep": 10
+ },
+ "45415cec": {
+  "run_id": "otl-001-T1-B-r11",
+  "arm": "B",
+  "rep": 11
+ },
+ "e34e3c86": {
+  "run_id": "otl-001-T1-B-r12",
+  "arm": "B",
+  "rep": 12
+ },
+ "afec2be7": {
+  "run_id": "otl-001-T1-B-r13",
+  "arm": "B",
+  "rep": 13
+ },
+ "f74a964e": {
+  "run_id": "otl-001-T1-B-r14",
+  "arm": "B",
+  "rep": 14
+ },
+ "4f55b249": {
+  "run_id": "otl-001-T1-B-r15",
+  "arm": "B",
+  "rep": 15
+ },
+ "06f33c25": {
+  "run_id": "otl-001-T1-B-r16",
+  "arm": "B",
+  "rep": 16
+ },
+ "ccca6666": {
+  "run_id": "otl-001-T1-B-r17",
+  "arm": "B",
+  "rep": 17
+ },
+ "78d0bdab": {
+  "run_id": "otl-001-T1-B-r18",
+  "arm": "B",
+  "rep": 18
+ },
+ "67703427": {
+  "run_id": "otl-001-T1-B-r19",
+  "arm": "B",
+  "rep": 19
+ },
+ "f9d297b9": {
+  "run_id": "otl-001-T1-B-r20",
+  "arm": "B",
+  "rep": 20
+ },
+ "dd32fdd3": {
+  "run_id": "otl-001-T1-C-r01",
+  "arm": "C",
+  "rep": 1
+ },
+ "3a6003c5": {
+  "run_id": "otl-001-T1-C-r02",
+  "arm": "C",
+  "rep": 2
+ },
+ "1a91361e": {
+  "run_id": "otl-001-T1-C-r03",
+  "arm": "C",
+  "rep": 3
+ },
+ "fda6c10e": {
+  "run_id": "otl-001-T1-C-r04",
+  "arm": "C",
+  "rep": 4
+ },
+ "ca9c885a": {
+  "run_id": "otl-001-T1-C-r05",
+  "arm": "C",
+  "rep": 5
+ },
+ "0f24528b": {
+  "run_id": "otl-001-T1-C-r06",
+  "arm": "C",
+  "rep": 6
+ },
+ "8ca8ea66": {
+  "run_id": "otl-001-T1-C-r07",
+  "arm": "C",
+  "rep": 7
+ },
+ "9bc1b2cf": {
+  "run_id": "otl-001-T1-C-r08",
+  "arm": "C",
+  "rep": 8
+ },
+ "79485f23": {
+  "run_id": "otl-001-T1-C-r09",
+  "arm": "C",
+  "rep": 9
+ },
+ "8b5a2515": {
+  "run_id": "otl-001-T1-C-r10",
+  "arm": "C",
+  "rep": 10
+ },
+ "bef2ca85": {
+  "run_id": "otl-001-T1-C-r11",
+  "arm": "C",
+  "rep": 11
+ },
+ "eacc9c80": {
+  "run_id": "otl-001-T1-C-r12",
+  "arm": "C",
+  "rep": 12
+ },
+ "8a0505f2": {
+  "run_id": "otl-001-T1-C-r13",
+  "arm": "C",
+  "rep": 13
+ },
+ "bfa275b1": {
+  "run_id": "otl-001-T1-C-r14",
+  "arm": "C",
+  "rep": 14
+ },
+ "bd3673a8": {
+  "run_id": "otl-001-T1-C-r15",
+  "arm": "C",
+  "rep": 15
+ },
+ "9b3863b9": {
+  "run_id": "otl-001-T1-C-r16",
+  "arm": "C",
+  "rep": 16
+ },
+ "7165e5b6": {
+  "run_id": "otl-001-T1-C-r17",
+  "arm": "C",
+  "rep": 17
+ },
+ "ab583a57": {
+  "run_id": "otl-001-T1-C-r18",
+  "arm": "C",
+  "rep": 18
+ },
+ "3d54c182": {
+  "run_id": "otl-001-T1-C-r19",
+  "arm": "C",
+  "rep": 19
+ },
+ "f8e987d9": {
+  "run_id": "otl-001-T1-C-r20",
+  "arm": "C",
+  "rep": 20
+ },
+ "58be830b": {
+  "run_id": "otl-001-T1-control-r01",
+  "arm": "control",
+  "rep": 1
+ },
+ "98a99531": {
+  "run_id": "otl-001-T1-control-r02",
+  "arm": "control",
+  "rep": 2
+ },
+ "3df5791e": {
+  "run_id": "otl-001-T1-control-r03",
+  "arm": "control",
+  "rep": 3
+ },
+ "8a4d4a55": {
+  "run_id": "otl-001-T1-control-r04",
+  "arm": "control",
+  "rep": 4
+ },
+ "cac1818c": {
+  "run_id": "otl-001-T1-control-r05",
+  "arm": "control",
+  "rep": 5
+ },
+ "2b547aff": {
+  "run_id": "otl-001-T1-control-r06",
+  "arm": "control",
+  "rep": 6
+ },
+ "c27803ad": {
+  "run_id": "otl-001-T1-control-r07",
+  "arm": "control",
+  "rep": 7
+ },
+ "47a89e04": {
+  "run_id": "otl-001-T1-control-r08",
+  "arm": "control",
+  "rep": 8
+ },
+ "e51197b5": {
+  "run_id": "otl-001-T1-control-r09",
+  "arm": "control",
+  "rep": 9
+ },
+ "798b9afe": {
+  "run_id": "otl-001-T1-control-r10",
+  "arm": "control",
+  "rep": 10
+ },
+ "ded58996": {
+  "run_id": "otl-001-T1-control-r11",
+  "arm": "control",
+  "rep": 11
+ },
+ "ce3ce0be": {
+  "run_id": "otl-001-T1-control-r12",
+  "arm": "control",
+  "rep": 12
+ },
+ "c1b00ded": {
+  "run_id": "otl-001-T1-control-r13",
+  "arm": "control",
+  "rep": 13
+ },
+ "fcf9bb51": {
+  "run_id": "otl-001-T1-control-r14",
+  "arm": "control",
+  "rep": 14
+ },
+ "07ee823f": {
+  "run_id": "otl-001-T1-control-r15",
+  "arm": "control",
+  "rep": 15
+ },
+ "7a6befa0": {
+  "run_id": "otl-001-T1-control-r16",
+  "arm": "control",
+  "rep": 16
+ },
+ "56b446b5": {
+  "run_id": "otl-001-T1-control-r17",
+  "arm": "control",
+  "rep": 17
+ },
+ "69de3287": {
+  "run_id": "otl-001-T1-control-r18",
+  "arm": "control",
+  "rep": 18
+ },
+ "f475b1c5": {
+  "run_id": "otl-001-T1-control-r19",
+  "arm": "control",
+  "rep": 19
+ },
+ "e6ece85b": {
+  "run_id": "otl-001-T1-control-r20",
+  "arm": "control",
+  "rep": 20
+ }
+}
