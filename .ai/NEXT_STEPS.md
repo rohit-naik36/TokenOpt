@@ -54,3 +54,8 @@ action PRs merged. README already documents `pip install tokenopt`.
 
 - Prompt versioning/registry, A/B testing framework, team config sharing,
   web UI for experimentation
+
+## Experiments follow-up (2026-10-14)
+
+- Owner approval needed before pushing `feat/n8n-workflow-benchmark` and `feat/output-turn-levers` (verify `git remote -v`; decide on the author email in commit metadata).
+- Optional reruns: Ollama `format: json` (open decision in the n8n pre-registration), prompt-caching cost model.

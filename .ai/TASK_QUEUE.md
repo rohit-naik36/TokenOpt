@@ -68,3 +68,8 @@ Tasks map to milestones in `.ai/IMPLEMENTATION_ROADMAP.md`.
 - M15 PyPI publish gate — **resolved 2026-08-02: v0.1.0 published**
   (Decision 26, user-approved)
 - Dependabot action-upgrade PRs — merged 2026-08-02 (commit `c914e1b`)
+
+## Experiments (2026-10-14)
+
+- DONE: n8n SDLC benchmark, blind judge, REPORT.
+- READY (needs owner approval): push the two experiment branches after confirming remote and author email.
