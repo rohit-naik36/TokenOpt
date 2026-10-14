@@ -111,3 +111,13 @@ Full run data is in `full_s2_runs.jsonl`, `full_s2_outputs.jsonl` and `run_s2_fu
 3. **Earlier key exposed and deleted.** The key `my_secret_key` was shared with Claude Code sessions. It was deleted.
 4. **Phase A key.** Phase A used a fresh key, `bench-s2`.
 5. **Pending.** Token-level reconciliation against the Usage page is still pending.
+
+## 17. Scoring deviations (recorded before phase A results were computed; no threshold or rule changed)
+Scoring of `full_s2_outputs.jsonl` and `full_s2_runs.jsonl` is done by `stage2_score.py`, which imports `score.py` and leaves its check functions unchanged. The Stage 1 scorer does not read Stage 2 rows directly, so the following are the only differences, each forced by the input format and not by the outputs:
+1. **Input adapter.** `score.py` reads Ollama-shaped rows (`prompt_eval_count`, `eval_count`, `done_reason`, `ticket_id`). Stage 2 rows are `kind: call` rows with a `usage` object and `stop_reason`, the run summary names the ticket `ticket`, and outputs are in a separate file keyed by `run_id` and `stage`. The adapter maps these onto the Stage 1 shape: prompt = input + cache creation + cache read; output = output tokens; `done_reason = length` iff `stop_reason = max_tokens` (section 12.4); `ticket_id` = `ticket`.
+2. **Weighted cost.** `score.py` defines W = prompt + 4 x output. The adapter uses section 6's W = (input + cache creation) x 1 + cache read x 0.1 + output x 4. For phase A (no cache terms) the two are identical.
+3. **Dollar endpoint.** Dollars are computed from usage at the prices in `stage2_prices.json` (section 8) and bootstrapped with the same method as W. `score.py` has no dollar endpoint.
+4. **Bootstrap code.** The cluster bootstrap in `score.py` is inside `main()` and cannot be called on its own. `stage2_score.py` reimplements the same algorithm (ticket clusters, all reps kept, 10,000 resamples, seed 20261015, ratio of sums). Before any Stage 2 result is reported, it must reproduce the published Stage 1 numbers from `runs.jsonl` (A W 0.90 [0.86, 0.93]; H W 0.71 [0.66, 0.75]; AH W 0.67 [0.64, 0.69]). If it does not reproduce them, the Stage 2 results are not reported.
+5. **Output shape (inspected before scoring, no rule change).** All 800 outputs are bare JSON with no markdown fence. 796 start with `{`. 773 end with `}` and 4 contain prose outside the braces, which the first-`{`-to-last-`}` parser handles. No repair is needed for Stage 2 outputs; the repaired-brace variant is still reported as secondary.
+
+Nothing in sections 1-16 is changed. Thresholds (95% quality gate, 0.90/1.10 materiality band, 0.5 format-uninformative rule) are as written in section 10.
