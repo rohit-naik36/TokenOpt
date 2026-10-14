@@ -51,7 +51,17 @@ def unpriced_units(prices, model, usage):
 
 
 def dollars(usage, prices, model):
-    """USD for one call, or None if any non-zero unit is unpriced. Prices are USD per 1M tokens."""
+    """USD for one call, or None if any non-zero unit is unpriced. Prices are USD per 1M tokens.
+
+    Raises ValueError when the model has a base-tier input limit and the request is over it: the over-limit rates
+    apply to the whole request and are not wired here, so pricing it at the base rate would be silently wrong.
+    """
+    limit = prices.get(model, {}).get("tier_limit_input_tokens")
+    if limit is not None:
+        total_in = usage["input_tokens"] + usage["cache_creation_input_tokens"] + usage["cache_read_input_tokens"]
+        if total_in > limit:
+            raise ValueError(f"{model}: {total_in} input tokens exceed the {limit} base-tier limit; "
+                             "over-limit pricing is not implemented, so this call is refused")
     if unpriced_units(prices, model, usage):
         return None
     total = 0.0

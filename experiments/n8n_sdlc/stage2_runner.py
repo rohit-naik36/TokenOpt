@@ -13,7 +13,9 @@ runs the five stages. Rows (JSONL, append-only):
   budget_stop    written when the dollar cap stops the runner
 Completed-stage usage of a failed attempt is billed, so it is logged as `call` rows with that attempt number.
 
-The API key is checked for presence only; it is never printed, written to a file, or put in the payload.
+The webhook requires the shared secret in the X-Bench-Token header, read from BENCH_WEBHOOK_TOKEN in this process
+and in the n8n container. A 401 stops the runner at once: no stage ran, so nothing was billed and nothing retries.
+The Anthropic API key lives only in the n8n container; this process never reads it.
 """
 import argparse
 import json
@@ -36,7 +38,8 @@ INPUT_BOUND = 20_000  # tokens per stage; only for the budget estimate before an
 
 def post(url, body, timeout):
     """Return (status, parsed_json, headers). HTTP error bodies are returned, not raised."""
-    req = urllib.request.Request(url, json.dumps(body).encode(), {"Content-Type": "application/json"})
+    headers = {"Content-Type": "application/json", "X-Bench-Token": os.environ.get("BENCH_WEBHOOK_TOKEN", "")}
+    req = urllib.request.Request(url, json.dumps(body).encode(), headers)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.status, json.loads(r.read()), dict(r.headers)
@@ -93,6 +96,10 @@ def attempt_once(a, payload, post_fn, log, run_id, attempt, tid, rep, arm):
         log({"kind": "attempt_error", **base, "error_type": type(e).__name__, "error": str(e)[:300],
              "usage_known": False})
         return False, [], None, None
+    if code == 401:
+        log({"kind": "attempt_error", **base, "http_status": 401, "error": "unauthorized", "usage_known": False})
+        raise SystemExit("webhook returned 401: BENCH_WEBHOOK_TOKEN here does not match the n8n container; "
+                         "no stage ran, nothing was billed")
     if code == 200 and isinstance(res, list):
         res = res[0]
     if code == 200 and isinstance(res, dict) and "stages" in res:
@@ -125,7 +132,9 @@ def main(argv=None, post_fn=post):
     ap.add_argument("--reps", type=int, default=1)
     ap.add_argument("--arms", default=",".join(ARMS))
     ap.add_argument("--max-tokens", type=int, default=2048)
-    ap.add_argument("--cap-usd", type=float, required=True, help="dollar cap; the runner stops before exceeding it")
+    ap.add_argument("--cap-usd", "--cap", dest="cap_usd", type=float, required=True,
+                    help="dollar cap at the prices file's rates; the runner stops before the next webhook call once "
+                         "spend plus the next run's estimate would exceed it")
     ap.add_argument("--webhook", default="http://localhost:5678/webhook/sdlc-bench-s2")
     ap.add_argument("--temperature", type=float, default=0.3, help="ollama only")
     ap.add_argument("--prices", type=Path, default=cost.PRICES_PATH)
@@ -141,12 +150,12 @@ def main(argv=None, post_fn=post):
 
     if a.cap_usd <= 0:
         sys.exit("cap must be > 0")
+    if not a.dry_run and not os.environ.get("BENCH_WEBHOOK_TOKEN"):
+        sys.exit("BENCH_WEBHOOK_TOKEN is not set in this process environment")
     prices = cost.load_prices(a.prices)
     if a.backend == "anthropic":
         if a.model not in prices:
             sys.exit(f"no prices entry for {a.model}; add it to {a.prices} first")
-        if not a.dry_run and not os.environ.get("ANTHROPIC_API_KEY"):
-            sys.exit("ANTHROPIC_API_KEY is not set in this process environment")
         needed = ["input", "output"] + (["cache_write_5m", "cache_read"] if a.caching == "fixed" else [])
         todo = [k for k in needed if not isinstance(prices[a.model].get(k), (int, float))]
         if todo:
@@ -161,6 +170,7 @@ def main(argv=None, post_fn=post):
         if r["kind"] in ("attempt_error", "run"):
             failed_attempts[r["run_id"]] = max(failed_attempts.get(r["run_id"], 0), r.get("attempt", r.get("attempts", 0)))
     spent = sum((r.get("cost_usd") or 0.0) for r in rows if r["kind"] == "call")
+    n_calls = sum(1 for r in rows if r["kind"] == "call")  # stage calls: one per Messages API request
     run_costs = [r["cost_usd"] for r in rows if r["kind"] == "run" and r.get("cost_usd") is not None]
     plan = [(tid, rep, arm) for tid in ids for rep in range(1, a.reps + 1) for arm in arms]
 
@@ -206,13 +216,23 @@ def main(argv=None, post_fn=post):
             ok, items, retry_after, http_code = attempt_once(a, payload, post_fn, log, run_id, attempt, tid, rep, arm)
             for s, st in items:
                 u = cost.as_usage(st.get("usage_raw"))
-                c = cost.dollars(u, prices, a.model) if a.backend == "anthropic" else None
+                tier_err = None
+                try:
+                    c = cost.dollars(u, prices, a.model) if a.backend == "anthropic" else None
+                except ValueError as e:
+                    c, tier_err = None, str(e)
                 log({"kind": "call", "run_id": run_id, "attempt": attempt, "arm": arm, "ticket": tid, "rep": rep,
                      "stage": s, "backend": a.backend, "model": a.model, "caching": a.caching,
                      "request_id": st.get("request_id"), "http_status": st.get("http_status"),
                      "stop_reason": st.get("stop_reason"), "latency_ms": st.get("latency_ms"),
                      "usage": u, "usage_raw": st.get("usage_raw"),
-                     "weighted_cost_census": round(cost.weighted(u), 4), "cost_usd": c})
+                     "weighted_cost_census": round(cost.weighted(u), 4), "cost_usd": c, "error": tier_err})
+                n_calls += 1
+                if n_calls % 20 == 0:
+                    print(f"running total: {n_calls} stage calls, spent ${spent + (c or 0.0):.4f} of cap "
+                          f"${a.cap_usd:.2f}", flush=True)
+                if tier_err:
+                    sys.exit(f"{run_id} {s}: {tier_err}; call logged with cost_usd null, runner stopped")
                 with a.outputs.open("a", encoding="utf-8", newline="\n") as f:
                     f.write(json.dumps({"run_id": run_id, "attempt": attempt, "stage": s,
                                         "output": st.get("output")}, ensure_ascii=False) + "\n")

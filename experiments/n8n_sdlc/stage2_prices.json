@@ -1,16 +1,33 @@
 {
-  "_units": "USD per 1,000,000 tokens. TODO = not set; a non-zero count in that unit makes the dollar cost of the call unknown and the runner refuses to start.",
-  "_source": "Input and output rates copied from the claude-api skill model table (cached 2026-10-06, first-party, prompts up to 100K tokens). Cache write and cache read rates are not in that table: TODO. Owner to review every value against the Console price list before any run is treated as final.",
+  "_units": "USD per 1,000,000 tokens. A non-zero count in a unit with no numeric price makes the dollar cost of the call unknown (cost_usd null) and the runner refuses to start a caching phase.",
+  "_source": "Anthropic pricing page, checked 2026-10-14, first-party. Prompts up to 100K input tokens (input + cache writes + cache reads) use the base rates. Haiku 5.5 prompts over 100K use over_100k and apply to the whole request; stage2_cost.dollars() raises on that case, so the base rate is never misapplied.",
   "claude-haiku-5-5": {
     "input": 0.10,
     "output": 0.50,
-    "cache_write_5m": "TODO",
-    "cache_read": "TODO"
+    "cache_write_5m": 0.125,
+    "cache_write_1h": 0.20,
+    "cache_read": 0.01,
+    "tier_limit_input_tokens": 100000,
+    "over_100k": {
+      "input": 0.50,
+      "output": 2.50,
+      "cache_write_5m": 0.625,
+      "cache_write_1h": 1.00,
+      "cache_read": 0.05
+    }
+  },
+  "claude-sonnet-5-5": {
+    "input": 2.00,
+    "output": 10.00,
+    "cache_write_5m": 2.50,
+    "cache_write_1h": 4.00,
+    "cache_read": 0.10
   },
   "claude-sonnet-4-6": {
     "input": 3.00,
     "output": 15.00,
-    "cache_write_5m": "TODO",
-    "cache_read": "TODO"
+    "cache_write_5m": 3.75,
+    "cache_write_1h": 6.00,
+    "cache_read": 0.30
   }
 }

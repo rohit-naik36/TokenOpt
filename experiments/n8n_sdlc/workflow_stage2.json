@@ -6,7 +6,7 @@
    "parameters": {
     "httpMethod": "POST",
     "path": "sdlc-bench-s2",
-    "responseMode": "lastNode",
+    "responseMode": "responseNode",
     "options": {}
    },
    "id": "00000000-0000-4000-8000-000000000001",
@@ -21,6 +21,70 @@
   },
   {
    "parameters": {
+    "jsCode": "const expected = $env.BENCH_WEBHOOK_TOKEN || '';\nconst headers = $input.first().json.headers || {};\nconst got = String(headers['x-bench-token'] || '');\nfunction sameBytes(a, b) {\n  if (!a || a.length !== b.length) return false;\n  let diff = 0;\n  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);\n  return diff === 0;\n}\nreturn [{ json: { auth_ok: sameBytes(expected, got) } }];"
+   },
+   "id": "00000000-0000-4000-8000-000000000005",
+   "name": "auth",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    250,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "strict",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "00000000-0000-4000-8000-000000000006",
+       "leftValue": "={{ $json.auth_ok }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "options": {}
+   },
+   "id": "00000000-0000-4000-8000-000000000007",
+   "name": "if_auth",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    500,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "respondWith": "json",
+    "responseBody": "={{ { message: 'unauthorized' } }}",
+    "options": {
+     "responseCode": 401
+    }
+   },
+   "id": "00000000-0000-4000-8000-000000000008",
+   "name": "respond_401",
+   "type": "n8n-nodes-base.respondToWebhook",
+   "typeVersion": 1.1,
+   "position": [
+    750,
+    300
+   ]
+  },
+  {
+   "parameters": {
     "jsCode": "const STAGES = ['triage', 'requirements', 'plan', 'review', 'release_note'];\nconst P = $('Webhook').first().json.body;\nfunction got(s) {\n  try { const j = $(s).first().json; return j && j.statusCode !== undefined ? j : null; } catch (e) { return null; }\n}\nfunction startOf(s) {\n  try { return $('guard_' + s).first().json.t_start; } catch (e) { return null; }\n}\nfunction textOf(j) {\n  const b = (j && j.body) || {};\n  if (P.backend === 'anthropic') return (b.content || []).filter(c => c.type === 'text').map(c => c.text).join('');\n  return b.message ? b.message.content : null;\n}\nfunction usageOf(j) {\n  const b = (j && j.body) || {};\n  if (P.backend === 'anthropic') return b.usage || null;\n  return { input_tokens: b.prompt_eval_count, output_tokens: b.eval_count };\n}\nfunction summary(k) {\n  const s = STAGES[k];\n  const j = got(s) || {};\n  const b = j.body || {};\n  const h = j.headers || {};\n  const start = startOf(s);\n  const end = (k + 1 < STAGES.length ? startOf(STAGES[k + 1]) : null) || Date.now();\n  return {\n    http_status: j.statusCode === undefined ? null : j.statusCode,\n    request_id: h['request-id'] || null,\n    stop_reason: b.stop_reason || b.done_reason || null,\n    usage_raw: usageOf(j),\n    output: textOf(j),\n    latency_ms: start ? end - start : null\n  };\n}\nfunction failure(k) {\n  const s = STAGES[k];\n  const j = got(s) || {};\n  const b = j.body || {};\n  const h = j.headers || {};\n  const completed = {};\n  for (let i = 0; i < k; i++) { const c = summary(i); delete c.output; completed[STAGES[i]] = c; }\n  const payload = {\n    failed_stage: s,\n    http_status: j.statusCode === undefined ? null : j.statusCode,\n    error_type: (b.error && b.error.type) || b.type || null,\n    error_message: String((b.error && b.error.message) || b.error || '').slice(0, 300),\n    request_id: h['request-id'] || null,\n    retry_after: h['retry-after'] || null,\n    completed: completed\n  };\n  return new Error('SDLC_STAGE_FAILED ' + JSON.stringify(payload));\n}\n\nreturn [{ json: { t_start: Date.now() } }];"
    },
    "id": "00000000-0000-4000-8000-000000000020",
@@ -28,7 +92,7 @@
    "type": "n8n-nodes-base.code",
    "typeVersion": 2,
    "position": [
-    250,
+    750,
     0
    ],
    "onError": "continueErrorOutput"
@@ -68,7 +132,7 @@
    "type": "n8n-nodes-base.httpRequest",
    "typeVersion": 4.2,
    "position": [
-    500,
+    1000,
     0
    ]
   },
@@ -81,7 +145,7 @@
    "type": "n8n-nodes-base.code",
    "typeVersion": 2,
    "position": [
-    750,
+    1250,
     0
    ],
    "onError": "continueErrorOutput"
@@ -121,7 +185,7 @@
    "type": "n8n-nodes-base.httpRequest",
    "typeVersion": 4.2,
    "position": [
-    1000,
+    1500,
     0
    ]
   },
@@ -134,7 +198,7 @@
    "type": "n8n-nodes-base.code",
    "typeVersion": 2,
    "position": [
-    1250,
+    1750,
     0
    ],
    "onError": "continueErrorOutput"
@@ -174,7 +238,7 @@
    "type": "n8n-nodes-base.httpRequest",
    "typeVersion": 4.2,
    "position": [
-    1500,
+    2000,
     0
    ]
   },
@@ -187,7 +251,7 @@
    "type": "n8n-nodes-base.code",
    "typeVersion": 2,
    "position": [
-    1750,
+    2250,
     0
    ],
    "onError": "continueErrorOutput"
@@ -227,7 +291,7 @@
    "type": "n8n-nodes-base.httpRequest",
    "typeVersion": 4.2,
    "position": [
-    2000,
+    2500,
     0
    ]
   },
@@ -240,7 +304,7 @@
    "type": "n8n-nodes-base.code",
    "typeVersion": 2,
    "position": [
-    2250,
+    2750,
     0
    ],
    "onError": "continueErrorOutput"
@@ -280,7 +344,7 @@
    "type": "n8n-nodes-base.httpRequest",
    "typeVersion": 4.2,
    "position": [
-    2500,
+    3000,
     0
    ]
   },
@@ -293,7 +357,7 @@
    "type": "n8n-nodes-base.code",
    "typeVersion": 2,
    "position": [
-    2750,
+    3250,
     0
    ],
    "onError": "continueErrorOutput"
@@ -307,8 +371,23 @@
    "type": "n8n-nodes-base.code",
    "typeVersion": 2,
    "position": [
-    3000,
+    3500,
     300
+   ]
+  },
+  {
+   "parameters": {
+    "respondWith": "json",
+    "responseBody": "={{ $json }}",
+    "options": {}
+   },
+   "id": "00000000-0000-4000-8000-000000000097",
+   "name": "respond_ok",
+   "type": "n8n-nodes-base.respondToWebhook",
+   "typeVersion": 1.1,
+   "position": [
+    3750,
+    0
    ]
   }
  ],
@@ -317,7 +396,36 @@
    "main": [
     [
      {
+      "node": "auth",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "auth": {
+   "main": [
+    [
+     {
+      "node": "if_auth",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "if_auth": {
+   "main": [
+    [
+     {
       "node": "guard_triage",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "respond_401",
       "type": "main",
       "index": 0
      }
@@ -471,10 +579,27 @@
   },
   "collect": {
    "main": [
-    [],
+    [
+     {
+      "node": "respond_ok",
+      "type": "main",
+      "index": 0
+     }
+    ],
     [
      {
       "node": "collect_fail",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "collect_fail": {
+   "main": [
+    [
+     {
+      "node": "respond_ok",
       "type": "main",
       "index": 0
      }

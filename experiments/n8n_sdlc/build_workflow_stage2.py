@@ -183,20 +183,68 @@ URL = (
 )
 API_KEY = "={{ $('Webhook').first().json.body.backend === 'anthropic' ? $env.ANTHROPIC_API_KEY : 'not-used' }}"
 
+# Shared-secret gate. The header is compared in constant time with BENCH_WEBHOOK_TOKEN from the n8n container
+# environment; an unset or empty token rejects every request (fail closed). A rejected request gets 401 from
+# respond_401 and never reaches a guard or an HTTP Request node, so no API call is made.
+AUTH = r"""
+const expected = $env.BENCH_WEBHOOK_TOKEN || '';
+const headers = $input.first().json.headers || {};
+const got = String(headers['x-bench-token'] || '');
+function sameBytes(a, b) {
+  if (!a || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+return [{ json: { auth_ok: sameBytes(expected, got) } }];
+"""
+
 nodes = [
     {
-        "parameters": {"httpMethod": "POST", "path": "sdlc-bench-s2", "responseMode": "lastNode", "options": {}},
+        "parameters": {"httpMethod": "POST", "path": "sdlc-bench-s2", "responseMode": "responseNode", "options": {}},
         "id": "00000000-0000-4000-8000-000000000001",
         "name": "Webhook",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2,
         "position": [0, 0],
         "webhookId": str(uuid.UUID("5d1c2b3a-0000-4000-8000-5d1c2b3a0002")),
-    }
+    },
+    {
+        "parameters": {"jsCode": AUTH.strip()},
+        "id": "00000000-0000-4000-8000-000000000005",
+        "name": "auth",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [250, 0],
+    },
+    {
+        "parameters": {"conditions": {
+            "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict", "version": 2},
+            "conditions": [{"id": "00000000-0000-4000-8000-000000000006", "leftValue": "={{ $json.auth_ok }}",
+                            "rightValue": "", "operator": {"type": "boolean", "operation": "true", "singleValue": True}}],
+            "combinator": "and"}, "options": {}},
+        "id": "00000000-0000-4000-8000-000000000007",
+        "name": "if_auth",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [500, 0],
+    },
+    {
+        "parameters": {"respondWith": "json", "responseBody": "={{ { message: 'unauthorized' } }}",
+                       "options": {"responseCode": 401}},
+        "id": "00000000-0000-4000-8000-000000000008",
+        "name": "respond_401",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [750, 300],
+    },
 ]
-connections = {}
-prev_node = "Webhook"
-x = 0
+connections = {
+    "Webhook": {"main": [[{"node": "auth", "type": "main", "index": 0}]]},
+    "auth": {"main": [[{"node": "if_auth", "type": "main", "index": 0}]]},
+}
+prev_node = "if_auth"
+x = 500
 
 
 def add(node):
@@ -275,9 +323,20 @@ nodes.append({
 for node in nodes:
     if node["name"].startswith("guard_") or node["name"] == "collect":
         node["onError"] = "continueErrorOutput"
+nodes.append({
+    "parameters": {"respondWith": "json", "responseBody": "={{ $json }}", "options": {}},
+    "id": "00000000-0000-4000-8000-000000000097",
+    "name": "respond_ok",
+    "type": "n8n-nodes-base.respondToWebhook",
+    "typeVersion": 1.1,
+    "position": [x + 500, 0],
+})
 for s in STAGES:
     connections[f"guard_{s}"]["main"].append([{"node": "collect_fail", "type": "main", "index": 0}])
-connections["collect"] = {"main": [[], [{"node": "collect_fail", "type": "main", "index": 0}]]}
+connections["if_auth"]["main"].append([{"node": "respond_401", "type": "main", "index": 0}])
+connections["collect"] = {"main": [[{"node": "respond_ok", "type": "main", "index": 0}],
+                                   [{"node": "collect_fail", "type": "main", "index": 0}]]}
+connections["collect_fail"] = {"main": [[{"node": "respond_ok", "type": "main", "index": 0}]]}
 
 wf = {
     "id": "sdlcbench0000002",

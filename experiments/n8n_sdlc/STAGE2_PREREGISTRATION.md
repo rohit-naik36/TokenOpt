@@ -95,3 +95,11 @@ docker restart n8n-sdlc
 python experiments/n8n_sdlc/stage2_runner.py --tickets T01 --reps 1 --caching none --cap-usd 0.50 --out pilot_s2_runs.jsonl
 ```
 (`-e ANTHROPIC_API_KEY` with no value copies the host variable; on Git Bash set `MSYS_NO_PATHCONV=1` for `docker exec` paths.)
+
+## 15. Addendum: prep changes before phase A (2026-10-14, appended; sections 1-14 are not edited)
+Made after the pilot's API calls and before any full-run call. Each change is a deviation from the text above.
+1. **Prices (supersedes section 8's TODO):** `stage2_prices.json` now holds the Anthropic pricing page values checked 2026-10-14 for `claude-haiku-5-5`, `claude-sonnet-5-5` and `claude-sonnet-4-6`, including cache writes (5-minute and 1-hour) and cache reads. Haiku prompts over 100,000 input tokens are priced at a higher tier. The runner does not price them: `stage2_cost.dollars()` raises, the call is logged with `cost_usd` null and the run stops. Re-pricing the pilot's 20 calls gives $0.009173, unchanged (the pilot has no cache tokens and every request is under 4,120 input tokens).
+2. **Webhook authentication (deviation from section 2's endpoint description):** the webhook requires header `X-Bench-Token`, compared in constant time with `$env.BENCH_WEBHOOK_TOKEN` in the n8n container (fail closed: an unset token rejects everything). A failed check returns HTTP 401 from a Respond node; no stage node runs, so no API call is made. The runner sends the header from `BENCH_WEBHOOK_TOKEN` in its own process and stops at once on 401 (no retry, nothing billed). The token is never written to a file.
+3. **Runner key handling:** the runner no longer checks `ANTHROPIC_API_KEY` in its own process. The key is used only inside the n8n container.
+4. **Spend cap:** `--cap` is an alias of `--cap-usd`. The runner stops before a webhook call whenever spend plus the next run's estimate would exceed the cap, which is at or before the cap being reached. It prints a running total every 20 stage calls.
+5. **Workflow change:** `workflow_stage2.json` was regenerated. The Webhook responds through Respond nodes instead of the last node, so the n8n container must re-import and re-publish the workflow (section 14) before any run.

@@ -5,9 +5,12 @@
 No test here reaches the network: the webhook is replaced by a fake post function.
 """
 import json
+import os
 import shutil
+import subprocess
 import sys
 import tempfile
+import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -16,9 +19,13 @@ sys.path.insert(0, str(HERE))
 import stage2_cost as cost  # noqa: E402
 import stage2_runner as runner  # noqa: E402
 
+# Offline dummy for the runner's presence check. Not the real secret; no request leaves this process.
+os.environ["BENCH_WEBHOOK_TOKEN"] = "offline-test-token"
+
 PRICES = {
     "claude-haiku-5-5": {"input": 0.10, "output": 0.50, "cache_write_5m": "TODO", "cache_read": "TODO"},
 }
+REAL_PRICES = cost.load_prices()
 USAGE = {"input_tokens": 1000, "output_tokens": 500, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0}
 
 
@@ -31,6 +38,95 @@ def test_dollars_unknown_when_cache_unpriced():
     u = dict(USAGE, cache_read_input_tokens=10)
     assert cost.unpriced_units(PRICES, "claude-haiku-5-5", u) == ["cache_read"]
     assert cost.dollars(u, PRICES, "claude-haiku-5-5") is None
+
+
+def test_over_100k_is_refused_not_priced_at_base_rate():
+    # Base tier applies up to and including 100,000 input tokens (input + cache writes + cache reads).
+    at_limit = dict(USAGE, input_tokens=99_000, cache_read_input_tokens=1_000)
+    assert cost.dollars(at_limit, REAL_PRICES, "claude-haiku-5-5") is not None
+    over = dict(USAGE, input_tokens=99_000, cache_read_input_tokens=1_001)
+    try:
+        cost.dollars(over, REAL_PRICES, "claude-haiku-5-5")
+        raise AssertionError("expected ValueError above 100k input tokens")
+    except ValueError as e:
+        assert "100000" in str(e)
+
+
+def test_runner_stops_on_over_100k_request():
+    d, out, outputs = _workdir()
+    try:
+        big = _ok_stage(0)
+        big["usage_raw"] = dict(USAGE, input_tokens=150_000)
+        response = {"stages": {s: dict(big) for s in runner.STAGES}}
+        calls = []
+
+        def fake(url, body, timeout):
+            calls.append(1)
+            return 200, response, {}
+
+        try:
+            runner.main(["--tickets", "T01", "--arms", "control", "--cap", "5", "--sleep-scale", "0",
+                         "--out", str(out), "--outputs", str(outputs)], post_fn=fake)
+            raise AssertionError("expected the runner to stop")
+        except SystemExit as e:
+            assert "base-tier" in str(e)
+        assert len(calls) == 1
+        first_call = [r for r in _rows(out) if r["kind"] == "call"][0]
+        assert first_call["cost_usd"] is None and "base-tier" in first_call["error"]
+    finally:
+        shutil.rmtree(d)
+
+
+def test_webhook_401_stops_without_retry_or_billing():
+    d, out, outputs = _workdir()
+    try:
+        calls = []
+
+        def fake(url, body, timeout):
+            calls.append(1)
+            return 401, {"message": "unauthorized"}, {}
+
+        try:
+            runner.main(["--tickets", "T01", "--arms", "control", "--cap", "5", "--sleep-scale", "0",
+                         "--out", str(out), "--outputs", str(outputs)], post_fn=fake)
+            raise AssertionError("expected SystemExit on 401")
+        except SystemExit as e:
+            assert "401" in str(e)
+        assert len(calls) == 1  # no retry
+        rows = _rows(out)
+        assert [r["kind"] for r in rows] == ["attempt_error"] and rows[0]["http_status"] == 401
+        assert rows[0]["usage_known"] is False
+    finally:
+        shutil.rmtree(d)
+
+
+def test_post_sends_token_header_from_env():
+    seen = {}
+
+    class FakeResp:
+        status = 200
+        headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def read(self):
+            return b"{}"
+
+    def fake_urlopen(req, timeout=None):
+        seen["token"] = req.get_header("X-bench-token")
+        return FakeResp()
+
+    real = urllib.request.urlopen
+    urllib.request.urlopen = fake_urlopen
+    try:
+        runner.post("http://x/webhook", {}, 5)
+    finally:
+        urllib.request.urlopen = real
+    assert seen["token"] == os.environ["BENCH_WEBHOOK_TOKEN"]
 
 
 def test_census_weight():
@@ -70,9 +166,7 @@ def _rows(path):
     return [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines()]
 
 
-def test_retry_logs_completed_stages_of_failed_attempt(monkeypatch=None):
-    import os
-    os.environ.setdefault("ANTHROPIC_API_KEY", "test-not-a-real-key")
+def test_retry_logs_completed_stages_of_failed_attempt():
     d, out, outputs = _workdir()
     try:
         completed = {s: _ok_stage(i) for i, s in enumerate(runner.STAGES[:3])}  # triage..plan done, review 529
@@ -146,6 +240,58 @@ def test_workflow_never_contains_key_and_anthropic_body_has_no_sampling():
         if expr:
             assert "temperature" in expr  # ollama branch keeps it
             assert "thinking: { type: 'disabled' }" in expr  # anthropic branch disables thinking explicitly
+
+
+AUTH_CASES = [
+    # (token in n8n env, header sent, expected auth_ok)
+    ("s3cret-value", "s3cret-value", True),
+    ("s3cret-value", "s3cret-valuX", False),
+    ("s3cret-value", "s3cret-value ", False),
+    ("s3cret-value", "", False),
+    ("", "", False),  # unset/empty token in the container rejects everything
+]
+
+
+def test_auth_gate_compares_token_and_fails_closed():
+    # Runs the real Code node from the built workflow in node, with $env and $input stubbed.
+    if shutil.which("node") is None:
+        print("skipped: node not on PATH")
+        return
+    wf = json.loads((HERE / "workflow_stage2.json").read_text(encoding="utf-8"))
+    code = next(n for n in wf["nodes"] if n["name"] == "auth")["parameters"]["jsCode"]
+    driver = ("const code = process.argv[1]; const cases = JSON.parse(process.argv[2]);"
+              "console.log(JSON.stringify(cases.map(c => new Function('$env', '$input', code)"
+              "({BENCH_WEBHOOK_TOKEN: c.env}, {first: () => ({json: {headers: c.headers}})})[0].json.auth_ok)));")
+    cases = [{"env": env, "headers": {"x-bench-token": got}} if got != "" else {"env": env, "headers": {}}
+             for env, got, _ in AUTH_CASES]
+    r = subprocess.run(["node", "-e", driver, code, json.dumps(cases)], capture_output=True, text=True, check=True)
+    assert json.loads(r.stdout) == [want for *_, want in AUTH_CASES]
+
+
+def test_auth_failure_only_reaches_401_and_api_nodes_only_after_auth():
+    wf = json.loads((HERE / "workflow_stage2.json").read_text(encoding="utf-8"))
+    conn = wf["connections"]
+    assert next(n for n in wf["nodes"] if n["name"] == "Webhook")["parameters"]["responseMode"] == "responseNode"
+    assert conn["Webhook"]["main"][0][0]["node"] == "auth"
+    assert conn["if_auth"]["main"][1] == [{"node": "respond_401", "type": "main", "index": 0}]
+    assert "respond_401" not in conn  # the 401 branch ends at the response
+
+    def reach(start):
+        seen, todo = set(), [start]
+        while todo:
+            name = todo.pop()
+            for i, outs in enumerate(conn.get(name, {}).get("main", [])):
+                if name == "if_auth" and i != 0:
+                    continue
+                for o in outs:
+                    if o["node"] not in seen:
+                        seen.add(o["node"])
+                        todo.append(o["node"])
+        return seen
+
+    http_nodes = {n["name"] for n in wf["nodes"] if n["type"] == "n8n-nodes-base.httpRequest"}
+    assert http_nodes <= reach("Webhook")  # every stage is reachable...
+    assert not (http_nodes & reach("respond_401"))  # ...and none is reachable from the 401 branch
 
 
 def test_stage1_workflow_untouched():
