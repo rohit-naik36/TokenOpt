@@ -1,0 +1,191 @@
+runs ok: 160; harness-error attempts: 0 ([])
+
+Per arm, per stage: mean prompt tokens / output tokens
+arm                    triage        requirements                plan              review        release_note   wall_s/run
+control          663/67              671/303             972/511            1836/475            1969/129        47
+A                710/62              713/278             989/392            1734/372            1763/116        40
+H                569/70              470/310             594/488            1212/381             374/81         42
+AH               616/59              517/319             594/390            1186/330             416/78         38
+
+Per arm: totals and quality (n = runs)
+arm      n  prompt  output  total      W  | stage-ok triag requi  plan revie relea | defect_hit  quality_pass (Wilson)  [repaired-brace variant]
+control 40    6112    1485   7597   12051  |             40    40     3    33    40 |    26/40  2/40 (0.01-0.17)  [21/40]
+A       40    5910    1219   7129   10788  |             40    39     5    34    39 |    25/40  3/40 (0.03-0.20)  [16/40]
+H       40    3218    1330   4548    8537  |             40    40    11    39    40 |    29/40  9/40 (0.12-0.38)  [28/40]
+AH      40    3329    1176   4505    8033  |             40    38    11    36    40 |    24/40  11/40 (0.16-0.43)  [23/40]
+
+Ratio arm/control, paired CLUSTER percentile bootstrap (resamples tickets, keeps their reps), 10000 resamples, seed 20261015
+A    n=40  output_tokens 0.82 [0.77, 0.87]  total_tokens 0.94 [0.91, 0.96]  W 0.90 [0.86, 0.93]  W_out1 0.94 [0.91, 0.96]  W_out8 0.87 [0.83, 0.91]
+      quality gate: format 0.10 vs 0.07 -> n/a (control format rate < 0.5); defect_hit 0.62 vs 0.65 -> PASS; composite 0.07 vs 0.05
+H    n=40  output_tokens 0.90 [0.81, 0.98]  total_tokens 0.60 [0.57, 0.62]  W 0.71 [0.66, 0.75]  W_out1 0.60 [0.57, 0.62]  W_out8 0.77 [0.71, 0.82]
+      quality gate: format 0.28 vs 0.07 -> n/a (control format rate < 0.5); defect_hit 0.72 vs 0.65 -> PASS; composite 0.23 vs 0.05
+AH   n=40  output_tokens 0.79 [0.74, 0.84]  total_tokens 0.59 [0.58, 0.61]  W 0.67 [0.64, 0.69]  W_out1 0.59 [0.58, 0.61]  W_out8 0.71 [0.67, 0.74]
+      quality gate: format 0.28 vs 0.07 -> n/a (control format rate < 0.5); defect_hit 0.60 vs 0.65 -> FAIL; composite 0.28 vs 0.05
+
+Quality failures (run, failed checks, defect_hit):
+  ('T01-control-r01', {'plan': ['not_json']}, True)
+  ('T01-A-r01', {'plan': ['not_json']}, True)
+  ('T01-H-r01', {'plan': ['not_json']}, True)
+  ('T01-AH-r01', {'plan': ['not_json']}, True)
+  ('T01-control-r02', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T01-A-r02', {'plan': ['not_json']}, True)
+  ('T01-AH-r02', {'plan': ['not_json']}, True)
+  ('T01-control-r03', {'plan': ['not_json']}, True)
+  ('T01-A-r03', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T01-H-r03', {'plan': ['not_json']}, False)
+  ('T01-AH-r03', {'plan': ['not_json']}, False)
+  ('T01-control-r04', {'plan': ['not_json']}, True)
+  ('T01-A-r04', {'plan': ['not_json']}, True)
+  ('T01-H-r04', {'plan': ['not_json']}, True)
+  ('T01-AH-r04', {'plan': ['not_json']}, False)
+  ('T01-control-r05', {'plan': ['not_json']}, True)
+  ('T01-A-r05', {'plan': ['not_json']}, True)
+  ('T01-AH-r05', {'plan': ['not_json']}, True)
+  ('T02-control-r01', {'plan': ['not_json']}, True)
+  ('T02-H-r01', {'plan': ['not_json']}, False)
+  ('T02-AH-r01', {'requirements': ['not_json', 'truncated'], 'plan': ['not_json']}, True)
+  ('T02-control-r02', {'plan': ['not_json']}, True)
+  ('T02-A-r02', {'plan': ['not_json']}, False)
+  ('T02-H-r02', {'plan': ['not_json']}, True)
+  ('T02-AH-r02', {'plan': ['not_json']}, True)
+  ('T02-control-r03', {'plan': ['not_json']}, True)
+  ('T02-A-r03', {'plan': ['not_json']}, True)
+  ('T02-control-r04', {'plan': ['not_json']}, True)
+  ('T02-A-r04', {'review': ['not_json', 'truncated']}, False)
+  ('T02-H-r04', {'plan': ['not_json']}, True)
+  ('T02-AH-r04', {'plan': ['not_json']}, False)
+  ('T02-control-r05', {'plan': ['not_json']}, True)
+  ('T02-A-r05', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T02-H-r05', {'plan': ['not_json']}, False)
+  ('T02-AH-r05', {'plan': ['not_json']}, True)
+  ('T03-A-r01', {'plan': ['not_json']}, True)
+  ('T03-AH-r01', {'requirements': ['not_json'], 'plan': ['not_json']}, False)
+  ('T03-control-r02', {'plan': ['not_json']}, True)
+  ('T03-A-r02', {'plan': ['not_json']}, False)
+  ('T03-H-r02', {}, False)
+  ('T03-control-r03', {'plan': ['not_json']}, True)
+  ('T03-A-r03', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T03-H-r03', {'plan': ['not_json']}, True)
+  ('T03-control-r04', {}, False)
+  ('T03-A-r04', {'plan': ['not_json']}, True)
+  ('T03-H-r04', {'plan': ['not_json']}, True)
+  ('T03-AH-r04', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T03-control-r05', {'plan': ['not_json']}, True)
+  ('T03-H-r05', {'plan': ['not_json']}, True)
+  ('T03-AH-r05', {'plan': ['not_json']}, True)
+  ('T04-control-r01', {'plan': ['not_json']}, False)
+  ('T04-A-r01', {'plan': ['not_json']}, False)
+  ('T04-H-r01', {'plan': ['not_json']}, True)
+  ('T04-control-r02', {'plan': ['not_json']}, True)
+  ('T04-A-r02', {}, False)
+  ('T04-AH-r02', {'plan': ['not_json']}, True)
+  ('T04-control-r03', {'plan': ['not_json']}, False)
+  ('T04-A-r03', {'plan': ['not_json']}, True)
+  ('T04-H-r03', {'plan': ['not_json']}, True)
+  ('T04-control-r04', {'plan': ['not_json']}, True)
+  ('T04-A-r04', {'plan': ['not_json'], 'release_note': ['not_json']}, True)
+  ('T04-H-r04', {'plan': ['not_json']}, True)
+  ('T04-control-r05', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T04-A-r05', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T04-H-r05', {'plan': ['not_json']}, True)
+  ('T05-control-r01', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T05-A-r01', {'plan': ['not_json']}, True)
+  ('T05-control-r02', {'plan': ['not_json']}, True)
+  ('T05-A-r02', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T05-H-r02', {'plan': ['not_json']}, False)
+  ('T05-AH-r02', {'plan': ['not_json']}, False)
+  ('T05-control-r03', {'plan': ['not_json']}, True)
+  ('T05-A-r03', {'plan': ['not_json']}, False)
+  ('T05-H-r03', {'plan': ['not_json']}, False)
+  ('T05-AH-r03', {'plan': ['not_json']}, False)
+  ('T05-control-r04', {'plan': ['not_json']}, True)
+  ('T05-A-r04', {'requirements': ['not_json'], 'plan': ['not_json']}, False)
+  ('T05-H-r04', {'plan': ['not_json']}, False)
+  ('T05-AH-r04', {'plan': ['not_json']}, False)
+  ('T05-control-r05', {'plan': ['not_json']}, True)
+  ('T05-H-r05', {'plan': ['not_json']}, False)
+  ('T06-control-r01', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T06-A-r01', {'plan': ['not_json']}, True)
+  ('T06-AH-r01', {'plan': ['not_json']}, False)
+  ('T06-control-r02', {'plan': ['not_json']}, True)
+  ('T06-A-r02', {'plan': ['not_json']}, True)
+  ('T06-H-r02', {'plan': ['not_json']}, True)
+  ('T06-AH-r02', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T06-control-r03', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T06-A-r03', {'plan': ['not_json']}, True)
+  ('T06-H-r03', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T06-control-r04', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T06-A-r04', {'plan': ['not_json']}, True)
+  ('T06-H-r04', {'plan': ['not_json']}, True)
+  ('T06-AH-r04', {'plan': ['not_json']}, True)
+  ('T06-control-r05', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T06-A-r05', {'plan': ['not_json']}, True)
+  ('T06-H-r05', {'plan': ['not_json']}, True)
+  ('T06-AH-r05', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T07-control-r01', {'plan': ['not_json']}, True)
+  ('T07-A-r01', {'plan': ['not_json']}, True)
+  ('T07-H-r01', {'plan': ['not_json']}, True)
+  ('T07-AH-r01', {'plan': ['not_json']}, True)
+  ('T07-control-r02', {'plan': ['not_json']}, True)
+  ('T07-A-r02', {'plan': ['not_json']}, True)
+  ('T07-H-r02', {'plan': ['not_json']}, True)
+  ('T07-AH-r02', {'plan': ['not_json']}, True)
+  ('T07-A-r03', {'plan': ['not_json']}, True)
+  ('T07-H-r03', {'plan': ['not_json']}, True)
+  ('T07-AH-r03', {'plan': ['not_json']}, True)
+  ('T07-control-r04', {'plan': ['not_json']}, True)
+  ('T07-A-r04', {'plan': ['not_json']}, True)
+  ('T07-H-r04', {'plan': ['not_json']}, True)
+  ('T07-control-r05', {'plan': ['not_json']}, True)
+  ('T07-A-r05', {'plan': ['not_json']}, True)
+  ('T07-H-r05', {'plan': ['not_json']}, True)
+  ('T07-AH-r05', {'plan': ['not_json']}, True)
+  ('T08-control-r01', {'plan': ['not_json']}, True)
+  ('T08-A-r01', {'plan': ['not_json']}, True)
+  ('T08-AH-r01', {'plan': ['not_json']}, False)
+  ('T08-control-r02', {'plan': ['not_json']}, False)
+  ('T08-A-r02', {'plan': ['not_json']}, False)
+  ('T08-H-r02', {'plan': ['not_json']}, True)
+  ('T08-AH-r02', {'plan': ['not_json']}, False)
+  ('T08-control-r03', {'plan': ['not_json']}, False)
+  ('T08-A-r03', {'plan': ['not_json']}, True)
+  ('T08-AH-r03', {'plan': ['not_json']}, False)
+  ('T08-control-r04', {'plan': ['not_json']}, False)
+  ('T08-A-r04', {'plan': ['not_json']}, False)
+  ('T08-H-r04', {'plan': ['not_json']}, False)
+  ('T08-AH-r04', {'plan': ['not_json'], 'review': ['not_json']}, False)
+  ('T08-control-r05', {'plan': ['not_json']}, False)
+  ('T08-A-r05', {'plan': ['not_json']}, False)
+  ('T08-H-r05', {}, False)
+  ('T08-AH-r05', {'plan': ['not_json']}, False)
+
+
+=== Blind judge (secondary) - appended after score.py output; judge_analysis.py ===
+Judge scores written to judge_scores.jsonl before blind_map.json was opened. Judge = Claude Code single pass (non-deterministic), rubric judge_rubric.md.
+Caveats: (1) for most packets the judge read only the stage outputs, not the ticket/diff sections; (2) terse A / short H handoff style may reveal the arm.
+
+Blind judge (secondary), n=40 per arm, scores 0-10 (requirements 0-3, plan 0-2, review 0-3, release_note 0-2)
+arm         requirements          plan        review  release_note         total
+control             2.08          1.32          1.52          1.57          6.50
+A                   1.95          1.40          1.43          1.65          6.42
+H                   1.93          1.15          1.50          1.68          6.25
+AH                  1.93          1.07          1.32          1.60          5.92
+
+Ratio arm/control of mean judge score, paired CLUSTER percentile bootstrap, 10000 resamples, seed 20261015
+A    n=40  total 0.99 [0.91, 1.10]  review 0.93 [0.71, 1.22]  -> secondary gate (mean >= 95% of control): PASS
+H    n=40  total 0.96 [0.87, 1.07]  review 0.98 [0.66, 1.42]  -> secondary gate (mean >= 95% of control): PASS
+AH   n=40  total 0.91 [0.79, 1.05]  review 0.87 [0.61, 1.18]  -> secondary gate (mean >= 95% of control): FAIL
+
+Sanity: mean judge review score by deterministic defect_hit (all arms)
+  defect_hit=True: n=104 mean review 1.90
+  defect_hit=False: n=56 mean review 0.59
+
+Mean judge total by ticket (all arms)
+  T01: 6.65
+  T02: 6.25
+  T03: 5.60
+  T04: 8.05
+  T05: 6.15
+  T06: 6.75
+  T07: 6.55
+  T08: 4.20
