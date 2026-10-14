@@ -103,3 +103,11 @@ Made after the pilot's API calls and before any full-run call. Each change is a 
 3. **Runner key handling:** the runner no longer checks `ANTHROPIC_API_KEY` in its own process. The key is used only inside the n8n container.
 4. **Spend cap:** `--cap` is an alias of `--cap-usd`. The runner stops before a webhook call whenever spend plus the next run's estimate would exceed the cap, which is at or before the cap being reached. It prints a running total every 20 stage calls.
 5. **Workflow change:** `workflow_stage2.json` was regenerated. The Webhook responds through Respond nodes instead of the last node, so the n8n container must re-import and re-publish the workflow (section 14) before any run.
+
+## 16. Phase A record (2026-10-14, appended; sections 1-15 are not edited)
+Full run data is in `full_s2_runs.jsonl`, `full_s2_outputs.jsonl` and `run_s2_full.log`.
+1. **Console reconciliation deferred.** The Anthropic Console Usage page was not checked token by token for phase A.
+2. **Dollar total reconciled by balance difference.** Credits went from $2.07 to $1.71 (difference $0.36). Monthly spend went from $2.93 to $3.30 (difference $0.37). The runner log total is $0.365.
+3. **Earlier key exposed and deleted.** The key `my_secret_key` was shared with Claude Code sessions. It was deleted.
+4. **Phase A key.** Phase A used a fresh key, `bench-s2`.
+5. **Pending.** Token-level reconciliation against the Usage page is still pending.
