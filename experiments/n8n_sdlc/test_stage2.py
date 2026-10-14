@@ -140,6 +140,7 @@ def test_workflow_never_contains_key_and_anthropic_body_has_no_sampling():
     text = json.dumps(wf)
     assert "$env.ANTHROPIC_API_KEY" in text
     assert "sk-ant-" not in text
+    assert "body.anthropic_base_url" not in text and "body.ollama_base_url" not in text
     for n in wf["nodes"]:
         expr = n.get("parameters", {}).get("jsonBody", "")
         if expr:

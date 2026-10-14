@@ -174,10 +174,12 @@ return [{ json: { run_id: P.run_id, ticket_id: P.ticket.id, arm: P.arm, backend:
   caching: P.caching, stages: stages } }];
 """
 
+# Endpoints are fixed by the operator, never by the webhook body: a body-chosen host would receive the API key
+# header. Overrides come from the n8n container environment only (set with docker run -e, not in the payload).
 URL = (
     "={{ $('Webhook').first().json.body.backend === 'anthropic' "
-    "? ($('Webhook').first().json.body.anthropic_base_url || 'https://api.anthropic.com').replace(/\\/$/, '') + '/v1/messages' "
-    ": $('Webhook').first().json.body.ollama_base_url.replace(/\\/$/, '') + '/api/chat' }}"
+    "? ($env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\\/$/, '') + '/v1/messages' "
+    ": ($env.OLLAMA_BASE_URL || 'http://host.docker.internal:11434').replace(/\\/$/, '') + '/api/chat' }}"
 )
 API_KEY = "={{ $('Webhook').first().json.body.backend === 'anthropic' ? $env.ANTHROPIC_API_KEY : 'not-used' }}"
 

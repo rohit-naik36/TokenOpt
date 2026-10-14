@@ -127,8 +127,6 @@ def main(argv=None, post_fn=post):
     ap.add_argument("--max-tokens", type=int, default=2048)
     ap.add_argument("--cap-usd", type=float, required=True, help="dollar cap; the runner stops before exceeding it")
     ap.add_argument("--webhook", default="http://localhost:5678/webhook/sdlc-bench-s2")
-    ap.add_argument("--anthropic-base-url", default=None, help="test-only override (fake server)")
-    ap.add_argument("--ollama-base-url", default="http://host.docker.internal:11434", help="as seen from n8n")
     ap.add_argument("--temperature", type=float, default=0.3, help="ollama only")
     ap.add_argument("--prices", type=Path, default=cost.PRICES_PATH)
     ap.add_argument("--out", type=Path, default=HERE / "runs_stage2.jsonl")
@@ -193,11 +191,8 @@ def main(argv=None, post_fn=post):
         diff = ticket.pop("diff")
         payload = {"run_id": run_id, "arm": arm, "backend": a.backend, "model": a.model, "caching": a.caching,
                    "max_tokens": a.max_tokens, "ticket": ticket, "diff": diff}
-        if a.backend == "anthropic":
-            if a.anthropic_base_url:
-                payload["anthropic_base_url"] = a.anthropic_base_url
-        else:
-            payload.update({"ollama_base_url": a.ollama_base_url, "temperature": a.temperature, "seed": rep})
+        if a.backend == "ollama":
+            payload.update({"temperature": a.temperature, "seed": rep})
 
         est = max(run_costs) if run_costs else (
             worst_case_run_usd(prices, a.model, a.max_tokens) if a.backend == "anthropic" else 0.0)

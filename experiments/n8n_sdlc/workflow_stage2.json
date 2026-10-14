@@ -36,7 +36,7 @@
   {
    "parameters": {
     "method": "POST",
-    "url": "={{ $('Webhook').first().json.body.backend === 'anthropic' ? ($('Webhook').first().json.body.anthropic_base_url || 'https://api.anthropic.com').replace(/\\/$/, '') + '/v1/messages' : $('Webhook').first().json.body.ollama_base_url.replace(/\\/$/, '') + '/api/chat' }}",
+    "url": "={{ $('Webhook').first().json.body.backend === 'anthropic' ? ($env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\\/$/, '') + '/v1/messages' : ($env.OLLAMA_BASE_URL || 'http://host.docker.internal:11434').replace(/\\/$/, '') + '/api/chat' }}",
     "sendHeaders": true,
     "headerParameters": {
      "parameters": [
@@ -89,7 +89,7 @@
   {
    "parameters": {
     "method": "POST",
-    "url": "={{ $('Webhook').first().json.body.backend === 'anthropic' ? ($('Webhook').first().json.body.anthropic_base_url || 'https://api.anthropic.com').replace(/\\/$/, '') + '/v1/messages' : $('Webhook').first().json.body.ollama_base_url.replace(/\\/$/, '') + '/api/chat' }}",
+    "url": "={{ $('Webhook').first().json.body.backend === 'anthropic' ? ($env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\\/$/, '') + '/v1/messages' : ($env.OLLAMA_BASE_URL || 'http://host.docker.internal:11434').replace(/\\/$/, '') + '/api/chat' }}",
     "sendHeaders": true,
     "headerParameters": {
      "parameters": [
@@ -142,7 +142,7 @@
   {
    "parameters": {
     "method": "POST",
-    "url": "={{ $('Webhook').first().json.body.backend === 'anthropic' ? ($('Webhook').first().json.body.anthropic_base_url || 'https://api.anthropic.com').replace(/\\/$/, '') + '/v1/messages' : $('Webhook').first().json.body.ollama_base_url.replace(/\\/$/, '') + '/api/chat' }}",
+    "url": "={{ $('Webhook').first().json.body.backend === 'anthropic' ? ($env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\\/$/, '') + '/v1/messages' : ($env.OLLAMA_BASE_URL || 'http://host.docker.internal:11434').replace(/\\/$/, '') + '/api/chat' }}",
     "sendHeaders": true,
     "headerParameters": {
      "parameters": [
@@ -195,7 +195,7 @@
   {
    "parameters": {
     "method": "POST",
-    "url": "={{ $('Webhook').first().json.body.backend === 'anthropic' ? ($('Webhook').first().json.body.anthropic_base_url || 'https://api.anthropic.com').replace(/\\/$/, '') + '/v1/messages' : $('Webhook').first().json.body.ollama_base_url.replace(/\\/$/, '') + '/api/chat' }}",
+    "url": "={{ $('Webhook').first().json.body.backend === 'anthropic' ? ($env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\\/$/, '') + '/v1/messages' : ($env.OLLAMA_BASE_URL || 'http://host.docker.internal:11434').replace(/\\/$/, '') + '/api/chat' }}",
     "sendHeaders": true,
     "headerParameters": {
      "parameters": [
@@ -248,7 +248,7 @@
   {
    "parameters": {
     "method": "POST",
-    "url": "={{ $('Webhook').first().json.body.backend === 'anthropic' ? ($('Webhook').first().json.body.anthropic_base_url || 'https://api.anthropic.com').replace(/\\/$/, '') + '/v1/messages' : $('Webhook').first().json.body.ollama_base_url.replace(/\\/$/, '') + '/api/chat' }}",
+    "url": "={{ $('Webhook').first().json.body.backend === 'anthropic' ? ($env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\\/$/, '') + '/v1/messages' : ($env.OLLAMA_BASE_URL || 'http://host.docker.internal:11434').replace(/\\/$/, '') + '/api/chat' }}",
     "sendHeaders": true,
     "headerParameters": {
      "parameters": [
