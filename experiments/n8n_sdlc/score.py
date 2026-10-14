@@ -209,7 +209,7 @@ def main():
         print(f"{arm:<7}{n:>3}{mean('prompt_tokens'):>8.0f}{mean('output_tokens'):>8.0f}{mean('total_tokens'):>7.0f}{mean('W'):>8.0f}  |          {ok} | {sum(x['defect_hit'] for x in g):>5}/{n}  {qp}/{n} ({lo:.2f}-{hi:.2f})  [{sum(x['quality_pass_repaired'] for x in g)}/{n}]")
     ctl = {(s["ticket_id"], s["rep"]): s for s in by["control"]}
     if len(ctl) >= 2:
-        print(f"\nRatio arm/control, paired percentile bootstrap over (ticket, rep) units, {B} resamples, seed {SEED}")
+        print(f"\nRatio arm/control, paired CLUSTER percentile bootstrap (resamples tickets, keeps their reps), {B} resamples, seed {SEED}")
         for arm in ARMS[1:]:
             pairs = [(ctl[(s["ticket_id"], s["rep"])], s) for s in by[arm] if (s["ticket_id"], s["rep"]) in ctl]
             if len(pairs) < 2:
@@ -217,8 +217,12 @@ def main():
             line = f"{arm:<5}n={len(pairs)}"
             for k in ("output_tokens", "total_tokens", "W", "W_out1", "W_out8"):
                 rng = random.Random(SEED); v = []
-                for _ in range(B):
-                    smp = [pairs[rng.randrange(len(pairs))] for _ in pairs]
+                tix = defaultdict(list)
+                for p in pairs:
+                    tix[p[0]["ticket_id"]].append(p)
+                keys = sorted(tix)
+                for _ in range(B):  # cluster bootstrap: resample TICKETS, keep all reps of each drawn ticket
+                    smp = [p for t in (keys[rng.randrange(len(keys))] for _ in keys) for p in tix[t]]
                     v.append(sum(p[1][k] for p in smp) / sum(p[0][k] for p in smp))
                 r = sum(p[1][k] for p in pairs) / sum(p[0][k] for p in pairs)
                 line += f"  {k} {r:.2f} [{pct(v, .025):.2f}, {pct(v, .975):.2f}]"
