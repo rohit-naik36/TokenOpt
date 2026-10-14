@@ -1,0 +1,19 @@
+{
+ "id": "T06",
+ "title": "Look up active users by email (exclude soft-deleted)",
+ "type": "feature",
+ "priority_hint": "Medium",
+ "reporter": "backend-dev",
+ "labels": [
+  "api",
+  "users",
+  "signup"
+ ],
+ "description": "Soft-deleted users (those with `deleted_at` set) are still being returned by the admin user search and are triggering duplicate-account warnings on signup. Add `find_active_by_email(email)` to the user repository that returns the user whose email matches (case-insensitive) and whose `deleted_at` is NULL, or None. Use it from the signup duplicate check.",
+ "environment": "Python 3.12, psycopg 3 (raw SQL, no ORM in this module), PostgreSQL 15. Service: api. The email comes from an unauthenticated signup form.",
+ "comments": [
+  "backend-dev: Emails are stored lowercased on write already, but legacy rows may be mixed case.",
+  "pm: Signup duplicate check must not match deleted accounts, otherwise people cannot re-register."
+ ],
+ "diff": "diff --git a/api/repositories/users.py b/api/repositories/users.py\n--- a/api/repositories/users.py\n+++ b/api/repositories/users.py\n@@ -10,6 +10,18 @@ class UserRepository:\n     def __init__(self, conn):\n         self.conn = conn\n\n+    def find_active_by_email(self, email: str):\n+        query = (\n+            \"SELECT id, email, created_at FROM users \"\n+            f\"WHERE lower(email) = lower('{email}') AND deleted_at IS NULL\"\n+        )\n+        with self.conn.cursor() as cur:\n+            cur.execute(query)\n+            row = cur.fetchone()\n+        return row\n+\ndiff --git a/api/routes/signup.py b/api/routes/signup.py\n--- a/api/routes/signup.py\n+++ b/api/routes/signup.py\n@@ -22,7 +22,7 @@ def signup(form: SignupForm, repo: UserRepository = Depends(get_repo)):\n-    if repo.find_by_email(form.email):\n+    if repo.find_active_by_email(form.email):\n         raise HTTPException(status_code=409, detail=\"email already registered\")\n"
+}

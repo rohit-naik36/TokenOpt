@@ -1,0 +1,19 @@
+{
+ "id": "T07",
+ "title": "Cache product price lookups for 5 minutes",
+ "type": "chore",
+ "priority_hint": "Low",
+ "reporter": "backend-dev",
+ "labels": [
+  "api",
+  "pricing",
+  "performance"
+ ],
+ "description": "`get_price(sku, currency)` hits the pricing table on every cart render and shows up as the top query in slow-log. Prices change at most a few times a day. Add an in-process cache with a 5-minute TTL.\n\nConstraints: cached entries are per SKU and per currency (the same SKU is sold in EUR, USD and INR at different prices, not converted). Expired entries must be refetched. No new dependencies.",
+ "environment": "Python 3.12. Service: api. Single-process gunicorn workers (4 per pod), so per-process caching is acceptable for now.",
+ "comments": [
+  "backend-dev: Plain dict with timestamps is enough, no need for cachetools.",
+  "pm: Pricing team confirms stale prices up to 5 minutes are acceptable."
+ ],
+ "diff": "diff --git a/api/pricing.py b/api/pricing.py\n--- a/api/pricing.py\n+++ b/api/pricing.py\n@@ -1,14 +1,28 @@\n+import time\n+\n from api.db import fetch_price_row\n\n+TTL_SECONDS = 300\n+_cache: dict[str, tuple[float, float]] = {}\n+\n\n def get_price(sku: str, currency: str) -> float:\n-    row = fetch_price_row(sku, currency)\n-    return float(row[\"amount\"])\n+    now = time.monotonic()\n+    hit = _cache.get(sku)\n+    if hit is not None and now - hit[0] < TTL_SECONDS:\n+        return hit[1]\n+\n+    row = fetch_price_row(sku, currency)\n+    amount = float(row[\"amount\"])\n+    _cache[sku] = (now, amount)\n+    return amount\n"
+}

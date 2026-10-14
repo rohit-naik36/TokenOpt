@@ -1,0 +1,19 @@
+{
+ "id": "T05",
+ "title": "Password reset tokens must expire after 30 minutes",
+ "type": "security",
+ "priority_hint": "Critical",
+ "reporter": "security-eng",
+ "labels": [
+  "auth",
+  "security",
+  "pentest"
+ ],
+ "description": "Pen-test finding PT-2026-014: password reset links remain valid indefinitely. An attacker with access to an old email can take over an account months later. Reset tokens must be valid for 30 minutes from issue and single use.\n\nBehaviour: `POST /auth/reset/confirm` with an expired or already-used token returns HTTP 400 with `{\"error\": \"invalid_or_expired_token\"}` (same message in both cases so we do not leak which). A valid token sets the new password and is invalidated immediately.",
+ "environment": "Node 20, TypeScript, Express, PostgreSQL via Prisma. Service: auth. Tokens are stored hashed with `expiresAt` (timestamp) and `usedAt` (nullable).",
+ "comments": [
+  "security-eng: Must ship this sprint, customer audit on the 14th.",
+  "backend-dev: Token lookup by hash already exists; I only need the expiry check and to set usedAt."
+ ],
+ "diff": "diff --git a/auth/src/reset.ts b/auth/src/reset.ts\n--- a/auth/src/reset.ts\n+++ b/auth/src/reset.ts\n@@ -18,16 +18,24 @@ export async function confirmReset(rawToken: string, newPassword: string) {\n   const tokenHash = sha256(rawToken);\n   const token = await prisma.resetToken.findUnique({ where: { tokenHash } });\n\n-  if (!token) {\n-    throw new HttpError(400, \"invalid_or_expired_token\");\n-  }\n+  if (!token || token.usedAt !== null) {\n+    throw new HttpError(400, \"invalid_or_expired_token\");\n+  }\n+\n+  if (token.expiresAt.getTime() > Date.now()) {\n+    throw new HttpError(400, \"invalid_or_expired_token\");\n+  }\n\n-  await prisma.user.update({\n-    where: { id: token.userId },\n-    data: { passwordHash: await hashPassword(newPassword) },\n-  });\n+  await prisma.$transaction([\n+    prisma.user.update({\n+      where: { id: token.userId },\n+      data: { passwordHash: await hashPassword(newPassword) },\n+    }),\n+    prisma.resetToken.update({ where: { tokenHash }, data: { usedAt: new Date() } }),\n+  ]);\n }\n"
+}

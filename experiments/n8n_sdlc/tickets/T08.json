@@ -1,0 +1,20 @@
+{
+ "id": "T08",
+ "title": "Send weekly digest at 09:00 in the recipient's local time",
+ "type": "feature",
+ "priority_hint": "Medium",
+ "reporter": "growth-pm",
+ "labels": [
+  "notifications",
+  "digest",
+  "timezones"
+ ],
+ "description": "The weekly digest email currently goes out at 09:00 UTC for everyone, which lands at 02:00 for our West-coast customers and 14:30 for India. Growth wants it at 09:00 in each recipient's own time zone (IANA name stored in `users.timezone`, e.g. `America/Los_Angeles`).\n\nAdd `next_digest_time(user, now_utc)` returning the next 09:00 local time strictly after `now_utc`, as an aware UTC datetime. Must be correct across daylight saving changes. Users with no time zone fall back to `UTC`.",
+ "environment": "Python 3.12 (zoneinfo available). Service: notifications. Scheduler calls this function hourly.",
+ "comments": [
+  "growth-pm: Open rates are 3x higher when mail arrives at start of the working day.",
+  "backend-dev: I will use zoneinfo, no pytz.",
+  "qa: Please include a DST case in the tests."
+ ],
+ "diff": "diff --git a/notifications/schedule.py b/notifications/schedule.py\n--- a/notifications/schedule.py\n+++ b/notifications/schedule.py\n@@ -1,6 +1,28 @@\n-from datetime import datetime\n+from datetime import datetime, timedelta, timezone\n+from zoneinfo import ZoneInfo\n\n DIGEST_HOUR = 9\n\n+\n+def next_digest_time(user, now_utc: datetime) -> datetime:\n+    tz = ZoneInfo(user.timezone or \"UTC\")\n+    local_now = now_utc.replace(tzinfo=tz)\n+    target = local_now.replace(hour=DIGEST_HOUR, minute=0, second=0, microsecond=0)\n+    if target <= local_now:\n+        target += timedelta(days=1)\n+    return target.astimezone(timezone.utc)\n"
+}

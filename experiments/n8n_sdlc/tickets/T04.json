@@ -1,0 +1,19 @@
+{
+ "id": "T04",
+ "title": "Orders CSV export breaks on customer names with commas or quotes",
+ "type": "bug",
+ "priority_hint": "Medium",
+ "reporter": "support-lead",
+ "labels": [
+  "exports",
+  "csv",
+  "data-quality"
+ ],
+ "description": "Several customers report that the orders CSV export opens with shifted columns in Excel. Root cause found by support: names like `Smith, John` and company names like `Acme \"Rocket\" Ltd` are written unescaped. Examples from real exports:\n\n    1042,Smith, John,2026-03-02,149.00\n    1043,Acme \"Rocket\" Ltd,2026-03-03,2210.50\n\nThe export must produce RFC 4180 compliant CSV: fields containing a comma, a double quote or a newline are wrapped in double quotes, and any double quote inside a quoted field is doubled. The header row and column order must not change.",
+ "environment": "Python 3.12. Service: exports. Used by the dashboard Download button and by the scheduled S3 export.",
+ "comments": [
+  "backend-dev: We build rows by hand with join(). I would rather not pull in the csv module just for this, the helper is tiny.",
+  "support-lead: Please also make sure newlines in the notes column are handled, one customer has multi-line notes."
+ ],
+ "diff": "diff --git a/exports/orders_csv.py b/exports/orders_csv.py\n--- a/exports/orders_csv.py\n+++ b/exports/orders_csv.py\n@@ -1,18 +1,28 @@\n from typing import Iterable\n\n HEADER = [\"order_id\", \"customer\", \"created\", \"total\"]\n\n+\n+def _escape(value: object) -> str:\n+    text = str(value)\n+    if \",\" in text or \"\\n\" in text or '\"' in text:\n+        return '\"' + text + '\"'\n+    return text\n+\n\n def render(rows: Iterable[dict]) -> str:\n     lines = [\",\".join(HEADER)]\n     for row in rows:\n         lines.append(\n             \",\".join(\n-                str(row[col]) for col in HEADER\n+                _escape(row[col]) for col in HEADER\n             )\n         )\n     return \"\\r\\n\".join(lines) + \"\\r\\n\"\n"
+}
