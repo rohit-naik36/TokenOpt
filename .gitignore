@@ -35,3 +35,6 @@ Thumbs.db
 
 # Evaluation run evidence artifacts (preserve canonical baseline.json)
 evaluation/results/evidence_*
+
+# stray run logs at repo root (experiment logs live under experiments/)
+/*.log
