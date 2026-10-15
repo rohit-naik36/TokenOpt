@@ -1,6 +1,6 @@
 # Stage 2 results: n8n SDLC workflow on claude-haiku-5-5 (phase A, no caching)
 
-**Status: phase A only (no caching). The blind quality judge has not been run. Section 7a is a post-hoc diagnosis added after the main results; it changes no gate or threshold.**
+**Status: phase A only (no caching). The blind quality judge has been run (section 6). Section 7a is a post-hoc diagnosis added after the main results; it changes no gate or threshold.**
 
 Pre-registered in `STAGE2_PREREGISTRATION.md` (sections 1-17). Scoring deviations are in section 17 and were committed before results were computed. Thresholds, decision labels and the gate are as written in sections 6 and 10. No threshold was changed after seeing results.
 
@@ -83,9 +83,32 @@ Cost decisions (section 8): A and AH are promising, since their cost reductions 
 | H | 809 / 190 | 668 / 701 | 938 / 1319 | 2010 / 931 | 519 / 202 |
 | AH | 879 / 170 | 738 / 547 | 939 / 900 | 1862 / 679 | 585 / 177 |
 
-## 6. Blind judge (secondary; packets exported, **judge not run**)
+## 6. Blind judge (secondary, not part of the gate)
 
-160 blind packets are in `blind_s2/` (same format as Stage 1, with no arm, run id or rep). The id-to-run map is `blind_map_s2.json`. It was written at export and has not been opened. It is not committed, so that no judge session can read it from git history. No judge scores exist for Stage 2, so no judge result is reported.
+Judge `claude-sonnet-4-6`, temperature 0, one pass per packet, rubric `judge_rubric.md` (requirements 0-3, plan 0-2, review 0-3, release note 0-2, total 10). 160 blind packets (`blind_s2/`, no arm, run id or rep); scores `judge_s2_scores.jsonl` were final before `blind_map_s2.json` was opened. Runner `stage2_judge.py`, analysis `stage2_judge_analysis.py`. Judge cost about $1.65.
+
+Mean score by arm (n = 40 each):
+
+| arm | requirements (3) | plan (2) | review (3) | release note (2) | total (10) |
+|---|---|---|---|---|---|
+| control | 2.92 | 2.00 | 3.00 | 1.90 | 9.82 |
+| A | 2.98 | 2.00 | 2.98 | 1.95 | 9.90 |
+| H | 2.90 | 1.80 | 2.98 | 1.70 | 9.38 |
+| AH | 2.90 | 1.77 | 3.00 | 1.73 | 9.40 |
+
+Ratio versus control (paired, ticket-clustered bootstrap, 10,000 resamples, seed 20261015):
+
+| arm | total [95% CI] | review [95% CI] | secondary gate (mean >= 95% of control) |
+|---|---|---|---|
+| A | 1.01 [0.99, 1.03] | 0.99 [0.97, 1.00] | PASS |
+| H | 0.95 [0.92, 0.98] | 0.99 [0.97, 1.00] | PASS (at the threshold; CI lower bound 0.92) |
+| AH | 0.96 [0.92, 0.99] | 1.00 [1.00, 1.00] | PASS (CI lower bound 0.92) |
+
+Reading, with limits:
+- The handoff arms (H, AH) lose about 4-5% of the judge total, almost all in the plan (1.80 and 1.77 against 2.00) and release note (1.70 and 1.73 against 1.90) criteria, the stages whose input the handoff compresses. The review criterion is at ceiling in every arm.
+- The judge review score is 2.98 where the deterministic defect-hit is true and 3.00 where it is false (n = 104 and 56). The judge finds the real defect in reviews that failed the JSON gate, which agrees with section 7a.
+- Scores are near the ceiling (9.4 to 9.9 of 10), so the judge discriminates weakly. H and AH sit on the 95% line and their intervals extend below it; "passes the secondary gate" is a point-estimate statement.
+- Single judge, single pass, temperature 0; blinding is imperfect (terse A/AH outputs and structured H handoffs may be recognisable); eight tickets; the judge is secondary and never merged with the deterministic gate.
 
 ## 7. Finding that bears on the defect-hit gate
 
@@ -110,7 +133,7 @@ Separately, 53 reviews are valid JSON but lack a `summary` key (44) or name it `
 
 Reading, with limits:
 - Every one of the 160 reviews names the planted defect once the closing brackets are repaired. The defect-hit gate difference (H fails, A and AH pass) therefore comes from JSON formatting, not from missed defects.
-- This does not show equal review quality. The planted-defect check is one regex per ticket, 100% of matches is suspiciously lenient, `verdict: approve` never occurred (0/160), and the blind judge has not been run.
+- This does not show equal review quality. The planted-defect check is one regex per ticket, 100% of matches is suspiciously lenient, `verdict: approve` never occurred (0/160), and the blind judge (section 6) is a single secondary pass near ceiling.
 - The repair rule was written after seeing the failures, so it is post-hoc. It is evidence about the metric, not a pre-registered result.
 - Implication for a next run: add a one-line fix for the findings-array closer (or request structured output) in the review prompt before drawing quality conclusions between arms.
 
@@ -130,6 +153,6 @@ Reading, with limits:
 ## 9. Files
 
 - `stage2_score.py` (scoring, bootstrap, Stage 1 reproduction check), `stage2_analysis.py` (tables), `stage2_export_blind.py` (judge packets)
-- `stage2_json_diagnosis.py` (post-hoc diagnosis, section 7a)
+- `stage2_json_diagnosis.py` (post-hoc diagnosis, section 7a), `stage2_judge.py`, `stage2_judge_analysis.py`, `judge_s2_scores.jsonl`, `blind_map_s2.json` (section 6)
 - `full_s2_scored.jsonl` (per-run scores), `blind_s2/` (160 packets)
 - `STAGE2_PREREGISTRATION.md` section 17 (scoring deviations)

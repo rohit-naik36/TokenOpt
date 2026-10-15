@@ -28,7 +28,7 @@ A controlled, measure-first test of how much cost a 5-stage SDLC chain (triage, 
 | H | 0.71 | 0.75 |
 | AH | 0.67 | 0.60 |
 
-Stage 2 cost $0.365 for all 160 runs, reconciled against the billing console. These are cost measurements on a small synthetic set against a naive baseline, not production savings. Handoff alone failed the quality gate in Stage 2 because the review stage often returned invalid JSON; a post-hoc check shows the planted defect is named in every review once the brackets are repaired. The blind quality judge has not been run yet. Method, limits and how to re-run: [experiments/n8n_sdlc/README.md](experiments/n8n_sdlc/README.md); results: [STAGE2_RESULTS.md](experiments/n8n_sdlc/STAGE2_RESULTS.md).
+Stage 2 cost $0.365 for all 160 runs, reconciled against the billing console. These are cost measurements on a small synthetic set against a naive baseline, not production savings. Handoff alone failed the quality gate in Stage 2 because the review stage often returned invalid JSON; a post-hoc check shows the planted defect is named in every review once the brackets are repaired. A blind LLM judge (single pass, scores near ceiling) rates A at 101%, H at 95% and AH at 96% of control quality; the handoff arms lose a little on plan and release-note quality. Method, limits and how to re-run: [experiments/n8n_sdlc/README.md](experiments/n8n_sdlc/README.md); results: [STAGE2_RESULTS.md](experiments/n8n_sdlc/STAGE2_RESULTS.md).
 
 ---
 
