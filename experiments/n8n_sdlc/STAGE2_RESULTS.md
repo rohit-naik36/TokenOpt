@@ -131,6 +131,8 @@ Tail repair = cut the text at the last `"summary"` key, force-close the findings
 
 Separately, 53 reviews are valid JSON but lack a `summary` key (44) or name it `" summary"` (9). These count against the format rate (section 3), not against defect-hit.
 
+Cross-check (`stage2_review_diagnose.py`, a separate script run after the one above): of 160 reviews, 109 fail the strict review check. 56 are not valid JSON (control 15, A 8, H 20, AH 13, matching the table above) and 53 are valid JSON with a schema failure (12, 13, 15, 13), the missing or misnamed `summary` key. Truncation: 0. Markdown fences: 0. Reviews with prose outside the JSON object: 5 (control 3, A 2). Arm H's review fails the strict check in 35 of 40 runs although every upstream stage parsed, so its failure is not inherited from earlier stages. That script's cause buckets (trailing comma, missing closer, extra closer) did not flag the closer pattern, so it labels all 56 not-JSON reviews "other"; the closer pattern comes from direct inspection of the outputs in `stage2_json_diagnosis.py`, and the two scripts agree on the counts but not on the cause labels.
+
 Reading, with limits:
 - Every one of the 160 reviews names the planted defect once the closing brackets are repaired. The defect-hit gate difference (H fails, A and AH pass) therefore comes from JSON formatting, not from missed defects.
 - This does not show equal review quality. The planted-defect check is one regex per ticket, 100% of matches is suspiciously lenient, `verdict: approve` never occurred (0/160), and the blind judge (section 6) is a single secondary pass near ceiling.
@@ -153,6 +155,6 @@ Reading, with limits:
 ## 9. Files
 
 - `stage2_score.py` (scoring, bootstrap, Stage 1 reproduction check), `stage2_analysis.py` (tables), `stage2_export_blind.py` (judge packets)
-- `stage2_json_diagnosis.py` (post-hoc diagnosis, section 7a), `stage2_judge.py`, `stage2_judge_analysis.py`, `judge_s2_scores.jsonl`, `blind_map_s2.json` (section 6)
+- `stage2_json_diagnosis.py`, `stage2_review_diagnose.py` (post-hoc diagnosis, section 7a), `stage2_judge.py`, `stage2_judge_analysis.py`, `judge_s2_scores.jsonl`, `blind_map_s2.json` (section 6)
 - `full_s2_scored.jsonl` (per-run scores), `blind_s2/` (160 packets)
 - `STAGE2_PREREGISTRATION.md` section 17 (scoring deviations)
