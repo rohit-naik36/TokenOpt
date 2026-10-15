@@ -31,3 +31,7 @@ None. All release gates cleared; PyPI Trusted Publisher active (Decision 26).
 | Markdown links (`.ai/**/*.md`) | verified in M14 (29/29) |
 | `git remote -v` | `https://github.com/rohit-naik36/TokenOpt.git` (valid, Decision 11) |
 | CI badge (main) | passing |
+
+## Addendum 2026-10-14 (experiments, not part of the release line)
+
+n8n SDLC benchmark finished on `feat/n8n-workflow-benchmark` (committed locally, unpushed). Safe stopping point: yes; working tree clean after the checkpoint commit. See CHECKPOINT_20261014_1712.md.

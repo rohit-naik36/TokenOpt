@@ -789,3 +789,10 @@
   into the guide as **Appendix C** (verbatim from `docs/UAT.md`, marked as
   canonical-copy; `docs/UAT.md` stays the source of truth) — the guide is
   now a single self-contained document; intro + footer updated.
+
+## Session 21 — n8n SDLC benchmark results and pre-push scan (2026-10-14)
+
+- Blind-judged 160 packets (batches of 20), then unblinded and joined to arms (`experiments/n8n_sdlc/judge_analysis.py`). Wrote `experiments/n8n_sdlc/REPORT.md`; converted `summary.txt` to UTF-8 and appended the judge section. Commit `962d0dd` on `feat/n8n-workflow-benchmark` (not pushed).
+- Findings: A/H/AH reduce W to 0.90/0.71/0.67 of control; defect-hit gate passes for A and H, fails for AH; format gate n/a. Judge is a coarse secondary signal.
+- Read-only privacy scan of both unpushed branches before any push: no local paths, secrets or keys; only example emails in test data and the commit author email `rohit.naik873@gmail.com` on 11 commits (reported, not changed).
+- Not done: tests/lint/mypy (no tokenopt changes), push. Checkpoint: CHECKPOINT_20261014_1712.md.

@@ -1,0 +1,1 @@
+Be terse. Do not restate file contents, the task, or your plan. Make edits as the smallest possible diffs (smallest old_string/new_string); never rewrite a whole file. After finishing, reply with one line.

@@ -1,0 +1,160 @@
+{"id":"00fa869d","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"Review finds 4xx retry bug but fix is weak; AC misplaces retry logging."}
+{"id":"04f68588","requirements":2,"plan":1,"review":1,"release_note":2,"total":6,"note":"Review misdiagnoses as atomicity and pushes Lua; misses per-request EXPIRE reset."}
+{"id":"05158232","requirements":1,"plan":1,"review":2,"release_note":0,"total":4,"note":"Offset bug found but false alarm on total; release note invents params and fields."}
+{"id":"07ebb8ed","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"Identifies EXPIRE reset each request but proposes wrong fix."}
+{"id":"089e39ef","requirements":3,"plan":1,"review":2,"release_note":2,"total":8,"note":"Quote-doubling defect found with correct fix plus CRLF noise."}
+{"id":"08e852cf","requirements":2,"plan":1,"review":0,"release_note":2,"total":5,"note":"Approves change that retries 4xx."}
+{"id":"08eb55a4","requirements":1,"plan":1,"review":1,"release_note":2,"total":5,"note":"Wrong rationale (atomicity) though suggested count===1 expire is right; lots of noise."}
+{"id":"0aec3b13","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"Correct quote-doubling defect and fix with some noise."}
+{"id":"0ce22584","requirements":1,"plan":1,"review":2,"release_note":1,"total":5,"note":"ACs have wrong UTC examples; review finds replace(tzinfo) but with false claims; note invents endpoint."}
+{"id":"11efc471","requirements":2,"plan":1,"review":0,"release_note":2,"total":5,"note":"Approves inverted expiry comparison."}
+{"id":"122c3d8c","requirements":2,"plan":1,"review":0,"release_note":2,"total":5,"note":"Approves inverted expiry comparison; plan uses wrong stack."}
+{"id":"14e11051","requirements":3,"plan":2,"review":0,"release_note":2,"total":7,"note":"Approves escape that never doubles quotes."}
+{"id":"1539109b","requirements":3,"plan":2,"review":0,"release_note":2,"total":7,"note":"Review findings are false and miss the 4xx retry bug."}
+{"id":"15c3eda9","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"Invented 5ms and no-increment ACs; review touches TTL anchoring but with false blocker and Lua."}
+{"id":"1686da4d","requirements":2,"plan":2,"review":3,"release_note":1,"total":8,"note":"Cache-key bug found and fixed; release note misframes as currency fix."}
+{"id":"16e698a4","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"Correct defect and fix with minor noise."}
+{"id":"17f596d4","requirements":2,"plan":1,"review":0,"release_note":2,"total":5,"note":"Approves inverted expiry comparison."}
+{"id":"186cbdac","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"Invented apostrophe AC; review finds doubling but adds false apostrophe finding."}
+{"id":"18787ffe","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"Invented concurrency and status ACs; review finds cache-key bug with noise."}
+{"id":"18e8b75b","requirements":1,"plan":1,"review":2,"release_note":1,"total":5,"note":"AC contradicts case-insensitivity; SQL injection found but noise; note invents endpoint."}
+{"id":"198bf920","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"Wrong UTC example values and approves replace(tzinfo) bug."}
+{"id":"1aaebde9","requirements":2,"plan":1,"review":0,"release_note":2,"total":5,"note":"Approves inverted expiry comparison."}
+{"id":"1abd4315","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"SQL injection found with correct fix plus two false alarms."}
+{"id":"1c7c06c0","requirements":2,"plan":2,"review":2,"release_note":2,"total":8,"note":"SQL injection found and fixed; extra empty-input finding is noise."}
+{"id":"1da4c445","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"Wrong example values; approves replace(tzinfo) bug."}
+{"id":"1e229246","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"4xx retry bug found but suggested fix would also fail 5xx."}
+{"id":"1e5cc15f","requirements":3,"plan":2,"review":2,"release_note":1,"total":8,"note":"Doubling defect found; release note claims csv refactor not in diff."}
+{"id":"2026fc94","requirements":3,"plan":2,"review":2,"release_note":1,"total":8,"note":"Offset bug found plus false count blocker; note frames feature as a bug fix."}
+{"id":"20f9fbcb","requirements":3,"plan":1,"review":0,"release_note":2,"total":6,"note":"Review findings are false and miss the 4xx retry bug."}
+{"id":"21986737","requirements":3,"plan":2,"review":3,"release_note":2,"total":10,"note":"Clean, correct review of the quote-doubling defect."}
+{"id":"22b51236","requirements":2,"plan":1,"review":0,"release_note":0,"total":3,"note":"Misses offset bug; release note invents limit/offset and default 20."}
+{"id":"24fda51d","requirements":2,"plan":1,"review":2,"release_note":1,"total":6,"note":"4xx retry bug found with correct fix but muddled reasoning; note invents claims."}
+{"id":"2a2e260c","requirements":2,"plan":2,"review":2,"release_note":2,"total":8,"note":"SQL injection found with fix; non-goals garbled and extra noise findings."}
+{"id":"2a3e1355","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"Wrong UTC example values; approves replace(tzinfo) bug."}
+{"id":"2bf431b6","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"EXPIRE-reset defect found but fix is overbuilt; off-by-one AC."}
+{"id":"368adb4d","requirements":2,"plan":1,"review":2,"release_note":1,"total":6,"note":"SQL injection found; plan omits signup change; note invents endpoint."}
+{"id":"377eba26","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"Offset bug found with fix plus false SQLAlchemy findings."}
+{"id":"383e845e","requirements":1,"plan":1,"review":2,"release_note":1,"total":5,"note":"Spec turned into sliding window; review spots TTL reset but proposes wrong fix."}
+{"id":"38af3eb4","requirements":2,"plan":2,"review":2,"release_note":2,"total":8,"note":"Offset bug found; second blocker about account filter is false."}
+{"id":"3c14be05","requirements":3,"plan":1,"review":2,"release_note":1,"total":7,"note":"Plan clamps page_size to min 50; duplicate review finding; note invents breaking change."}
+{"id":"3c2676e9","requirements":2,"plan":1,"review":0,"release_note":2,"total":5,"note":"Approves inverted expiry comparison."}
+{"id":"3c33ae9d","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"Cache-key bug found and fixed; false error-caching and thread-safety blockers."}
+{"id":"3e41c7f7","requirements":2,"plan":1,"review":2,"release_note":1,"total":6,"note":"Key bug found; duplicate finding; note frames new cache as a collision fix."}
+{"id":"3f7c8111","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"Wrong UTC examples; review misses replace(tzinfo) bug and raises false alarms."}
+{"id":"421a1c0b","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"Vague ACs; approves replace(tzinfo) bug."}
+{"id":"45dba97e","requirements":2,"plan":1,"review":2,"release_note":1,"total":6,"note":"Key bug found among noisy findings; note claims thread-safe locking not in diff."}
+{"id":"49934a36","requirements":2,"plan":1,"review":2,"release_note":1,"total":6,"note":"4xx retry bug found with correct fix but repeated six times; note vague."}
+{"id":"523df1ef","requirements":2,"plan":1,"review":0,"release_note":1,"total":4,"note":"Approves inverted expiry; invented password-complexity AC and note claim."}
+{"id":"52e6ff0c","requirements":2,"plan":1,"review":0,"release_note":2,"total":5,"note":"Approves inverted expiry comparison."}
+{"id":"5314fe1f","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"Invented invalidation AC; key bug found with noise."}
+{"id":"53316095","requirements":2,"plan":2,"review":2,"release_note":2,"total":8,"note":"SQL injection found and fixed amid rambling noise findings."}
+{"id":"53802df4","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"Wrong examples; approves replace(tzinfo) bug."}
+{"id":"545c5d39","requirements":2,"plan":2,"review":2,"release_note":1,"total":7,"note":"Inverted expiry identified with messy duplicates; note marks breaking."}
+{"id":"570670c9","requirements":3,"plan":2,"review":2,"release_note":0,"total":7,"note":"Offset bug found; release note wrongly says cursor-based."}
+{"id":"583a2636","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"Offset bug found after rambling; note accurate though sparse."}
+{"id":"5878f1c9","requirements":2,"plan":1,"review":2,"release_note":1,"total":6,"note":"SQL injection found; false multi-user finding; note invents endpoint."}
+{"id":"5c124571","requirements":1,"plan":1,"review":2,"release_note":1,"total":5,"note":"Invented trimming requirement; injection found plus false sanitization blocker."}
+{"id":"5c6e9138","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"Key bug found with some noise."}
+{"id":"630fb3cb","requirements":2,"plan":1,"review":3,"release_note":1,"total":7,"note":"Inverted expiry found with correct fix; note invents breaking change."}
+{"id":"63820180","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"SQL injection found; placeholder style wrong and extra noise; plan omits signup change."}
+{"id":"6ad30897","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"Offset bug found and fixed; second finding is a non-issue."}
+{"id":"6bf3513f","requirements":2,"plan":0,"review":2,"release_note":2,"total":6,"note":"Plan uses Redis for an in-process cache; review finds key bug but duplicates it."}
+{"id":"6c634611","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"Doubling defect found with fix; CRLF finding is noise."}
+{"id":"6dfbd9a8","requirements":3,"plan":1,"review":0,"release_note":2,"total":6,"note":"Approves inverted expiry comparison."}
+{"id":"6e98ff0c","requirements":2,"plan":1,"review":0,"release_note":2,"total":5,"note":"Review pushes Lua and a false threshold change; misses per-request EXPIRE."}
+{"id":"6f23a097","requirements":3,"plan":1,"review":2,"release_note":2,"total":8,"note":"Doubling defect found; trailing-newline finding is false."}
+{"id":"6fc1b119","requirements":1,"plan":1,"review":2,"release_note":1,"total":5,"note":"AC wrongly empties page 2 and invents 400; offset bug found with muddled reasoning."}
+{"id":"70b388e3","requirements":3,"plan":1,"review":2,"release_note":2,"total":8,"note":"4xx retry found but the suggested <500 fix is wrong."}
+{"id":"752e9463","requirements":2,"plan":2,"review":2,"release_note":1,"total":7,"note":"SQL injection found and fixed; note claims named-field return not in diff."}
+{"id":"760f0096","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"Doubling defect found with fix plus line-terminator noise."}
+{"id":"77f056f7","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"Invented no-email AC; approves inverted expiry."}
+{"id":"79893e5b","requirements":3,"plan":1,"review":2,"release_note":1,"total":7,"note":"Inverted expiry found with correct fix; note invents breaking change."}
+{"id":"7a4551a9","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"Doubling defect found; trailing newline finding is noise."}
+{"id":"7e952ed4","requirements":1,"plan":1,"review":2,"release_note":1,"total":5,"note":"ACs invent 404/200 and a wrong timestamp; key bug found but repeated."}
+{"id":"8041b23b","requirements":1,"plan":0,"review":0,"release_note":2,"total":3,"note":"Plan builds in-memory sliding window; review misses real defect."}
+{"id":"8425dff2","requirements":1,"plan":1,"review":1,"release_note":2,"total":5,"note":"Cache-key bug only noted as minor beside false blockers."}
+{"id":"85341b87","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"4xx retry found with right fix plus minor noise."}
+{"id":"86dc1d40","requirements":3,"plan":1,"review":2,"release_note":2,"total":8,"note":"Unconditional EXPIRE found; fix drifts toward sorted sets; plan is sliding window."}
+{"id":"87c05732","requirements":3,"plan":2,"review":2,"release_note":0,"total":7,"note":"Offset bug found; release note invents size param and totalPages."}
+{"id":"87c4d82b","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"Doubling defect found; CRLF finding is noise."}
+{"id":"8b1fb6b9","requirements":2,"plan":1,"review":0,"release_note":1,"total":4,"note":"One wrong example value; review raises false DST concerns and misses replace(tzinfo)."}
+{"id":"901c7e45","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"Wrong UTC examples; approves replace(tzinfo) bug."}
+{"id":"951422d4","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"Unconditional EXPIRE found; plan uses aligned windows and review has false threshold finding."}
+{"id":"959cb334","requirements":2,"plan":1,"review":2,"release_note":0,"total":5,"note":"Offset bug found; release note invents cursor-based pagination."}
+{"id":"96070f24","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"Wrong examples; approves replace(tzinfo) bug."}
+{"id":"96ee69b3","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"Offset bug found and fixed; extra count blockers are noise."}
+{"id":"9931bad9","requirements":3,"plan":1,"review":2,"release_note":2,"total":8,"note":"Inverted expiry found with correct fix but muddled and duplicated."}
+{"id":"99e9bb4b","requirements":3,"plan":2,"review":0,"release_note":2,"total":7,"note":"Approves escape that never doubles quotes."}
+{"id":"9bd58812","requirements":3,"plan":1,"review":0,"release_note":2,"total":6,"note":"Approves change that retries 4xx."}
+{"id":"9d80a060","requirements":1,"plan":1,"review":1,"release_note":2,"total":5,"note":"AC invents Retry-After=60 and 401; review misdiagnoses with windowed keys."}
+{"id":"9f95110e","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"Wrong UTC examples; approves replace(tzinfo) bug."}
+{"id":"a03f3ab5","requirements":2,"plan":1,"review":0,"release_note":2,"total":5,"note":"Vague ACs, padded plan; approves replace(tzinfo) bug."}
+{"id":"a0f054a2","requirements":3,"plan":1,"review":2,"release_note":2,"total":8,"note":"4xx retry bug found with right fix amid noise."}
+{"id":"a1828d76","requirements":1,"plan":1,"review":3,"release_note":2,"total":7,"note":"Correctly identifies replace(tzinfo) with right astimezone fix; ACs have wrong values."}
+{"id":"a2ad1963","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"Wrong UTC examples; approves replace(tzinfo) bug."}
+{"id":"a5032995","requirements":2,"plan":1,"review":0,"release_note":0,"total":3,"note":"Approves offset bug; release note invents limit param and totalPages."}
+{"id":"a521dc5a","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"Invented 10ms and 404 ACs; key bug found plus false 404 blocker."}
+{"id":"a5948e56","requirements":3,"plan":1,"review":3,"release_note":2,"total":9,"note":"Inverted expiry found with correct fix and minimal noise."}
+{"id":"a6022e66","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"Key bug found; invented external-clear and error-caching blockers."}
+{"id":"a8844466","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"Unconditional EXPIRE eventually diagnosed amid rambling; Lua fix is weak."}
+{"id":"a98dbda2","requirements":3,"plan":2,"review":2,"release_note":1,"total":8,"note":"Key bug found; note claims a threading lock not in the diff."}
+{"id":"aacbe547","requirements":2,"plan":2,"review":2,"release_note":1,"total":7,"note":"Key bug found with noisy extra findings; note frames new cache as a fix."}
+{"id":"aaf247e0","requirements":3,"plan":1,"review":2,"release_note":2,"total":8,"note":"Unconditional EXPIRE found with correct count==1 fix; one noisy finding."}
+{"id":"aba33e80","requirements":3,"plan":1,"review":2,"release_note":1,"total":7,"note":"Key bug found among false timestamp finding; note claims timestamp fix."}
+{"id":"ac973a1d","requirements":3,"plan":1,"review":2,"release_note":2,"total":8,"note":"4xx retry bug found with right fix, repeated six times."}
+{"id":"ad321227","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"ACs invent a 4s delay for 5xx; 4xx retry found plus false delay finding."}
+{"id":"addca851","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"Invented 500/404/410 ACs; key bug found plus false 404 blocker."}
+{"id":"ae057517","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"AC wrongly defaults small page_size to 50; offset bug found with vague noise."}
+{"id":"afa79ce3","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"Contradictory ACs; review raises only false naming and sanitization issues."}
+{"id":"afd32321","requirements":2,"plan":1,"review":3,"release_note":1,"total":7,"note":"Key bug correctly found and fixed; plan includes commit/push; note misframes."}
+{"id":"b0392abe","requirements":2,"plan":2,"review":2,"release_note":2,"total":8,"note":"4xx retry bug found including 410; extra nits."}
+{"id":"b0f7eb6e","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"Non-goals contradict ticket; 4xx retry found amid rambling."}
+{"id":"b67772cd","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"ACs wrong on delays (2s then 4,8,16); review flags false delay issues and misses 4xx bug."}
+{"id":"b82a82a4","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"Doubling defect found; CRLF finding is noise."}
+{"id":"b8e5945a","requirements":1,"plan":0,"review":1,"release_note":1,"total":3,"note":"Degenerate repeated ACs, TypeScript plan; review buries the 4xx issue under a false language mismatch."}
+{"id":"ba0d77a2","requirements":2,"plan":2,"review":2,"release_note":1,"total":7,"note":"SQL injection found; placeholder style wrong; note invents endpoint."}
+{"id":"ba3a61a1","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"SQL injection found and fixed; extra findings are noise."}
+{"id":"ba42ee08","requirements":2,"plan":1,"review":0,"release_note":2,"total":5,"note":"Review is a degenerate loop with no useful finding."}
+{"id":"bb545854","requirements":3,"plan":1,"review":2,"release_note":2,"total":8,"note":"Inverted expiry found with fix amid extra findings."}
+{"id":"bc873332","requirements":3,"plan":1,"review":2,"release_note":2,"total":8,"note":"Offset bug found; negative-page finding is false (ge=1 present); plan clamps min 50."}
+{"id":"bd684289","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"AC wrongly sets 5xx wait to 4s; 4xx retry bug found with right fix plus noise."}
+{"id":"bdf5be0b","requirements":1,"plan":1,"review":0,"release_note":1,"total":3,"note":"Invented 503 behavior and off-by-one AC; review misdiagnoses and misses EXPIRE reset."}
+{"id":"be454bf5","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"Offset bug found; second total-count finding is noise; invented 400 AC."}
+{"id":"be6ac72d","requirements":0,"plan":1,"review":0,"release_note":2,"total":3,"note":"All example UTC values wrong; review claims naive datetime and misses replace(tzinfo)."}
+{"id":"c0b0a3bf","requirements":3,"plan":1,"review":2,"release_note":0,"total":6,"note":"Offset bug found; plan uses total_count; note invents limit and totalPages."}
+{"id":"c0c903de","requirements":1,"plan":2,"review":0,"release_note":2,"total":5,"note":"Non-goals are nonsensical; approves quote-doubling bug."}
+{"id":"c1328ec9","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"Review raises false 401 and threshold findings, misses EXPIRE reset."}
+{"id":"c5bdc22b","requirements":3,"plan":2,"review":2,"release_note":1,"total":8,"note":"Inverted expiry found with fix after a wrong timezone claim; note marks breaking."}
+{"id":"c693f1d4","requirements":1,"plan":1,"review":2,"release_note":1,"total":5,"note":"AC contradicts case-insensitivity; SQL injection found; note invents endpoint."}
+{"id":"cdb6d21d","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"Doubling defect found with fix plus self-negating noise."}
+{"id":"ce0c87cb","requirements":1,"plan":0,"review":1,"release_note":2,"total":4,"note":"Plan targets TypeScript; review spots replace(tzinfo) only as a side note under a false language blocker."}
+{"id":"d6162ac7","requirements":1,"plan":1,"review":0,"release_note":2,"total":4,"note":"Wrong UTC examples; approves replace(tzinfo) bug."}
+{"id":"d749340d","requirements":3,"plan":1,"review":2,"release_note":0,"total":6,"note":"Offset bug found among many noisy findings; note invents limit param."}
+{"id":"d864e171","requirements":1,"plan":0,"review":1,"release_note":2,"total":4,"note":"Plan uses sliding windows in Python; review muddles increment order and window reset."}
+{"id":"d8f08fcc","requirements":1,"plan":1,"review":0,"release_note":1,"total":3,"note":"Wrong DST example value; review only raises validation noise."}
+{"id":"da34fb19","requirements":3,"plan":2,"review":0,"release_note":0,"total":5,"note":"Review only flags carriage returns and misses missing quote doubling; note misdescribes the change."}
+{"id":"dab120d4","requirements":2,"plan":1,"review":0,"release_note":1,"total":4,"note":"Vague ACs; approves replace(tzinfo) bug."}
+{"id":"dba07dc2","requirements":3,"plan":1,"review":2,"release_note":1,"total":7,"note":"Inverted expiry found with right fix but muddled; note marks breaking."}
+{"id":"dede594f","requirements":2,"plan":2,"review":2,"release_note":1,"total":7,"note":"SQL injection found and fixed; note invents endpoint."}
+{"id":"dfe9249b","requirements":1,"plan":1,"review":2,"release_note":0,"total":4,"note":"Invented 405 AC; inverted expiry found; note claims GET now returns 405."}
+{"id":"e096a777","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"Review notes TTL anchored to last request but proposes sorted sets."}
+{"id":"e1ab5686","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"Inverted expiry found with right fix; invented GET-record AC."}
+{"id":"e254611a","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"Doubling defect found; trailing CRLF finding is noise."}
+{"id":"e283c96b","requirements":3,"plan":2,"review":2,"release_note":1,"total":8,"note":"Key bug found with noisy second finding; note frames new cache as a fix."}
+{"id":"e2a5f31a","requirements":3,"plan":2,"review":2,"release_note":2,"total":9,"note":"Doubling defect found; wrongly asks for LF line endings."}
+{"id":"e30a79e2","requirements":2,"plan":1,"review":2,"release_note":1,"total":6,"note":"Key bug found with redundant findings; note claims a prior key bug was corrected."}
+{"id":"e5cfe005","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"Non-goals contradict ticket; SQL injection found with noise."}
+{"id":"e7bdca0c","requirements":0,"plan":1,"review":2,"release_note":2,"total":5,"note":"ACs have impossible UTC values; replace(tzinfo) found with correct fix plus speculative noise."}
+{"id":"e92276ae","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"SQL injection found; empty-input and collation findings are noise."}
+{"id":"ea5f4add","requirements":1,"plan":1,"review":2,"release_note":1,"total":5,"note":"Invented multi-match exception; injection found; note invents validation."}
+{"id":"ec360987","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"Inverted expiry found among six redundant and partly wrong findings."}
+{"id":"edbdf810","requirements":1,"plan":1,"review":2,"release_note":2,"total":6,"note":"Unconditional EXPIRE identified with right fix among sorted-set and 503 noise."}
+{"id":"eef80c5b","requirements":3,"plan":2,"review":0,"release_note":2,"total":7,"note":"Approves escape that never doubles quotes."}
+{"id":"ef40594a","requirements":2,"plan":1,"review":2,"release_note":1,"total":6,"note":"SQL injection found with false return-type finding; note invents endpoint."}
+{"id":"f1dbf3e2","requirements":3,"plan":2,"review":0,"release_note":2,"total":7,"note":"Review misses offset bug and flags index and validation nits."}
+{"id":"f1ed9049","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"4xx retry found with right fix plus false DB-update finding."}
+{"id":"f9f4975e","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"Key bug found; thread-safety blocker suggests a forbidden library."}
+{"id":"fb30adc4","requirements":2,"plan":2,"review":2,"release_note":2,"total":8,"note":"SQL injection found and fixed; empty-input finding is noise."}
+{"id":"fb917a4f","requirements":2,"plan":1,"review":2,"release_note":2,"total":7,"note":"Unconditional EXPIRE found among atomicity noise; Lua fix is weak."}
+{"id":"ffffa5f7","requirements":2,"plan":1,"review":2,"release_note":1,"total":6,"note":"SQL injection found; placeholder style wrong; note invents endpoint."}

@@ -1,0 +1,20 @@
+{
+ "id": "T03",
+ "title": "Per-API-key rate limiting at the gateway",
+ "type": "feature",
+ "priority_hint": "High",
+ "reporter": "security-eng",
+ "labels": [
+  "gateway",
+  "rate-limit",
+  "security"
+ ],
+ "description": "We need a fixed-window rate limiter keyed by API key to stop a single integration from degrading the shared cluster. Limit: 100 requests per 60-second window per key. When exceeded, respond with HTTP 429 and a `Retry-After` header (seconds until the window resets). Use the existing Redis. The window must reset 60 seconds after the first request in it, regardless of traffic during the window.\n\nOut of scope: per-endpoint limits, burst credits, dashboards.",
+ "environment": "Node 20, TypeScript 5, Express 4, Redis 7 via ioredis. Service: gateway.",
+ "comments": [
+  "security-eng: Last incident a single key sent 9k rps for 20 minutes.",
+  "sre: Redis commands must be cheap; this runs on every request, so avoid Lua unless needed.",
+  "backend-dev: INCR plus EXPIRE is enough for fixed window."
+ ],
+ "diff": "diff --git a/gateway/src/middleware/rateLimit.ts b/gateway/src/middleware/rateLimit.ts\nnew file mode 100644\n--- /dev/null\n+++ b/gateway/src/middleware/rateLimit.ts\n@@ -0,0 +1,26 @@\n+import type { NextFunction, Request, Response } from \"express\";\n+import { redis } from \"../redis\";\n+\n+const LIMIT = 100;\n+const WINDOW_SECONDS = 60;\n+\n+export async function rateLimit(req: Request, res: Response, next: NextFunction) {\n+  const key = req.header(\"x-api-key\");\n+  if (!key) {\n+    return res.status(401).json({ error: \"missing api key\" });\n+  }\n+\n+  const bucket = `rl:${key}`;\n+  const count = await redis.incr(bucket);\n+  await redis.expire(bucket, WINDOW_SECONDS);\n+\n+  if (count > LIMIT) {\n+    const ttl = await redis.ttl(bucket);\n+    res.setHeader(\"Retry-After\", String(ttl));\n+    return res.status(429).json({ error: \"rate limit exceeded\" });\n+  }\n+  return next();\n+}\n"
+}

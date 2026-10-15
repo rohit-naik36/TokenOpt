@@ -499,3 +499,7 @@ drop-in replacements, plus local model servers (Ollama/vLLM/llama.cpp).
 - `python -m build` → sdist + wheel OK; **`twine check` PASSED**
 - 6 examples validated against stub server (exit 0, truthful)
 - **GitHub Actions CI** → full matrix green (verified via GitHub API)
+
+## Experiments (2026-10-14, branches not merged, not pushed)
+
+- `feat/n8n-workflow-benchmark`: n8n SDLC benchmark complete; see `experiments/n8n_sdlc/REPORT.md` and CHECKPOINT_20261014_1712.md. `feat/output-turn-levers`: otl-001 experiment (7 commits).

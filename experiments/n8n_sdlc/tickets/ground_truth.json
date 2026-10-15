@@ -1,0 +1,108 @@
+{
+ "_note": "Planted-defect ground truth. Read only by score.py; never sent to the workflow.",
+ "tickets": {
+  "T01": {
+   "file": "api/routes/invoices.py",
+   "defect": "offset = page * page_size skips the first page; the offset must be (page - 1) * page_size for 1-based pages",
+   "match_regexes": [
+    "off[- ]?by[- ]?one",
+    "\\(\\s*page\\s*-\\s*1\\s*\\)",
+    "page\\s*-\\s*1",
+    "skip(s|ped|ping)?\\s+(the\\s+)?first\\s+(page|\\d+|page_size|rows|results)",
+    "1[- ]based",
+    "first page"
+   ]
+  },
+  "T02": {
+   "file": "notifications/delivery.py",
+   "defect": "retries on every status >= 400, including 4xx responses, which the ticket says must never be retried; only 5xx should retry",
+   "match_regexes": [
+    "4\\s*xx",
+    "\\b4\\d\\d\\b",
+    "client errors?",
+    "status[_ ]code\\s*(>=|<)\\s*400",
+    "(>=|<)\\s*400",
+    "should(n't| not) retry",
+    "only\\s+(retry\\s+)?(on\\s+)?5\\s*xx",
+    "retr(y|ies|ying)[^.]{0,60}(4xx|client)"
+   ]
+  },
+  "T03": {
+   "file": "gateway/src/middleware/rateLimit.ts",
+   "defect": "expire() is called on every request, which resets the window each time; under steady traffic the key never expires. EXPIRE must be set only when count === 1",
+   "match_regexes": [
+    "expire[^.]{0,80}(every|each|all)\\s+request",
+    "(reset|extend|refresh)(s|ing)?[^.]{0,60}(window|ttl|expir)",
+    "(window|ttl|expir\\w*)[^.]{0,60}(reset|extend|refresh|never)",
+    "count\\s*===?\\s*1",
+    "only\\s+(set|call|when)[^.]{0,40}(first|1)",
+    "sliding"
+   ]
+  },
+  "T04": {
+   "file": "exports/orders_csv.py",
+   "defect": "_escape wraps the field in quotes but does not double embedded double quotes (text.replace('\"', '\"\"')), so values containing a double quote still produce invalid CSV",
+   "match_regexes": [
+    "double[- ]?quote",
+    "embedded\\s+(double\\s+)?quote",
+    "(escape|escaping|escaped|doubl\\w+)[^.]{0,60}(quote|\\\")",
+    "replace\\(\\s*['\\\"]\\\\?\\\"",
+    "rfc\\s*4180",
+    "\\\"\\\""
+   ]
+  },
+  "T05": {
+   "file": "auth/src/reset.ts",
+   "defect": "the expiry comparison is inverted: it rejects tokens whose expiresAt is still in the future and accepts expired tokens (should be expiresAt <= now)",
+   "match_regexes": [
+    "invert",
+    "revers",
+    "backwards?",
+    "opposite",
+    "wrong(\\s+direction)?[^.]{0,40}(comparison|operator|condition)",
+    "(comparison|operator|condition)[^.]{0,60}(wrong|incorrect|flipped)",
+    "expiresAt[^.]{0,80}(>|greater)",
+    "(valid|unexpired|future)[^.]{0,50}(reject|throw|fail)",
+    "(accept|allow)s?[^.]{0,40}expired"
+   ]
+  },
+  "T06": {
+   "file": "api/repositories/users.py",
+   "defect": "SQL injection: the unauthenticated email value is interpolated into the query with an f-string instead of a bound parameter",
+   "match_regexes": [
+    "sql[- ]?injection",
+    "injection",
+    "f-?string",
+    "string (interpolation|formatting|concatenation)",
+    "parameteri[sz]ed",
+    "bound parameter",
+    "placeholder",
+    "%s"
+   ]
+  },
+  "T07": {
+   "file": "api/pricing.py",
+   "defect": "the cache key is only the sku, not (sku, currency), so a price cached in one currency is returned for requests in another currency",
+   "match_regexes": [
+    "cache key",
+    "key[^.]{0,60}(sku|currency)",
+    "currenc(y|ies)[^.]{0,80}(cache|key|differ|wrong|same)",
+    "(sku, ?currency)",
+    "per[- ]currency"
+   ]
+  },
+  "T08": {
+   "file": "notifications/schedule.py",
+   "defect": "now_utc.replace(tzinfo=tz) relabels the UTC wall-clock time as local time instead of converting it (should be now_utc.astimezone(tz)), so the computed local time is wrong for every non-UTC user",
+   "match_regexes": [
+    "replace\\(\\s*tzinfo",
+    "astimezone",
+    "(relabel|re-?label|mislabel|reinterpret)",
+    "(convert|conversion)[^.]{0,60}(time ?zone|tz|utc)",
+    "(utc|wall[- ]?clock)[^.]{0,60}(as|treated as|interpreted as)[^.]{0,30}local",
+    "without\\s+convert",
+    "not\\s+convert"
+   ]
+  }
+ }
+}
