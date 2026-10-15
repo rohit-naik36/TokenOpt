@@ -1,5 +1,7 @@
 # Stage 2 results: n8n SDLC workflow on claude-haiku-5-5 (phase A, no caching)
 
+**Status: phase A only (no caching). The blind quality judge has not been run. Section 7a is a post-hoc diagnosis added after the main results; it changes no gate or threshold.**
+
 Pre-registered in `STAGE2_PREREGISTRATION.md` (sections 1-17). Scoring deviations are in section 17 and were committed before results were computed. Thresholds, decision labels and the gate are as written in sections 6 and 10. No threshold was changed after seeing results.
 
 Data: 8 tickets x 4 arms x 5 reps = 160 runs, 800 stage calls, all `end_turn`, zero `max_tokens`, zero errors, zero retries. Cost $0.364969 (logged $0.365). Scoring: `stage2_score.py` (imports the Stage 1 checks from `score.py`, unchanged). Tables: `stage2_analysis.py`. Per-run scores: `full_s2_scored.jsonl`.
@@ -68,7 +70,7 @@ Note the composite pass rates are reported for completeness and are not the gate
 Transfer rule (section 10: same direction on W with the CI excluding 1, and the Stage 2 gate passing):
 - **A: transferred.** W reduction in both stages; Stage 2 gate passes.
 - **H: not transferred.** W reduction in both stages, but the Stage 2 defect-hit gate fails.
-- **AH: transferred under the rule as written.** W reduction in both stages; Stage 2 gate passes. Note that the Stage 1 gate for AH failed (0.60 vs 0.65), so the Stage 2 pass does not reproduce the Stage 1 quality result.
+- **AH: cost transfers; quality transfer is not established.** Under the rule as written AH counts as transferred (W reduction in both stages, Stage 2 gate passes). The Stage 1 gate for AH failed (0.60 vs 0.65), so the Stage 2 pass does not reproduce the Stage 1 quality result, and both gates are dominated by JSON formatting (section 7a).
 
 Cost decisions (section 8): A and AH are promising, since their cost reductions come with a passing gate. H's W reduction is a quality-cost trade-off, because its gate fails.
 
@@ -87,7 +89,30 @@ Cost decisions (section 8): A and AH are promising, since their cost reductions 
 
 ## 7. Finding that bears on the defect-hit gate
 
-Every parseable review contains the planted defect: 25/25 (control), 32/32 (A), 20/20 (H), 27/27 (AH). Every miss is a review that is not valid JSON (15, 8, 20 and 13 runs respectively). The defect-hit metric is therefore, in practice, a review-parse rate, and the H gate failure comes from 20 unparseable reviews. No review in any arm returned `verdict: approve` (0/160), so the verdict is not a discriminating signal here. The cause of the unparseable reviews was not analysed in this phase.
+Every parseable review contains the planted defect: 25/25 (control), 32/32 (A), 20/20 (H), 27/27 (AH). Every miss is a review that is not valid JSON (15, 8, 20 and 13 runs respectively). The defect-hit metric is therefore, in practice, a review-parse rate, and the H gate failure comes from 20 unparseable reviews. No review in any arm returned `verdict: approve` (0/160), so the verdict is not a discriminating signal here. The cause of the unparseable reviews was not analysed in the main phase; see section 7a.
+
+## 7a. Post-hoc diagnosis of the unparseable reviews (descriptive; added after results)
+
+Script: `stage2_json_diagnosis.py` (reads `full_s2_outputs.jsonl` and `full_s2_scored.jsonl`; no network). It does not change any scored value, gate or threshold.
+
+All 56 unparseable reviews start as a JSON object. In 52 of them the failure is the same: the characters that close the `findings` array just before the `"summary"` key are wrong. The model wrote `]],` (23), `]),` (20), `]",` (7) or `].,` (2) instead of `],`. The other 4 fail elsewhere (for example a trailing comma before the closing brace, and one unterminated string in an arm A run, `T07-A-r05`). Truncation is not the cause: every call ended with `end_turn`.
+
+| arm | invalid reviews (of 40) | malformed closer before `summary` | other | recovered by tail repair | defect-hit, strict (gate) | defect-hit after tail repair |
+|---|---|---|---|---|---|---|
+| control | 15 | 13 | 2 | 15 | 25/40 | 40/40 |
+| A | 8 | 6 | 2 | 8 | 32/40 | 40/40 |
+| H | 20 | 20 | 0 | 20 | 20/40 | 40/40 |
+| AH | 13 | 13 | 0 | 13 | 27/40 | 40/40 |
+
+Tail repair = cut the text at the last `"summary"` key, force-close the findings list, and re-add a placeholder summary; then apply the unchanged Stage 1 `defect_hit` check.
+
+Separately, 53 reviews are valid JSON but lack a `summary` key (44) or name it `" summary"` (9). These count against the format rate (section 3), not against defect-hit.
+
+Reading, with limits:
+- Every one of the 160 reviews names the planted defect once the closing brackets are repaired. The defect-hit gate difference (H fails, A and AH pass) therefore comes from JSON formatting, not from missed defects.
+- This does not show equal review quality. The planted-defect check is one regex per ticket, 100% of matches is suspiciously lenient, `verdict: approve` never occurred (0/160), and the blind judge has not been run.
+- The repair rule was written after seeing the failures, so it is post-hoc. It is evidence about the metric, not a pre-registered result.
+- Implication for a next run: add a one-line fix for the findings-array closer (or request structured output) in the review prompt before drawing quality conclusions between arms.
 
 ## 8. Caveats
 
@@ -100,10 +125,11 @@ Every parseable review contains the planted defect: 25/25 (control), 32/32 (A), 
 - **Format gate uninformative.** The control format rate (0.30) is below the 0.5 threshold, so the format component of the gate is not applied, and the only gate is defect-hit, which is the parse-rate issue in section 7.
 - **Scoring timing.** The failure-reason tally and the parseability breakdown (sections 3 and 7) were computed after the first scoring pass. Neither changed a check or threshold. The scorer deviations (section 17) were committed before any Stage 2 result was computed.
 - **Stage 1 comparison.** The Stage 1 numbers come from `summary.txt` and the same method, which reproduces them. Stage 1 used a local model with a different tokenizer, so token counts are not directly comparable across stages; only the ratios are compared.
-- **Dollars.** Dollars use the Haiku 5.5 base-tier prices in `stage2_prices.json`. Cache prices are unused in phase A. Console reconciliation is still pending (see `STAGE2_PREREGISTRATION.md` section 16).
+- **Dollars.** Dollars use the Haiku 5.5 base-tier prices in `stage2_prices.json`. Cache prices are unused in phase A. Reconciled after the run: the Console Cost page for the benchmark key shows $0.37 (input about $0.127, output about $0.238, no cache cost) against $0.364969 computed here, consistent to rounding; the account balance moved by about $0.36. See `STAGE2_PREREGISTRATION.md` section 16.
 
 ## 9. Files
 
 - `stage2_score.py` (scoring, bootstrap, Stage 1 reproduction check), `stage2_analysis.py` (tables), `stage2_export_blind.py` (judge packets)
+- `stage2_json_diagnosis.py` (post-hoc diagnosis, section 7a)
 - `full_s2_scored.jsonl` (per-run scores), `blind_s2/` (160 packets)
 - `STAGE2_PREREGISTRATION.md` section 17 (scoring deviations)

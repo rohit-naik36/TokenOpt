@@ -18,6 +18,20 @@ The optimizer's prose compression is small on real, dense prompts. The large lev
 
 ---
 
+## SDLC workflow benchmark
+
+A controlled, measure-first test of how much cost a 5-stage SDLC chain (triage, requirements, plan, review, release note, run in n8n) saves when its stages hand off differently. Four arms: naive chaining (control), output discipline (A), structured handoff (H), and both (AH). 8 synthetic tickets, each with one planted defect, 5 repetitions per cell, 160 runs per model.
+
+| arm | Stage 1: local qwen3.5:9b, weighted cost vs control | Stage 2: Claude Haiku 5.5, dollars vs control |
+| --- | --- | --- |
+| A | 0.90 | 0.80 |
+| H | 0.71 | 0.75 |
+| AH | 0.67 | 0.60 |
+
+Stage 2 cost $0.365 for all 160 runs, reconciled against the billing console. These are cost measurements on a small synthetic set against a naive baseline, not production savings. Handoff alone failed the quality gate in Stage 2 because the review stage often returned invalid JSON; a post-hoc check shows the planted defect is named in every review once the brackets are repaired. The blind quality judge has not been run yet. Method, limits and how to re-run: [experiments/n8n_sdlc/README.md](experiments/n8n_sdlc/README.md); results: [STAGE2_RESULTS.md](experiments/n8n_sdlc/STAGE2_RESULTS.md).
+
+---
+
 ## Monorepo Architecture
 
 This repository consolidates the TokenOpt product ecosystem into a unified monorepo:
@@ -26,13 +40,15 @@ This repository consolidates the TokenOpt product ecosystem into a unified monor
 | ------ | --------- | ----------- |
 | [`tokenopt-proxy/`](tokenopt-proxy/) | **HTTP Enterprise Proxy** | Production FastAPI service (`v2.0`) with async embeddings, circuit breaker provider router, PostgreSQL audit trail, Redis cache, and Kafka event streamer. See [Proxy README](tokenopt-proxy/README.md). |
 | [`tokenopt-optimizer/`](tokenopt-optimizer/) | **Optimizer Engine** | Standalone, embeddable `tokenopt_optimizer` engine with response fidelity validation, batch optimization, TTL LRU cache, and tokenizers. See [Optimizer README](tokenopt-optimizer/README.md). |
-| [`tokenopt-sdk/`](tokenopt-sdk/) | **Client SDK (`v0.1.0`)** | Drop-in `tokenopt` client SDK for OpenAI, Anthropic, and local models (Ollama/vLLM/llama.cpp). See [SDK README](tokenopt-sdk/README.md). |
+| [`tokenopt/`](tokenopt/) | **Client SDK (`tokenopt` package)** | Drop-in `tokenopt` client wrappers for OpenAI, Anthropic, and local models (Ollama/vLLM/llama.cpp). Installed from the repository root (`pyproject.toml`). |
+| [`experiments/`](experiments/) | **Benchmarks** | Measure-first experiments, including the [n8n SDLC workflow benchmark](experiments/n8n_sdlc/README.md). |
 
 ```
 .
 ├── tokenopt-proxy/        # FastAPI HTTP Proxy service, Dockerfile, Terraform, & docs
 ├── tokenopt-optimizer/    # Standalone Python optimizer engine
-└── tokenopt-sdk/          # Published client SDK (v0.1.0 snapshot) + .ai/ specs
+├── tokenopt/              # Client SDK package (installed from the repo root)
+└── experiments/           # Measure-first benchmarks (n8n SDLC workflow)
 ```
 
 ---
@@ -65,7 +81,7 @@ docker build --build-context tokenopt_sdk=../tokenopt-optimizer -t tokenopt-prox
 
 ---
 
-## Quick Start — TokenOpt Client SDK (`v0.1.0`)
+## Quick Start — TokenOpt Client SDK
 
 The SDK provides drop-in replacement wrappers for OpenAI and Anthropic clients:
 
@@ -96,8 +112,8 @@ cd tokenopt-proxy && python -m pytest tests/ -v
 # Test the Standalone Optimizer Engine
 cd tokenopt-optimizer && python -m pytest tests/ -v
 
-# Test the Client SDK
-cd tokenopt-sdk && python -m pytest tests/ -v
+# Test the Client SDK (repo root)
+python -m pytest tests/ -v
 ```
 
 ---
@@ -107,7 +123,7 @@ cd tokenopt-sdk && python -m pytest tests/ -v
 This repository follows an **Open-Core Dual-Licensing** model:
 
 - **TokenOpt Enterprise Platform (`tokenopt-proxy/`)**: Licensed under the **TokenOpt Enterprise Commercial License** ([tokenopt-proxy/LICENSE](tokenopt-proxy/LICENSE)). Commercial / paid software; production use requires an enterprise license agreement or authorized production pilot agreement.
-- **Client SDK (`tokenopt-sdk/`)**: Licensed under the **MIT License** ([tokenopt-sdk/LICENSE](tokenopt-sdk/LICENSE)). Free for embedding into client applications.
+- **Client SDK (`tokenopt/`, repository root)**: see the root [LICENSE](LICENSE). Free for embedding into client applications.
 - **Optimizer Engine (`tokenopt-optimizer/`)**: Licensed under the **MIT License** ([tokenopt-optimizer/LICENSE](tokenopt-optimizer/LICENSE)). Standalone embeddable core.
 
 See [LICENSE](LICENSE) for the full monorepo licensing summary.
