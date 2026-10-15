@@ -44,7 +44,7 @@ def call(key, system, packet):
             "messages": [{"role": "user", "content": packet}]}
     req = urllib.request.Request(URL, json.dumps(body).encode(), {
         "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"})
-    with urllib.request.urlopen(req, timeout=120) as r:
+    with urllib.request.urlopen(req, timeout=300) as r:
         return json.loads(r.read())
 
 
@@ -53,12 +53,15 @@ def main():
     ap.add_argument("--cap-usd", type=float, default=2.50)
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--out", default="judge_s2_scores.jsonl")
+    ap.add_argument("--limit", type=int, default=0, help="judge only the first N unscored packets (connectivity test)")
     a = ap.parse_args()
     system = (HERE / "judge_rubric.md").read_text(encoding="utf-8")
     packets = sorted((HERE / "blind_s2").glob("*.md"))
     out = HERE / a.out
     done = {json.loads(l)["id"] for l in out.read_text(encoding="utf-8").splitlines() if l.strip()} if out.exists() else set()
     todo = [p for p in packets if p.stem not in done]
+    if a.limit:
+        todo = todo[: a.limit]
     est_in = sum(len(p.read_text(encoding="utf-8")) + len(system) for p in todo) / 3.5  # conservative chars/token
     est = est_in / 1e6 * PRICE_IN + len(todo) * 150 / 1e6 * PRICE_OUT
     print(f"{len(packets)} packets, {len(done)} already scored, {len(todo)} to do; estimated cost about ${est:.2f} (cap ${a.cap_usd:.2f})")
@@ -83,7 +86,13 @@ def main():
                 if e.code in (429, 500, 529) and attempt < 3:
                     time.sleep(10 * attempt)
                     continue
-                sys.exit(f"HTTP {e.code} on packet {p.stem}; stopped. Spent about ${spent:.3f}")
+                sys.exit(f"HTTP {e.code} on packet {p.stem}: {e.read().decode('utf-8', 'replace')[:300]}\nstopped. Spent about ${spent:.3f}")
+            except (TimeoutError, urllib.error.URLError, ConnectionError) as e:
+                # network stall: a timed-out request may still have been billed, so spend can be understated
+                print(f"  packet {p.stem} attempt {attempt}: {type(e).__name__}; retrying", flush=True)
+                if attempt == 3:
+                    sys.exit(f"network failure on packet {p.stem}; stopped. Check connection, VPN or proxy. Spent about ${spent:.3f} (timed-out calls not counted)")
+                time.sleep(15 * attempt)
             except (ValueError, KeyError, json.JSONDecodeError):
                 if attempt == 3:
                     sys.exit(f"unparseable judge reply for {p.stem}; stopped. Spent about ${spent:.3f}")
@@ -91,7 +100,7 @@ def main():
             f.write(json.dumps({"id": p.stem, **{k: d[k] for k in KEYS}, "total": d["total"], "note": d["note"]}) + "\n")
         if spent > a.cap_usd:
             sys.exit(f"cap reached after {i} packets; about ${spent:.3f} spent")
-        if i % 20 == 0:
+        if i == 1 or i % 20 == 0:
             print(f"{i}/{len(todo)} judged, about ${spent:.3f} spent", flush=True)
     print(f"done: {len(todo)} packets, about ${spent:.3f}")
 
